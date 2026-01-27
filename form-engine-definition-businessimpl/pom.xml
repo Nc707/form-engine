@@ -1,0 +1,28 @@
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
+  <modelVersion>4.0.0</modelVersion>
+  <parent>
+    <groupId>com.nc</groupId>
+    <artifactId>form-engine</artifactId>
+    <version>0.0.1-SNAPSHOT</version>
+  </parent>
+  <artifactId>form-engine-definition-buisnessimpl</artifactId>
+  <dependencies>
+  	<dependency>
+  		<groupId>com.nc</groupId>
+  		<artifactId>form-engine-definition-data</artifactId>
+  	</dependency>
+		<dependency>
+		<groupId>com.nc</groupId>
+		<artifactId>form-engine-definition-business</artifactId>
+		</dependency>
+		<dependency>
+		<groupId>com.nc</groupId>
+		<artifactId>form-engine-definition-model</artifactId>
+		</dependency>
+		<dependency>
+		<groupId>org.springframework</groupId>
+		<artifactId>spring-tx</artifactId>
+		</dependency>
+		
+  </dependencies>
+</project>
