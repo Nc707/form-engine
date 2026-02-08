@@ -1,8 +1,9 @@
 package com.nc.formengine.dataimpl.repository;
 
-import com.nc.formengine.data.entity.FieldDependency;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
+
+import com.nc.formengine.dataimpl.entity.FieldDependency;
 
 import java.util.List;
 

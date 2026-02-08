@@ -1,4 +1,4 @@
-package com.nc.formengine.data.entity;
+package com.nc.formengine.dataimpl.entity;
 
 import jakarta.persistence.Entity;
 import jakarta.persistence.GeneratedValue;

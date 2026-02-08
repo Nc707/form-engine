@@ -1,7 +1,7 @@
 package com.nc.formengine.dataimpl.mapper;
 
-import com.nc.formengine.data.entity.FieldDefinition;
-import com.nc.formengine.data.entity.FieldOption;
+import com.nc.formengine.dataimpl.entity.FieldDefinition;
+import com.nc.formengine.dataimpl.entity.FieldOption;
 import com.nc.formengine.model.dto.FieldOptionDTO;
 import org.springframework.stereotype.Component;
 

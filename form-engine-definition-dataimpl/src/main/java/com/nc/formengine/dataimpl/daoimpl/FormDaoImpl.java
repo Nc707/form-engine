@@ -1,7 +1,7 @@
 package com.nc.formengine.dataimpl.daoimpl;
 
 import com.nc.formengine.data.dao.FormDao;
-import com.nc.formengine.data.entity.FormDefinition;
+import com.nc.formengine.dataimpl.entity.FormDefinition;
 import com.nc.formengine.dataimpl.mapper.FormDefinitionMapper;
 import com.nc.formengine.dataimpl.repository.FormRepository;
 import com.nc.formengine.model.dto.FormDefinitionDTO;

@@ -35,7 +35,6 @@ public class FormSubmission {
     @Column(name = "submitted_at", nullable = false)
     private LocalDateTime submittedAt;
 
-    @Builder.Default
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)
     private SubmissionStatus status = SubmissionStatus.SUBMITTED;

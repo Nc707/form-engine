@@ -1,8 +1,8 @@
 package com.nc.formengine.dataimpl.daoimpl;
 
 import com.nc.formengine.data.dao.FieldOptionDao;
-import com.nc.formengine.data.entity.FieldDefinition;
-import com.nc.formengine.data.entity.FieldOption;
+import com.nc.formengine.dataimpl.entity.FieldDefinition;
+import com.nc.formengine.dataimpl.entity.FieldOption;
 import com.nc.formengine.dataimpl.mapper.FieldOptionMapper;
 import com.nc.formengine.dataimpl.repository.FieldOptionRepository;
 import com.nc.formengine.dataimpl.repository.FieldRepository;

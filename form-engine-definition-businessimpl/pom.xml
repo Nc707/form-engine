@@ -11,6 +11,10 @@
   		<groupId>com.nc</groupId>
   		<artifactId>form-engine-definition-data</artifactId>
   	</dependency>
+  	<dependency>
+  		<groupId>com.nc</groupId>
+  		<artifactId>form-engine-definition-dataimpl</artifactId>
+  	</dependency>
 		<dependency>
 		<groupId>com.nc</groupId>
 		<artifactId>form-engine-definition-business</artifactId>

@@ -1,8 +1,8 @@
 package com.nc.formengine.dataimpl.daoimpl;
 
 import com.nc.formengine.data.dao.FieldDefinitionDao;
-import com.nc.formengine.data.entity.FieldDefinition;
-import com.nc.formengine.data.entity.FormDefinition;
+import com.nc.formengine.dataimpl.entity.FieldDefinition;
+import com.nc.formengine.dataimpl.entity.FormDefinition;
 import com.nc.formengine.dataimpl.mapper.FieldDefinitionMapper;
 import com.nc.formengine.dataimpl.repository.FieldRepository;
 import com.nc.formengine.dataimpl.repository.FormRepository;

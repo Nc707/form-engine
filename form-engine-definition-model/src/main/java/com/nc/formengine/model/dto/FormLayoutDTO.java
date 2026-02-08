@@ -1,5 +1,6 @@
 package com.nc.formengine.model.dto;
 
+import com.nc.formengine.model.enums.DeviceType;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -12,17 +13,13 @@ import java.util.List;
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
-public class FormDefinitionDTO {
+public class FormLayoutDTO {
 
     private Long id;
-    private String code;
-    private String title;
-    private String description;
-    private Integer version;
+    private Long formDefinitionId;
+    private DeviceType deviceType;
+    private String customDeviceName;
     
     @Builder.Default
-    private List<FieldDefinitionDTO> fields = new ArrayList<>();
-    
-    @Builder.Default
-    private List<FormLayoutDTO> layouts = new ArrayList<>();
+    private List<FieldLayoutDTO> fieldLayouts = new ArrayList<>();
 }

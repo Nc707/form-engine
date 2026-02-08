@@ -1,4 +1,4 @@
-package com.nc.formengine.data.entity;
+package com.nc.formengine.dataimpl.entity;
 
 import com.nc.formengine.data.enums.DependencyAction;
 import jakarta.persistence.*;

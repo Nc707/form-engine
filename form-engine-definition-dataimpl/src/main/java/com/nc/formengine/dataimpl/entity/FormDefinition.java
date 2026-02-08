@@ -1,4 +1,4 @@
-package com.nc.formengine.data.entity;
+package com.nc.formengine.dataimpl.entity;
 
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -44,4 +44,8 @@ public class FormDefinition {
     @OrderBy("orderIndex ASC")
     @Builder.Default
     private List<FieldDefinition> fields = new ArrayList<>();
+
+    @OneToMany(mappedBy = "formDefinition", cascade = CascadeType.ALL, orphanRemoval = true)
+    @Builder.Default
+    private List<FormLayout> layouts = new ArrayList<>();
 }

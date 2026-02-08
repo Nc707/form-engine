@@ -1,6 +1,6 @@
 package com.nc.formengine.dataimpl.mapper;
 
-import com.nc.formengine.data.entity.FormDefinition;
+import com.nc.formengine.dataimpl.entity.FormDefinition;
 import com.nc.formengine.model.dto.FormDefinitionDTO;
 import org.springframework.stereotype.Component;
 
@@ -10,9 +10,11 @@ import java.util.stream.Collectors;
 public class FormDefinitionMapper {
 
     private final FieldDefinitionMapper fieldDefinitionMapper;
+    private final FormLayoutMapper formLayoutMapper;
 
-    public FormDefinitionMapper(FieldDefinitionMapper fieldDefinitionMapper) {
+    public FormDefinitionMapper(FieldDefinitionMapper fieldDefinitionMapper, FormLayoutMapper formLayoutMapper) {
         this.fieldDefinitionMapper = fieldDefinitionMapper;
+        this.formLayoutMapper = formLayoutMapper;
     }
 
     public FormDefinitionDTO toDTO(FormDefinition entity) {
@@ -29,6 +31,10 @@ public class FormDefinitionMapper {
                 .fields(entity.getFields() != null ? 
                     entity.getFields().stream()
                         .map(fieldDefinitionMapper::toDTO)
+                        .collect(Collectors.toList()) : null)
+                .layouts(entity.getLayouts() != null ?
+                    entity.getLayouts().stream()
+                        .map(formLayoutMapper::toDTO)
                         .collect(Collectors.toList()) : null)
                 .build();
     }
