@@ -27,7 +27,8 @@ public class FieldSubmissionServiceImpl implements FieldSubmissionService {
 
     @Override
     public FieldSubmissionDTO update(Long id, FieldSubmissionDTO fieldSubmissionDTO) {
-        FieldSubmissionDTO existing = fieldSubmissionDao.findById(id)
+        // Existence check: throws if the id is unknown.
+        fieldSubmissionDao.findById(id)
                 .orElseThrow(() -> new RuntimeException("Field submission not found with id: " + id));
         
         fieldSubmissionDTO.setId(id);

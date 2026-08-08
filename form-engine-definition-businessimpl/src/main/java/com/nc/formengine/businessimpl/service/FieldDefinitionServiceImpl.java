@@ -27,7 +27,8 @@ public class FieldDefinitionServiceImpl implements FieldDefinitionService {
 
     @Override
     public FieldDefinitionDTO update(Long id, FieldDefinitionDTO fieldDefinitionDTO) {
-        FieldDefinitionDTO existing = fieldDefinitionDao.findById(id)
+        // Existence check: throws if the id is unknown.
+        fieldDefinitionDao.findById(id)
                 .orElseThrow(() -> new RuntimeException("Field not found with id: " + id));
         
         fieldDefinitionDTO.setId(id);

@@ -27,7 +27,8 @@ public class FieldOptionServiceImpl implements FieldOptionService {
 
     @Override
     public FieldOptionDTO update(Long id, FieldOptionDTO fieldOptionDTO) {
-        FieldOptionDTO existing = fieldOptionDao.findById(id)
+        // Existence check: throws if the id is unknown.
+        fieldOptionDao.findById(id)
                 .orElseThrow(() -> new RuntimeException("Field option not found with id: " + id));
         
         fieldOptionDTO.setId(id);

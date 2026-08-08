@@ -30,4 +30,17 @@ replay_pid*
 .settings
 
 target/
-.vscode/settings.json
+.vscode/
+.idea/
+*.iml
+
+# Vaadin build output
+node_modules/
+src/main/bundles/
+src/main/frontend/generated/
+form-engine-demo/package.json
+form-engine-demo/package-lock.json
+form-engine-demo/tsconfig.json
+form-engine-demo/types.d.ts
+form-engine-demo/vite.config.ts
+form-engine-demo/vite.generated.ts

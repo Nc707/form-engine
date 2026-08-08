@@ -26,8 +26,7 @@ public class FieldDefinitionMapper {
                     entity.getFormDefinition().getId() : null)
                 .name(entity.getName())
                 .label(entity.getLabel())
-                .type(entity.getType() != null ? 
-                    com.nc.formengine.model.enums.FieldType.valueOf(entity.getType().name()) : null)
+                .type(entity.getType())
                 .orderIndex(entity.getOrderIndex())
                 .required(entity.getRequired())
                 .restrictions(toRestrictions(entity))
@@ -43,8 +42,7 @@ public class FieldDefinitionMapper {
         entity.setId(dto.getId());
         entity.setName(dto.getName());
         entity.setLabel(dto.getLabel());
-        entity.setType(dto.getType() != null ? 
-            com.nc.formengine.data.enums.FieldType.valueOf(dto.getType().name()) : null);
+        entity.setType(dto.getType());
         entity.setOrderIndex(dto.getOrderIndex());
         entity.setRequired(dto.getRequired());
         applyRestrictions(dto.getRestrictions(), entity);
@@ -59,8 +57,7 @@ public class FieldDefinitionMapper {
 
         entity.setName(dto.getName());
         entity.setLabel(dto.getLabel());
-        entity.setType(dto.getType() != null ? 
-            com.nc.formengine.data.enums.FieldType.valueOf(dto.getType().name()) : null);
+        entity.setType(dto.getType());
         entity.setOrderIndex(dto.getOrderIndex());
         entity.setRequired(dto.getRequired());
         applyRestrictions(dto.getRestrictions(), entity);

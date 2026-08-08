@@ -2,6 +2,7 @@ package com.nc.formengine.dataimpl.mapper;
 
 import com.nc.formengine.dataimpl.entity.FieldDefinition;
 import com.nc.formengine.dataimpl.entity.FormDefinition;
+import com.nc.formengine.dataimpl.entity.FormLayout;
 import com.nc.formengine.model.dto.FormDefinitionDTO;
 import org.springframework.stereotype.Component;
 
@@ -51,7 +52,10 @@ public class FormDefinitionMapper {
         entity.setCode(dto.getCode());
         entity.setTitle(dto.getTitle());
         entity.setDescription(dto.getDescription());
-        entity.setVersion(dto.getVersion());
+        // version is NOT NULL and defaults to 1 on the entity; only overwrite when supplied.
+        if (dto.getVersion() != null) {
+            entity.setVersion(dto.getVersion());
+        }
 
         if (dto.getFields() != null) {
             List<FieldDefinition> fields = dto.getFields().stream()
@@ -59,6 +63,16 @@ public class FormDefinitionMapper {
                     .collect(Collectors.toList());
             fields.forEach(field -> fieldDefinitionMapper.setFormDefinition(field, entity));
             entity.setFields(fields);
+        }
+
+        // toDTO maps layouts, so toEntity must map them back. Dropping them here means an update
+        // built from a round-tripped DTO orphan-removes every layout of the form.
+        if (dto.getLayouts() != null) {
+            List<FormLayout> layouts = dto.getLayouts().stream()
+                    .map(formLayoutMapper::toEntity)
+                    .collect(Collectors.toList());
+            layouts.forEach(layout -> layout.setFormDefinition(entity));
+            entity.setLayouts(layouts);
         }
 
         return entity;
@@ -72,6 +86,8 @@ public class FormDefinitionMapper {
         entity.setCode(dto.getCode());
         entity.setTitle(dto.getTitle());
         entity.setDescription(dto.getDescription());
-        entity.setVersion(dto.getVersion());
+        if (dto.getVersion() != null) {
+            entity.setVersion(dto.getVersion());
+        }
     }
 }

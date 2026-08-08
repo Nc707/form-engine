@@ -15,10 +15,8 @@
       <groupId>com.nc</groupId>
       <artifactId>form-engine-definition-data</artifactId>
     </dependency>
-    <dependency>
-      <groupId>jakarta.persistence</groupId>
-      <artifactId>jakarta.persistence-api</artifactId>
-    </dependency>
+    <!-- Pageable / Page in the DAO signatures. This module holds interfaces only:
+         the entities live in form-engine-submission-dataimpl, so no JPA API is needed here. -->
     <dependency>
       <groupId>org.springframework.data</groupId>
       <artifactId>spring-data-commons</artifactId>

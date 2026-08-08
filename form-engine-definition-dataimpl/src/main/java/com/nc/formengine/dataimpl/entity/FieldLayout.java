@@ -3,18 +3,20 @@ package com.nc.formengine.dataimpl.entity;
 import com.nc.formengine.model.enums.ComponentType;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
-import lombok.Data;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
+import lombok.Setter;
+import lombok.ToString;
 
 import jakarta.persistence.*;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Objects;
 
 @Entity
-@Getter
 @Table(name = "field_layouts")
-@Data
+@Getter
+@Setter
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
@@ -26,10 +28,12 @@ public class FieldLayout {
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "form_layout_id", nullable = false)
+    @ToString.Exclude
     private FormLayout formLayout;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "field_definition_id", nullable = false)
+    @ToString.Exclude
     private FieldDefinition fieldDefinition;
 
     @Column(name = "row_position")
@@ -56,4 +60,20 @@ public class FieldLayout {
     @Column(nullable = false)
     @Builder.Default
     private Boolean visible = true;
+
+    @Override
+    public boolean equals(Object other) {
+        if (this == other) {
+            return true;
+        }
+        if (!(other instanceof FieldLayout that)) {
+            return false;
+        }
+        return id != null && id.equals(that.id);
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(id);
+    }
 }

@@ -19,8 +19,7 @@ public class FieldDependencyMapper {
                     entity.getDependentField().getId() : null)
                 .triggerFieldId(entity.getTriggerField() != null ? 
                     entity.getTriggerField().getId() : null)
-                .action(entity.getAction() != null ? 
-                    com.nc.formengine.model.enums.DependencyAction.valueOf(entity.getAction().name()) : null)
+                .action(entity.getAction())
                 .triggerValue(entity.getTriggerValue())
                 .build();
     }
@@ -32,8 +31,7 @@ public class FieldDependencyMapper {
 
         FieldDependency entity = new FieldDependency();
         entity.setId(dto.getId());
-        entity.setAction(dto.getAction() != null ? 
-            com.nc.formengine.data.enums.DependencyAction.valueOf(dto.getAction().name()) : null);
+        entity.setAction(dto.getAction());
         entity.setTriggerValue(dto.getTriggerValue());
 
         return entity;
@@ -44,8 +42,7 @@ public class FieldDependencyMapper {
             return;
         }
 
-        entity.setAction(dto.getAction() != null ? 
-            com.nc.formengine.data.enums.DependencyAction.valueOf(dto.getAction().name()) : null);
+        entity.setAction(dto.getAction());
         entity.setTriggerValue(dto.getTriggerValue());
     }
 

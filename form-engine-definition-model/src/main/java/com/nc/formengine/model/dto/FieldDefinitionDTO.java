@@ -4,7 +4,6 @@ import com.nc.formengine.model.enums.FieldType;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
-import lombok.Getter;
 import lombok.NoArgsConstructor;
 
 import java.util.List;
@@ -14,7 +13,6 @@ import java.util.List;
  * Represents a field in a form with its configuration and validation rules.
  */
 @Data
-@Getter
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor

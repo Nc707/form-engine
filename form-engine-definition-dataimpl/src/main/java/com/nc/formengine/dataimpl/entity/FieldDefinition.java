@@ -1,18 +1,21 @@
 package com.nc.formengine.dataimpl.entity;
 
-import com.nc.formengine.data.enums.FieldType;
+import com.nc.formengine.model.enums.FieldType;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
-import lombok.Data;
+import lombok.Getter;
 import lombok.NoArgsConstructor;
+import lombok.Setter;
 import lombok.ToString;
 
 import java.util.List;
+import java.util.Objects;
 
 @Entity
 @Table(name = "field_definitions")
-@Data
+@Getter
+@Setter
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
@@ -40,16 +43,36 @@ public class FieldDefinition {
     @Column(name = "order_index")
     private Integer orderIndex;
 
+    @Builder.Default
     private Boolean required = false;
+
     private Integer minLength;
     private Integer maxLength;
     private Double minValue;
     private Double maxValue;
     private String regexPattern;
-    
+
     @OneToMany(mappedBy = "triggerField", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
+    @ToString.Exclude
     private List<FieldDependency> triggeredDependencies;
 
     @OneToMany(mappedBy = "dependentField", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
+    @ToString.Exclude
     private List<FieldDependency> myDependencies;
+
+    @Override
+    public boolean equals(Object other) {
+        if (this == other) {
+            return true;
+        }
+        if (!(other instanceof FieldDefinition that)) {
+            return false;
+        }
+        return id != null && id.equals(that.id);
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(id);
+    }
 }

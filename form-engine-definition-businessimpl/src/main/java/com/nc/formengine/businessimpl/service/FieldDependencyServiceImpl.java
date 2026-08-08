@@ -27,7 +27,8 @@ public class FieldDependencyServiceImpl implements FieldDependencyService {
 
     @Override
     public FieldDependencyDTO update(Long id, FieldDependencyDTO fieldDependencyDTO) {
-        FieldDependencyDTO existing = fieldDependencyDao.findById(id)
+        // Existence check: throws if the id is unknown.
+        fieldDependencyDao.findById(id)
                 .orElseThrow(() -> new RuntimeException("Field dependency not found with id: " + id));
         
         fieldDependencyDTO.setId(id);

@@ -29,7 +29,8 @@ public class FormSubmissionServiceImpl implements FormSubmissionService {
 
     @Override
     public FormSubmissionDTO update(Long id, FormSubmissionDTO formSubmissionDTO) {
-        FormSubmissionDTO existing = formSubmissionDao.findById(id)
+        // Existence check: throws if the id is unknown.
+        formSubmissionDao.findById(id)
                 .orElseThrow(() -> new RuntimeException("Form submission not found with id: " + id));
         
         formSubmissionDTO.setId(id);

@@ -27,7 +27,8 @@ public class FormDefinitionServiceImpl implements FormDefinitionService {
 
     @Override
     public FormDefinitionDTO update(Long id, FormDefinitionDTO formDefinitionDTO) {
-        FormDefinitionDTO existing = formDao.findById(id)
+        // Existence check: throws if the id is unknown.
+        formDao.findById(id)
                 .orElseThrow(() -> new RuntimeException("Form not found with id: " + id));
         
         formDefinitionDTO.setId(id);
