@@ -1,5 +1,7 @@
 package com.nc.formengine.dataimpl.mapper;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.nc.formengine.dataimpl.entity.FieldLayout;
 import com.nc.formengine.model.dto.FieldLayoutDTO;
 import org.springframework.stereotype.Component;
@@ -10,6 +12,8 @@ import java.util.Map;
 @Component
 public class FieldLayoutMapper {
 
+    private final ObjectMapper objectMapper = new ObjectMapper();
+
     public FieldLayoutDTO toDTO(FieldLayout entity) {
         if (entity == null) {
             return null;
@@ -18,7 +22,11 @@ public class FieldLayoutMapper {
         Map<String, Object> customProps = new HashMap<>();
         if (entity.getCustomProperties() != null) {
             entity.getCustomProperties().forEach((key, value) -> {
-                customProps.put(key, value);
+                try {
+                    customProps.put(key, objectMapper.readValue(value, Object.class));
+                } catch (JsonProcessingException e) {
+                    customProps.put(key, value);
+                }
             });
         }
 
@@ -44,7 +52,11 @@ public class FieldLayoutMapper {
         Map<String, String> customProps = new HashMap<>();
         if (dto.getCustomProperties() != null) {
             dto.getCustomProperties().forEach((key, value) -> {
-                customProps.put(key, value != null ? value.toString() : null);
+                try {
+                    customProps.put(key, objectMapper.writeValueAsString(value));
+                } catch (JsonProcessingException e) {
+                    customProps.put(key, String.valueOf(value));
+                }
             });
         }
 
