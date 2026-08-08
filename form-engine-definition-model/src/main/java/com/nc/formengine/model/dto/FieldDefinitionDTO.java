@@ -4,11 +4,17 @@ import com.nc.formengine.model.enums.FieldType;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
+import lombok.Getter;
 import lombok.NoArgsConstructor;
 
 import java.util.List;
 
+/**
+ * DTO for field definition.
+ * Represents a field in a form with its configuration and validation rules.
+ */
 @Data
+@Getter
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
@@ -21,12 +27,15 @@ public class FieldDefinitionDTO {
     private FieldType type;
     private Integer orderIndex;
     private Boolean required;
-    private Integer minLength;
-    private Integer maxLength;
-    private Double minValue;
-    private Double maxValue;
-    private String regexPattern;
-    private List<FieldDependencyDTO> triggeredDependencies;
-    private List<FieldDependencyDTO> myDependencies;
+    
+    /**
+     * List of validation restrictions for this field.
+     * Uses the Specification pattern for flexible, composable validation rules.
+     */
+    private List<FieldRestrictionDTO> restrictions;
+    
+    /**
+     * Options for SELECT and MULTI_SELECT fields.
+     */
     private List<FieldOptionDTO> options;
 }
