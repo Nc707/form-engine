@@ -2,6 +2,7 @@ package com.nc.formengine.submission.dataimpl.daoimpl;
 
 import com.nc.formengine.submission.data.dao.FormSubmissionDao;
 import com.nc.formengine.submission.data.entity.FormSubmission;
+import com.nc.formengine.submission.data.enums.SubmissionStatus;
 import com.nc.formengine.submission.dataimpl.mapper.FormSubmissionMapper;
 import com.nc.formengine.submission.dataimpl.repository.FormSubmissionRepository;
 import com.nc.formengine.submission.model.dto.FormSubmissionDTO;
@@ -58,7 +59,7 @@ public class FormSubmissionDaoImpl implements FormSubmissionDao {
 
     @Override
     public List<FormSubmissionDTO> findByStatus(String status) {
-        return jpaRepository.findByStatus(status).stream()
+        return jpaRepository.findByStatus(SubmissionStatus.valueOf(status)).stream()
                 .map(mapper::toDTO)
                 .collect(Collectors.toList());
     }

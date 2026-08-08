@@ -1,9 +1,11 @@
 package com.nc.formengine.dataimpl.mapper;
 
+import com.nc.formengine.dataimpl.entity.FieldDefinition;
 import com.nc.formengine.dataimpl.entity.FormDefinition;
 import com.nc.formengine.model.dto.FormDefinitionDTO;
 import org.springframework.stereotype.Component;
 
+import java.util.List;
 import java.util.stream.Collectors;
 
 @Component
@@ -50,6 +52,14 @@ public class FormDefinitionMapper {
         entity.setTitle(dto.getTitle());
         entity.setDescription(dto.getDescription());
         entity.setVersion(dto.getVersion());
+
+        if (dto.getFields() != null) {
+            List<FieldDefinition> fields = dto.getFields().stream()
+                    .map(fieldDefinitionMapper::toEntity)
+                    .collect(Collectors.toList());
+            fields.forEach(field -> fieldDefinitionMapper.setFormDefinition(field, entity));
+            entity.setFields(fields);
+        }
 
         return entity;
     }

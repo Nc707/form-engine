@@ -27,9 +27,14 @@ public class FieldSubmission {
     @Column(name = "field_definition_id", nullable = false)
     private Long fieldDefinitionId;
 
-    @Column(name = "field_name", nullable = false)
+    /**
+     * Denormalized snapshot of the field name at submission time.
+     * Optional: the submission modules are decoupled from the definition modules,
+     * so it can only be supplied by the caller.
+     */
+    @Column(name = "field_name")
     private String fieldName;
 
-    @Column(columnDefinition = "TEXT")
+    @Column(name = "`value`", columnDefinition = "TEXT")
     private String value;
 }

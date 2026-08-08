@@ -16,8 +16,8 @@
     </properties>
   <modules>
   	<module>form-engine-definition-model</module>
-  	<module>form-engine-definition-buisness</module>
-  	<module>form-engine-definition-buisnessimpl</module>
+  	<module>form-engine-definition-business</module>
+  	<module>form-engine-definition-businessimpl</module>
   	<module>form-engine-definition-data</module>
   	<module>form-engine-definition-dataimpl</module>
   	<module>form-engine-submission-model</module>
@@ -110,6 +110,7 @@
                     <configuration>
                         <source>${java.version}</source>
                         <target>${java.version}</target>
+                        <parameters>true</parameters>
                     </configuration>
                 </plugin>
             </plugins>

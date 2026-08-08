@@ -19,7 +19,7 @@ import org.springframework.data.jpa.repository.config.EnableJpaRepositories;
     "com.nc.formengine.dataimpl.repository"
 })
 @EntityScan(basePackages = {
-		"com.nc.formengine.data.entity",
+		"com.nc.formengine.dataimpl.entity",
 		"com.nc.formengine.submission.data.entity"
 })
 public class FormEngineApplication {

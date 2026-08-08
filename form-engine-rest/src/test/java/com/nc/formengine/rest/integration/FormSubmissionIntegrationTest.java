@@ -178,7 +178,7 @@ class FormSubmissionIntegrationTest {
         completedSubmission.setFormDefinitionId(formDefinitionId);
         completedSubmission.setFormCode(formCode);
         completedSubmission.setSubmittedBy("user3@example.com");
-        completedSubmission.setStatus(SubmissionStatus.SUBMITTED);
+        completedSubmission.setStatus(SubmissionStatus.CANCELED);
 
         // When - Crear las submissions
         mockMvc.perform(post("/api/v1/form-submissions")
