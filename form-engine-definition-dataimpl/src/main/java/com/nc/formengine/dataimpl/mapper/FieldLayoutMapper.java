@@ -1,18 +1,29 @@
 package com.nc.formengine.dataimpl.mapper;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import com.nc.formengine.dataimpl.entity.FieldLayout;
 import com.nc.formengine.model.dto.FieldLayoutDTO;
 import org.springframework.stereotype.Component;
+import tools.jackson.core.JacksonException;
+import tools.jackson.databind.ObjectMapper;
 
 import java.util.HashMap;
 import java.util.Map;
 
+/**
+ * Maps {@link FieldLayout} to its DTO.
+ *
+ * <p>{@code customProperties} is persisted as a {@code Map<String, String>} but exposed as a
+ * {@code Map<String, Object>}, so each value is serialized to JSON individually. That is what lets
+ * a structured value such as {@code {"toolbar": ["bold", "italic"]}} survive a round trip.
+ */
 @Component
 public class FieldLayoutMapper {
 
-    private final ObjectMapper objectMapper = new ObjectMapper();
+    private final ObjectMapper objectMapper;
+
+    public FieldLayoutMapper(ObjectMapper objectMapper) {
+        this.objectMapper = objectMapper;
+    }
 
     public FieldLayoutDTO toDTO(FieldLayout entity) {
         if (entity == null) {
@@ -24,7 +35,7 @@ public class FieldLayoutMapper {
             entity.getCustomProperties().forEach((key, value) -> {
                 try {
                     customProps.put(key, objectMapper.readValue(value, Object.class));
-                } catch (JsonProcessingException e) {
+                } catch (JacksonException e) {
                     customProps.put(key, value);
                 }
             });
@@ -54,7 +65,7 @@ public class FieldLayoutMapper {
             dto.getCustomProperties().forEach((key, value) -> {
                 try {
                     customProps.put(key, objectMapper.writeValueAsString(value));
-                } catch (JsonProcessingException e) {
+                } catch (JacksonException e) {
                     customProps.put(key, String.valueOf(value));
                 }
             });

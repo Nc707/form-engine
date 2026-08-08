@@ -1,4 +1,4 @@
-package com.nc.base.ui;
+package com.nc.formengine.ui;
 
 import com.vaadin.flow.component.Component;
 import com.vaadin.flow.component.applayout.AppLayout;
@@ -16,6 +16,7 @@ import com.vaadin.flow.server.menu.MenuConfiguration;
 import com.vaadin.flow.server.menu.MenuEntry;
 import com.vaadin.flow.theme.lumo.LumoUtility;
 
+/** Application shell: drawer navigation built from the {@code @Menu} entries of each view. */
 @Layout
 public final class MainLayout extends AppLayout {
 
@@ -25,12 +26,11 @@ public final class MainLayout extends AppLayout {
     }
 
     private Component createHeader() {
-        // TODO Replace with real application logo and name
-        var appLogo = VaadinIcon.BOOK.create();
-        appLogo.setSize("48px");
-        appLogo.setColor("green");
+        var appLogo = VaadinIcon.FORM.create();
+        appLogo.setSize("40px");
+        appLogo.setColor("var(--lumo-primary-color)");
 
-        var appName = new Span("Form Engine Demo");
+        var appName = new Span("Form Engine");
         appName.getStyle().setFontWeight(Style.FontWeight.BOLD);
 
         var header = new VerticalLayout(appLogo, appName);
@@ -48,8 +48,7 @@ public final class MainLayout extends AppLayout {
     private SideNavItem createSideNavItem(MenuEntry menuEntry) {
         if (menuEntry.icon() != null) {
             return new SideNavItem(menuEntry.title(), menuEntry.path(), new Icon(menuEntry.icon()));
-        } else {
-            return new SideNavItem(menuEntry.title(), menuEntry.path());
         }
+        return new SideNavItem(menuEntry.title(), menuEntry.path());
     }
 }

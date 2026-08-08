@@ -1,4 +1,4 @@
-package com.nc.formengine.submission.data.entity;
+package com.nc.formengine.submission.dataimpl.entity;
 
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;

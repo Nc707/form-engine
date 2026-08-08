@@ -1,6 +1,6 @@
-package com.nc.formengine.submission.data.entity;
+package com.nc.formengine.submission.dataimpl.entity;
 
-import com.nc.formengine.submission.data.enums.SubmissionStatus;
+import com.nc.formengine.submission.model.enums.SubmissionStatus;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Builder;

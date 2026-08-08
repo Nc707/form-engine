@@ -1,8 +1,8 @@
 package com.nc.formengine.submission.dataimpl.daoimpl;
 
 import com.nc.formengine.submission.data.dao.FormSubmissionDao;
-import com.nc.formengine.submission.data.entity.FormSubmission;
-import com.nc.formengine.submission.data.enums.SubmissionStatus;
+import com.nc.formengine.submission.dataimpl.entity.FormSubmission;
+import com.nc.formengine.submission.model.enums.SubmissionStatus;
 import com.nc.formengine.submission.dataimpl.mapper.FormSubmissionMapper;
 import com.nc.formengine.submission.dataimpl.repository.FormSubmissionRepository;
 import com.nc.formengine.submission.model.dto.FormSubmissionDTO;

@@ -1,39 +1,51 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
     <modelVersion>4.0.0</modelVersion>
-    <!-- Project from https://start.vaadin.com/619619a0-a5d7-464a-b358-db5f6fce0ab6 -->
-    <groupId>com.nc</groupId>
-    <artifactId>form-engine-demo</artifactId>
-    <version>1.0-SNAPSHOT</version>
-    <packaging>jar</packaging>
-    
-    <properties>
-        <java.version>21</java.version>
-        <vaadin.version>25.0.4</vaadin.version>
-    </properties>
-    
+
     <parent>
-        <groupId>org.springframework.boot</groupId>
-        <artifactId>spring-boot-starter-parent</artifactId>
-        <version>4.0.2</version>
-        <relativePath/>
+        <groupId>com.nc</groupId>
+        <artifactId>form-engine</artifactId>
+        <version>0.0.1-SNAPSHOT</version>
     </parent>
-    <dependencyManagement>
-        <dependencies>
-            <dependency>
-                <groupId>com.vaadin</groupId>
-                <artifactId>vaadin-bom</artifactId>
-                <version>${vaadin.version}</version>
-                <type>pom</type>
-                <scope>import</scope>
-            </dependency>
-        </dependencies>
-    </dependencyManagement>
-    
+
+    <artifactId>form-engine-demo</artifactId>
+    <name>Form Engine Demo (Vaadin)</name>
+    <description>Vaadin UI for Form Engine: form builder, renderer and submission viewer</description>
+
     <dependencies>
+        <!-- Internal dependencies - Business layer (interfaces + implementations).
+             The implementations are required at runtime: the interface modules alone
+             provide no beans to inject into the views. -->
+        <dependency>
+            <groupId>com.nc</groupId>
+            <artifactId>form-engine-definition-business</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>com.nc</groupId>
+            <artifactId>form-engine-definition-businessimpl</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>com.nc</groupId>
+            <artifactId>form-engine-submission-business</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>com.nc</groupId>
+            <artifactId>form-engine-submission-businessimpl</artifactId>
+        </dependency>
+
+        <!-- Internal dependencies - Data implementations (entities + repositories) -->
+        <dependency>
+            <groupId>com.nc</groupId>
+            <artifactId>form-engine-definition-dataimpl</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>com.nc</groupId>
+            <artifactId>form-engine-submission-dataimpl</artifactId>
+        </dependency>
+
+        <!-- Vaadin -->
         <dependency>
             <groupId>com.vaadin</groupId>
-            <!-- Replace artifactId with vaadin-core to use only free components -->
             <artifactId>vaadin</artifactId>
         </dependency>
         <dependency>
@@ -45,37 +57,49 @@
             <groupId>com.vaadin</groupId>
             <artifactId>vaadin-spring-boot-starter</artifactId>
         </dependency>
+
+        <!-- Spring Boot Starters -->
         <dependency>
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-data-jpa</artifactId>
         </dependency>
+
+        <!-- Database -->
         <dependency>
             <groupId>com.h2database</groupId>
             <artifactId>h2</artifactId>
+            <scope>runtime</scope>
         </dependency>
+
+        <!-- Lombok -->
+        <dependency>
+            <groupId>org.projectlombok</groupId>
+            <artifactId>lombok</artifactId>
+            <optional>true</optional>
+        </dependency>
+
+        <!-- Testing -->
         <dependency>
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-test</artifactId>
             <scope>test</scope>
         </dependency>
-        <dependency>
-        	<groupId>com.nc</groupId>
-        	<artifactId>form-engine</artifactId>
-        	<version>0.0.1-SNAPSHOT</version>
-        </dependency>
-        <dependency>
-        	<groupId>com.nc</groupId>
-        	<artifactId>form-engine-definition-business</artifactId>
-        	<version>0.0.1-SNAPSHOT</version>
-        </dependency>
     </dependencies>
-    
+
     <build>
         <defaultGoal>spring-boot:run</defaultGoal>
         <plugins>
             <plugin>
                 <groupId>org.springframework.boot</groupId>
                 <artifactId>spring-boot-maven-plugin</artifactId>
+                <configuration>
+                    <excludes>
+                        <exclude>
+                            <groupId>org.projectlombok</groupId>
+                            <artifactId>lombok</artifactId>
+                        </exclude>
+                    </excludes>
+                </configuration>
             </plugin>
             <plugin>
                 <groupId>com.vaadin</groupId>
@@ -84,25 +108,38 @@
                 <executions>
                     <execution>
                         <goals>
-                            <goal>build-frontend</goal>
+                            <goal>prepare-frontend</goal>
                         </goals>
                     </execution>
                 </executions>
             </plugin>
         </plugins>
     </build>
-    
-    <repositories>
-        <repository>
-            <id>central</id>
-            <url>https://repo.maven.apache.org/maven2</url>
-            <snapshots>
-                <enabled>false</enabled>
-            </snapshots>
-        </repository>
-        <repository>
-            <id>vaadin-directory</id>
-            <url>https://maven.vaadin.com/vaadin-addons</url>
-        </repository>
-    </repositories>
+
+    <profiles>
+        <!-- Production build: compiles the frontend bundle. Kept out of the default
+             build so `mvn install` does not require a Node toolchain download. -->
+        <profile>
+            <id>production</id>
+            <build>
+                <plugins>
+                    <plugin>
+                        <groupId>com.vaadin</groupId>
+                        <artifactId>vaadin-maven-plugin</artifactId>
+                        <version>${vaadin.version}</version>
+                        <executions>
+                            <execution>
+                                <id>frontend</id>
+                                <goals>
+                                    <goal>prepare-frontend</goal>
+                                    <goal>build-frontend</goal>
+                                </goals>
+                                <phase>compile</phase>
+                            </execution>
+                        </executions>
+                    </plugin>
+                </plugins>
+            </build>
+        </profile>
+    </profiles>
 </project>

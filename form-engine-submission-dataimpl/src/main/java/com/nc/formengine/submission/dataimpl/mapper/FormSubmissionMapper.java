@@ -1,6 +1,6 @@
 package com.nc.formengine.submission.dataimpl.mapper;
 
-import com.nc.formengine.submission.data.entity.FormSubmission;
+import com.nc.formengine.submission.dataimpl.entity.FormSubmission;
 import com.nc.formengine.submission.model.dto.FormSubmissionDTO;
 
 import org.springframework.stereotype.Component;
@@ -27,8 +27,7 @@ public class FormSubmissionMapper {
                 .formCode(entity.getFormCode())
                 .submittedBy(entity.getSubmittedBy())
                 .submittedAt(entity.getSubmittedAt())
-                .status(entity.getStatus() != null ? 
-                    com.nc.formengine.submission.model.enums.SubmissionStatus.valueOf(entity.getStatus().name()) : null)
+                .status(entity.getStatus())
                 .fieldSubmissions(entity.getFieldSubmissions() != null ?
                         entity.getFieldSubmissions().stream()
                                 .map(fieldSubmissionMapper::toDTO)
@@ -47,8 +46,11 @@ public class FormSubmissionMapper {
         entity.setFormCode(dto.getFormCode());
         entity.setSubmittedBy(dto.getSubmittedBy());
         entity.setSubmittedAt(dto.getSubmittedAt());
-        entity.setStatus(dto.getStatus() != null ? 
-            com.nc.formengine.submission.data.enums.SubmissionStatus.valueOf(dto.getStatus().name()) : null);
+        // status is NOT NULL and defaults to SUBMITTED on the entity; only overwrite it when the
+        // DTO actually carries a value, otherwise a create without a status violates the constraint.
+        if (dto.getStatus() != null) {
+            entity.setStatus(dto.getStatus());
+        }
 
         return entity;
     }
@@ -61,8 +63,9 @@ public class FormSubmissionMapper {
         entity.setFormDefinitionId(dto.getFormDefinitionId());
         entity.setFormCode(dto.getFormCode());
         entity.setSubmittedBy(dto.getSubmittedBy());
-        entity.setStatus(dto.getStatus() != null ? 
-            com.nc.formengine.submission.data.enums.SubmissionStatus.valueOf(dto.getStatus().name()) : null);
+        if (dto.getStatus() != null) {
+            entity.setStatus(dto.getStatus());
+        }
         if (dto.getSubmittedAt() != null) {
             entity.setSubmittedAt(dto.getSubmittedAt());
         }

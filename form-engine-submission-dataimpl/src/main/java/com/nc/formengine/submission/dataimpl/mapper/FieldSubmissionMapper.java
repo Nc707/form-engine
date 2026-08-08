@@ -1,7 +1,7 @@
 package com.nc.formengine.submission.dataimpl.mapper;
 
-import com.nc.formengine.submission.data.entity.FieldSubmission;
-import com.nc.formengine.submission.data.entity.FormSubmission;
+import com.nc.formengine.submission.dataimpl.entity.FieldSubmission;
+import com.nc.formengine.submission.dataimpl.entity.FormSubmission;
 import com.nc.formengine.submission.model.dto.FieldSubmissionDTO;
 
 import org.springframework.stereotype.Component;

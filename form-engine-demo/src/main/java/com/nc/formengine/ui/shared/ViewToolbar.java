@@ -1,4 +1,4 @@
-package com.nc.base.ui;
+package com.nc.formengine.ui.shared;
 
 import com.vaadin.flow.component.Component;
 import com.vaadin.flow.component.Composite;
@@ -9,6 +9,7 @@ import com.vaadin.flow.component.orderedlayout.HorizontalLayout;
 import com.vaadin.flow.theme.lumo.LumoUtility;
 import org.jspecify.annotations.Nullable;
 
+/** Title bar shared by every view: drawer toggle, view title and optional action components. */
 public final class ViewToolbar extends Composite<HorizontalLayout> {
 
     public ViewToolbar(@Nullable String viewTitle, Component... components) {

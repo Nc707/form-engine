@@ -11,7 +11,8 @@
         <maven.compiler.source>${java.version}</maven.compiler.source>
         <maven.compiler.target>${java.version}</maven.compiler.target>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-        <spring-boot.version>3.2.2</spring-boot.version>
+        <spring-boot.version>4.0.2</spring-boot.version>
+        <vaadin.version>25.0.4</vaadin.version>
         <form-engine.version>0.0.1-SNAPSHOT</form-engine.version>
     </properties>
   <modules>
@@ -26,6 +27,7 @@
   	<module>form-engine-submission-business</module>
   	<module>form-engine-submission-businessimpl</module>
   	<module>form-engine-rest</module>
+  	<module>form-engine-demo</module>
   </modules>
     <dependencyManagement>
         <dependencies>
@@ -33,6 +35,13 @@
                 <groupId>org.springframework.boot</groupId>
                 <artifactId>spring-boot-dependencies</artifactId>
                 <version>${spring-boot.version}</version>
+                <type>pom</type>
+                <scope>import</scope>
+            </dependency>
+            <dependency>
+                <groupId>com.vaadin</groupId>
+                <artifactId>vaadin-bom</artifactId>
+                <version>${vaadin.version}</version>
                 <type>pom</type>
                 <scope>import</scope>
             </dependency>
@@ -86,11 +95,6 @@
                 <artifactId>form-engine-submission-businessimpl</artifactId>
                 <version>${form-engine.version}</version>
             </dependency>
-            <dependency>
-                <groupId>com.nc</groupId>
-                <artifactId>form-engine-submission-rest</artifactId>
-                <version>${form-engine.version}</version>
-            </dependency>
         </dependencies>
     </dependencyManagement>
     <dependencies>
@@ -113,6 +117,14 @@
                         <parameters>true</parameters>
                     </configuration>
                 </plugin>
+                <!-- This project imports the Boot BOM instead of inheriting from
+                     spring-boot-starter-parent, so the plugin version is not managed for us.
+                     Pin it, or Maven silently resolves the newest available release. -->
+                <plugin>
+                    <groupId>org.springframework.boot</groupId>
+                    <artifactId>spring-boot-maven-plugin</artifactId>
+                    <version>${spring-boot.version}</version>
+                </plugin>
             </plugins>
         </pluginManagement>
         
@@ -123,4 +135,14 @@
             </plugin>
         </plugins>
     </build>
+
+    <repositories>
+        <repository>
+            <id>vaadin-directory</id>
+            <url>https://maven.vaadin.com/vaadin-addons</url>
+            <snapshots>
+                <enabled>false</enabled>
+            </snapshots>
+        </repository>
+    </repositories>
 </project>

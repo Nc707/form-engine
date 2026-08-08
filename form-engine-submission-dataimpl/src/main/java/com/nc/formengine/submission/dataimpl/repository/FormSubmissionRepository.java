@@ -3,8 +3,8 @@ package com.nc.formengine.submission.dataimpl.repository;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
 
-import com.nc.formengine.submission.data.entity.FormSubmission;
-import com.nc.formengine.submission.data.enums.SubmissionStatus;
+import com.nc.formengine.submission.dataimpl.entity.FormSubmission;
+import com.nc.formengine.submission.model.enums.SubmissionStatus;
 
 import java.util.List;
 
