@@ -19,7 +19,8 @@ public class FieldDependencyMapper {
                     entity.getDependentField().getId() : null)
                 .triggerFieldId(entity.getTriggerField() != null ? 
                     entity.getTriggerField().getId() : null)
-                .action(entity.getAction())
+                .condition(entity.getCondition())
+                .effect(entity.getEffect())
                 .triggerValue(entity.getTriggerValue())
                 .build();
     }
@@ -31,7 +32,8 @@ public class FieldDependencyMapper {
 
         FieldDependency entity = new FieldDependency();
         entity.setId(dto.getId());
-        entity.setAction(dto.getAction());
+        entity.setCondition(dto.getCondition());
+        entity.setEffect(dto.getEffect());
         entity.setTriggerValue(dto.getTriggerValue());
 
         return entity;
@@ -42,7 +44,8 @@ public class FieldDependencyMapper {
             return;
         }
 
-        entity.setAction(dto.getAction());
+        entity.setCondition(dto.getCondition());
+        entity.setEffect(dto.getEffect());
         entity.setTriggerValue(dto.getTriggerValue());
     }
 

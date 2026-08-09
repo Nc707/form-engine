@@ -11,7 +11,13 @@ public interface FieldDependencyDao {
     Optional<FieldDependencyDTO> findById(Long id);
     
     List<FieldDependencyDTO> findByTriggerFieldId(Long triggerFieldId);
-    
+
+    /**
+     * Every dependency with both its trigger field and its dependent field in the given form.
+     * Dependencies straddling two forms are left out.
+     */
+    List<FieldDependencyDTO> findByFormDefinitionId(Long formDefinitionId);
+
     List<FieldDependencyDTO> findAll();
     
     void deleteById(Long id);

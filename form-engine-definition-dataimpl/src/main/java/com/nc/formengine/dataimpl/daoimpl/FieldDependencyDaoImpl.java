@@ -56,6 +56,13 @@ public class FieldDependencyDaoImpl implements FieldDependencyDao {
     }
 
     @Override
+    public List<FieldDependencyDTO> findByFormDefinitionId(Long formDefinitionId) {
+        return jpaRepository.findByFormDefinitionId(formDefinitionId).stream()
+                .map(mapper::toDTO)
+                .collect(Collectors.toList());
+    }
+
+    @Override
     public List<FieldDependencyDTO> findAll() {
         return jpaRepository.findAll().stream()
                 .map(mapper::toDTO)
