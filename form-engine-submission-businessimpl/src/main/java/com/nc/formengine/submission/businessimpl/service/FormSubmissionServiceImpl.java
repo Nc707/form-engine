@@ -3,6 +3,7 @@ package com.nc.formengine.submission.businessimpl.service;
 import com.nc.formengine.submission.business.service.FormSubmissionService;
 import com.nc.formengine.submission.data.dao.FormSubmissionDao;
 import com.nc.formengine.submission.model.dto.FormSubmissionDTO;
+import com.nc.formengine.submission.model.dto.SubmissionFilter;
 import com.nc.formengine.submission.model.enums.SubmissionStatus;
 import com.nc.formengine.submission.model.exception.FormSubmissionNotFoundException;
 import com.nc.formengine.submission.model.exception.InvalidSubmissionStatusException;
@@ -13,6 +14,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 
 @Service
@@ -90,6 +92,18 @@ public class FormSubmissionServiceImpl implements FormSubmissionService {
     @Transactional(readOnly = true)
     public Page<FormSubmissionDTO> findAll(Pageable pageable) {
         return formSubmissionDao.findAll(pageable);
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public Page<FormSubmissionDTO> findAll(SubmissionFilter filter, Pageable pageable) {
+        return formSubmissionDao.findAll(filter, pageable);
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public Map<SubmissionStatus, Long> countByStatus(SubmissionFilter filter) {
+        return formSubmissionDao.countByStatus(filter);
     }
 
     @Override

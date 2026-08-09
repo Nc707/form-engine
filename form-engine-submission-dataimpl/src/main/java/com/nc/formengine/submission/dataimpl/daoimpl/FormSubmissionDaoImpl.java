@@ -6,13 +6,17 @@ import com.nc.formengine.submission.model.enums.SubmissionStatus;
 import com.nc.formengine.submission.dataimpl.mapper.FormSubmissionMapper;
 import com.nc.formengine.submission.dataimpl.repository.FormSubmissionRepository;
 import com.nc.formengine.submission.model.dto.FormSubmissionDTO;
+import com.nc.formengine.submission.model.dto.SubmissionFilter;
 
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
+import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Component;
 
+import java.util.EnumMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.stream.Collectors;
 
@@ -95,6 +99,29 @@ public class FormSubmissionDaoImpl implements FormSubmissionDao {
     public Page<FormSubmissionDTO> findAll(Pageable pageable) {
         return jpaRepository.findAll(pageable)
                 .map(mapper::toDTO);
+    }
+
+    @Override
+    public Page<FormSubmissionDTO> findAll(SubmissionFilter filter, Pageable pageable) {
+        return jpaRepository.findAll(FormSubmissionSpecifications.matching(filter), pageable)
+                .map(mapper::toDTO);
+    }
+
+    /**
+     * One count per state rather than a grouped query, so that the filter is expressed once and the
+     * result always names all three states — including the ones with nothing in them, which a
+     * {@code group by} would simply omit and a summary has to show as zero.
+     */
+    @Override
+    public Map<SubmissionStatus, Long> countByStatus(SubmissionFilter filter) {
+        Specification<FormSubmission> base = FormSubmissionSpecifications.matching(filter);
+
+        Map<SubmissionStatus, Long> counts = new EnumMap<>(SubmissionStatus.class);
+        for (SubmissionStatus status : SubmissionStatus.values()) {
+            counts.put(status, jpaRepository.count(
+                    base.and(FormSubmissionSpecifications.hasStatus(status))));
+        }
+        return counts;
     }
 
     @Override
