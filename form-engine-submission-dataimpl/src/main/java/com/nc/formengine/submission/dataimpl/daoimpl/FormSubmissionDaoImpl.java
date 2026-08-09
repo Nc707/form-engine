@@ -23,9 +23,29 @@ public class FormSubmissionDaoImpl implements FormSubmissionDao {
     private final FormSubmissionRepository jpaRepository;
     private final FormSubmissionMapper mapper;
 
+    /**
+     * Creates the submission, or updates the stored one when the DTO names it.
+     *
+     * <p>An update reads the stored entity and applies the DTO onto it rather than merging a
+     * detached one built from scratch, for the same reason {@code FormDaoImpl} does: a submission
+     * owns its answers with {@code orphanRemoval}, and {@link FormSubmissionMapper#toEntity} does
+     * not carry them, so merging would delete every answer the submission has. That path is not
+     * hypothetical — {@code cancel} is exactly a status change on a submission full of answers.
+     */
     @Override
     public FormSubmissionDTO save(FormSubmissionDTO formSubmissionDTO) {
-        FormSubmission entity = mapper.toEntity(formSubmissionDTO);
+        FormSubmission stored = formSubmissionDTO.getId() != null
+                ? jpaRepository.findById(formSubmissionDTO.getId()).orElse(null)
+                : null;
+
+        FormSubmission entity;
+        if (stored != null) {
+            mapper.updateEntity(formSubmissionDTO, stored);
+            entity = stored;
+        } else {
+            entity = mapper.toEntity(formSubmissionDTO);
+        }
+
         FormSubmission saved = jpaRepository.save(entity);
         return mapper.toDTO(saved);
     }
