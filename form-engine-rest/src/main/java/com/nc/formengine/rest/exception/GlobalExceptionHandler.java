@@ -1,8 +1,12 @@
 package com.nc.formengine.rest.exception;
 
 import com.nc.formengine.model.exception.DuplicateResourceException;
+import com.nc.formengine.model.exception.FormDefinitionNotEditableException;
+import com.nc.formengine.model.exception.InvalidFormDefinitionTransitionException;
 import com.nc.formengine.model.exception.ResourceNotFoundException;
 import com.nc.formengine.model.exception.ValidationFailedException;
+import com.nc.formengine.submission.model.exception.FormNotAcceptingSubmissionsException;
+import com.nc.formengine.submission.model.exception.IllegalSubmissionTransitionException;
 import com.nc.formengine.submission.model.exception.InvalidSubmissionStatusException;
 import com.nc.formengine.submission.model.exception.SubmissionNotFoundException;
 import org.slf4j.Logger;
@@ -72,6 +76,21 @@ public class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
                 "Domain Validation Failed", ex.getMessage());
         body.setProperty("errors", ex.getReasons());
         return handleExceptionInternal(ex, body, new HttpHeaders(), HttpStatus.UNPROCESSABLE_ENTITY, request);
+    }
+
+    /**
+     * A lifecycle rule was broken: the request is well formed and the resource exists, but it is in a
+     * state that does not allow what was asked. 409, since retrying the same call cannot help — the
+     * state has to change first, or a new version has to be created.
+     */
+    @ExceptionHandler({
+            FormDefinitionNotEditableException.class,
+            InvalidFormDefinitionTransitionException.class,
+            IllegalSubmissionTransitionException.class,
+            FormNotAcceptingSubmissionsException.class})
+    public ResponseEntity<Object> handleIllegalState(RuntimeException ex, WebRequest request) {
+        ProblemDetail body = problem(HttpStatus.CONFLICT, "illegal-state", "Illegal State", ex.getMessage());
+        return handleExceptionInternal(ex, body, new HttpHeaders(), HttpStatus.CONFLICT, request);
     }
 
     @ExceptionHandler(InvalidSubmissionStatusException.class)

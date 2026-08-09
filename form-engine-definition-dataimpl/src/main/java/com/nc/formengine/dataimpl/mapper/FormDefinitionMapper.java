@@ -31,7 +31,8 @@ public class FormDefinitionMapper {
                 .title(entity.getTitle())
                 .description(entity.getDescription())
                 .version(entity.getVersion())
-                .fields(entity.getFields() != null ? 
+                .status(entity.getStatus())
+                .fields(entity.getFields() != null ?
                     entity.getFields().stream()
                         .map(fieldDefinitionMapper::toDTO)
                         .collect(Collectors.toList()) : null)
@@ -55,6 +56,10 @@ public class FormDefinitionMapper {
         // version is NOT NULL and defaults to 1 on the entity; only overwrite when supplied.
         if (dto.getVersion() != null) {
             entity.setVersion(dto.getVersion());
+        }
+        // Same for status, which defaults to DRAFT. Callers do not set it: the lifecycle does.
+        if (dto.getStatus() != null) {
+            entity.setStatus(dto.getStatus());
         }
 
         if (dto.getFields() != null) {
@@ -88,6 +93,9 @@ public class FormDefinitionMapper {
         entity.setDescription(dto.getDescription());
         if (dto.getVersion() != null) {
             entity.setVersion(dto.getVersion());
+        }
+        if (dto.getStatus() != null) {
+            entity.setStatus(dto.getStatus());
         }
     }
 }

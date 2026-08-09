@@ -11,9 +11,20 @@
       <groupId>com.nc</groupId>
       <artifactId>form-engine-submission-model</artifactId>
     </dependency>
-    		<dependency>
-    <groupId>org.springframework.data</groupId>
-    <artifactId>spring-data-commons</artifactId>
-</dependency>	
+    <!--
+      The submission slice reaches into the definition slice here, and only here at this layer.
+      Submitting a form means judging it against the restrictions its definition declares, so the
+      workflow contract has to be able to hand back a ValidationReport. The edge is one-way and stops
+      at the model: form-engine-definition-model never depends on anything of ours, so there is no
+      cycle, and the entities on both sides stay decoupled as before.
+    -->
+    <dependency>
+      <groupId>com.nc</groupId>
+      <artifactId>form-engine-definition-model</artifactId>
+    </dependency>
+    <dependency>
+      <groupId>org.springframework.data</groupId>
+      <artifactId>spring-data-commons</artifactId>
+    </dependency>
   </dependencies>
 </project>

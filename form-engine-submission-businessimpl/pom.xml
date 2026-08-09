@@ -15,17 +15,32 @@
       <groupId>com.nc</groupId>
       <artifactId>form-engine-submission-data</artifactId>
     </dependency>
+    <!--
+      The workflow validates a submission against its definition and refuses definitions that are not
+      published, so it needs the definition services. Interfaces only, one way, and the definition
+      slice knows nothing of us: see the note in form-engine-submission-business/pom.xml.
+    -->
+    <dependency>
+      <groupId>com.nc</groupId>
+      <artifactId>form-engine-definition-business</artifactId>
+    </dependency>
     <dependency>
       <groupId>org.springframework</groupId>
       <artifactId>spring-context</artifactId>
     </dependency>
     <dependency>
-    <groupId>org.springframework.data</groupId>
-    <artifactId>spring-data-commons</artifactId>
-</dependency>
-<dependency>
-<groupId>org.springframework</groupId>
-<artifactId>spring-tx</artifactId>
-</dependency>
+      <groupId>org.springframework.data</groupId>
+      <artifactId>spring-data-commons</artifactId>
+    </dependency>
+    <dependency>
+      <groupId>org.springframework</groupId>
+      <artifactId>spring-tx</artifactId>
+    </dependency>
+    <!-- JUnit 5 + AssertJ + Mockito for the workflow tests, which need no container. -->
+    <dependency>
+      <groupId>org.springframework.boot</groupId>
+      <artifactId>spring-boot-starter-test</artifactId>
+      <scope>test</scope>
+    </dependency>
   </dependencies>
 </project>

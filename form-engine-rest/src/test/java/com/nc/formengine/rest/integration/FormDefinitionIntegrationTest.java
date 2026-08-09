@@ -93,13 +93,16 @@ class FormDefinitionIntegrationTest {
                 FormDefinitionDTO.class);
         Long formId = createdForm.getId();
 
-        // When - updating the form
+        // When - updating the form, asking for a version bump along the way
         FormDefinitionDTO formToUpdate = new FormDefinitionDTO();
         formToUpdate.setCode("UPDATE_TEST");
         formToUpdate.setTitle("Updated Name");
         formToUpdate.setDescription("Updated description");
         formToUpdate.setVersion(2);
 
+        // Then - the editable fields change, and the version does not: (code, version) is the
+        // identity of this row, and a new version is made by copying the form, not by renumbering
+        // it in place.
         mockMvc.perform(put("/api/v1/form-definitions/{id}", formId)
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(objectMapper.writeValueAsString(formToUpdate)))
@@ -107,14 +110,15 @@ class FormDefinitionIntegrationTest {
                 .andExpect(jsonPath("$.id").value(formId))
                 .andExpect(jsonPath("$.title").value("Updated Name"))
                 .andExpect(jsonPath("$.description").value("Updated description"))
-                .andExpect(jsonPath("$.version").value(2));
+                .andExpect(jsonPath("$.version").value(1))
+                .andExpect(jsonPath("$.status").value("DRAFT"));
 
-        // Then - the changes are persisted
+        // And - the changes are persisted
         mockMvc.perform(get("/api/v1/form-definitions/{id}", formId))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.title").value("Updated Name"))
                 .andExpect(jsonPath("$.description").value("Updated description"))
-                .andExpect(jsonPath("$.version").value(2));
+                .andExpect(jsonPath("$.version").value(1));
     }
 
     @Test

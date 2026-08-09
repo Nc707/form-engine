@@ -10,18 +10,34 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
 
+import com.nc.formengine.model.enums.FormDefinitionStatus;
+
 import jakarta.persistence.CascadeType;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
+import jakarta.persistence.EnumType;
+import jakarta.persistence.Enumerated;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.OneToMany;
 import jakarta.persistence.OrderBy;
 import jakarta.persistence.Table;
+import jakarta.persistence.UniqueConstraint;
 
+/**
+ * A form, at one version.
+ *
+ * <p>A {@code code} identifies a form across its whole history, not a single row: every version of
+ * the same form shares it. Uniqueness therefore has to be on {@code (code, version)}, which is what
+ * makes a second version possible at all.
+ */
 @Entity
-@Table(name = "form_definitions")
+@Table(
+        name = "form_definitions",
+        uniqueConstraints = @UniqueConstraint(
+                name = "uk_form_definitions_code_version",
+                columnNames = {"code", "version"}))
 @Getter
 @Setter
 @Builder
@@ -33,7 +49,7 @@ public class FormDefinition {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @Column(nullable = false, unique = true)
+    @Column(nullable = false)
     private String code;
 
     @Column(nullable = false)
@@ -44,6 +60,11 @@ public class FormDefinition {
     @Column(nullable = false)
     @Builder.Default
     private Integer version = 1;
+
+    @Enumerated(EnumType.STRING)
+    @Column(nullable = false)
+    @Builder.Default
+    private FormDefinitionStatus status = FormDefinitionStatus.DRAFT;
 
     @OneToMany(mappedBy = "formDefinition", cascade = CascadeType.ALL, orphanRemoval = true)
     @OrderBy("orderIndex ASC")

@@ -1,5 +1,6 @@
 package com.nc.formengine.model.dto;
 
+import com.nc.formengine.model.enums.FormDefinitionStatus;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Positive;
@@ -34,6 +35,10 @@ public class FormDefinitionDTO {
     @NotNull(message = "version is required")
     @Positive(message = "version must be greater than 0")
     private Integer version;
+
+    // Not @NotNull: status is owned by the lifecycle, not by the caller. A create body that omits it
+    // gets DRAFT, and the only ways to change it are publish() and createNewVersion().
+    private FormDefinitionStatus status;
 
     // Nested collections are intentionally not cascaded with @Valid: they are populated
     // server-side on read, and a create body legitimately omits the back-references.
