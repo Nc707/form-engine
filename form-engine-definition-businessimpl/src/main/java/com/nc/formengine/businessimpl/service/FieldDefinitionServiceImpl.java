@@ -3,6 +3,7 @@ package com.nc.formengine.businessimpl.service;
 import com.nc.formengine.business.service.FieldDefinitionService;
 import com.nc.formengine.data.dao.FieldDefinitionDao;
 import com.nc.formengine.model.dto.FieldDefinitionDTO;
+import com.nc.formengine.model.exception.FieldDefinitionNotFoundException;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -29,7 +30,7 @@ public class FieldDefinitionServiceImpl implements FieldDefinitionService {
     public FieldDefinitionDTO update(Long id, FieldDefinitionDTO fieldDefinitionDTO) {
         // Existence check: throws if the id is unknown.
         fieldDefinitionDao.findById(id)
-                .orElseThrow(() -> new RuntimeException("Field not found with id: " + id));
+                .orElseThrow(() -> new FieldDefinitionNotFoundException(id));
         
         fieldDefinitionDTO.setId(id);
         return fieldDefinitionDao.save(fieldDefinitionDTO);

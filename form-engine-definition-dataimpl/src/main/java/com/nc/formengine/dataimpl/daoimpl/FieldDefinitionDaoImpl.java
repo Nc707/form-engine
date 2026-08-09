@@ -7,6 +7,7 @@ import com.nc.formengine.dataimpl.mapper.FieldDefinitionMapper;
 import com.nc.formengine.dataimpl.repository.FieldRepository;
 import com.nc.formengine.dataimpl.repository.FormRepository;
 import com.nc.formengine.model.dto.FieldDefinitionDTO;
+import com.nc.formengine.model.exception.FormDefinitionNotFoundException;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
 
@@ -47,7 +48,8 @@ public class FieldDefinitionDaoImpl implements FieldDefinitionDao {
 
         if (fieldDefinitionDTO.getFormDefinitionId() != null) {
             FormDefinition formDefinition = formRepository.findById(fieldDefinitionDTO.getFormDefinitionId())
-                    .orElseThrow(() -> new RuntimeException("Form not found"));
+                    .orElseThrow(() -> new FormDefinitionNotFoundException(
+                            fieldDefinitionDTO.getFormDefinitionId()));
             mapper.setFormDefinition(entity, formDefinition);
         }
 

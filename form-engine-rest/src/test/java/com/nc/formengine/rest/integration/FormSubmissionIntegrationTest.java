@@ -35,7 +35,7 @@ class FormSubmissionIntegrationTest {
 
     @BeforeEach
     void setUp() throws Exception {
-        // Crear un formulario para las submissions
+        // Create a form for the submissions
         FormDefinitionDTO form = new FormDefinitionDTO();
         form.setCode("CONTACT_FORM");
         form.setTitle("Contact Form");
@@ -56,7 +56,7 @@ class FormSubmissionIntegrationTest {
 
     @Test
     void shouldCreateFormSubmissionAndRetrieveIt() throws Exception {
-        // Given - Crear una submission
+        // Given - a submission
         FormSubmissionDTO submissionToCreate = new FormSubmissionDTO();
         submissionToCreate.setFormDefinitionId(formDefinitionId);
         submissionToCreate.setFormCode(formCode);
@@ -66,7 +66,7 @@ class FormSubmissionIntegrationTest {
 
         String submissionJson = objectMapper.writeValueAsString(submissionToCreate);
 
-        // When - POST para crear la submission
+        // When - POST to create the submission
         MvcResult createResult = mockMvc.perform(post("/api/v1/form-submissions")
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(submissionJson))
@@ -82,7 +82,7 @@ class FormSubmissionIntegrationTest {
         FormSubmissionDTO createdSubmission = objectMapper.readValue(responseJson, FormSubmissionDTO.class);
         Long submissionId = createdSubmission.getId();
 
-        // Then - Verificar que se guardó en la BD con GET por ID
+        // Then - it is persisted, fetched by id
         mockMvc.perform(get("/api/v1/form-submissions/{id}", submissionId))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.id").value(submissionId))
@@ -90,13 +90,13 @@ class FormSubmissionIntegrationTest {
                 .andExpect(jsonPath("$.submittedBy").value("user@example.com"))
                 .andExpect(jsonPath("$.status").value("DRAFT"));
 
-        // Then - Verificar que aparece en la lista por form definition
+        // Then - it shows up in the list for the form definition
         mockMvc.perform(get("/api/v1/form-submissions/by-form-definition/{formDefinitionId}", formDefinitionId))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$").isArray())
                 .andExpect(jsonPath("$[?(@.id == " + submissionId + ")].submittedBy").value("user@example.com"));
 
-        // Then - Verificar búsqueda por form code
+        // Then - it can be found by form code
         mockMvc.perform(get("/api/v1/form-submissions/by-form-code/{formCode}", formCode))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$").isArray())
@@ -105,7 +105,7 @@ class FormSubmissionIntegrationTest {
 
     @Test
     void shouldCreateMultipleSubmissionsAndFilterByUser() throws Exception {
-        // Given - Crear submissions de diferentes usuarios
+        // Given - submissions from different users
         String user1 = "alice@example.com";
         String user2 = "bob@example.com";
 
@@ -127,7 +127,7 @@ class FormSubmissionIntegrationTest {
         submission3.setSubmittedBy(user2);
         submission3.setStatus(SubmissionStatus.SUBMITTED);
 
-        // When - Crear las submissions
+        // When - creating the submissions
         mockMvc.perform(post("/api/v1/form-submissions")
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(objectMapper.writeValueAsString(submission1)))
@@ -143,7 +143,7 @@ class FormSubmissionIntegrationTest {
                 .content(objectMapper.writeValueAsString(submission3)))
                 .andExpect(status().isCreated());
 
-        // Then - Verificar filtrado por usuario (alice debe tener 2)
+        // Then - filtering by user returns alice's 2
         mockMvc.perform(get("/api/v1/form-submissions/by-submitted-by/{submittedBy}", user1))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$").isArray())
@@ -151,7 +151,7 @@ class FormSubmissionIntegrationTest {
                 .andExpect(jsonPath("$[0].submittedBy").value(user1))
                 .andExpect(jsonPath("$[1].submittedBy").value(user1));
 
-        // Then - Verificar filtrado por usuario (bob debe tener 1)
+        // Then - filtering by user returns bob's 1
         mockMvc.perform(get("/api/v1/form-submissions/by-submitted-by/{submittedBy}", user2))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$").isArray())
@@ -161,7 +161,7 @@ class FormSubmissionIntegrationTest {
 
     @Test
     void shouldFilterSubmissionsByStatus() throws Exception {
-        // Given - Crear submissions con diferentes estados
+        // Given - submissions in different statuses
         FormSubmissionDTO draftSubmission = new FormSubmissionDTO();
         draftSubmission.setFormDefinitionId(formDefinitionId);
         draftSubmission.setFormCode(formCode);
@@ -180,7 +180,7 @@ class FormSubmissionIntegrationTest {
         completedSubmission.setSubmittedBy("user3@example.com");
         completedSubmission.setStatus(SubmissionStatus.CANCELED);
 
-        // When - Crear las submissions
+        // When - creating the submissions
         mockMvc.perform(post("/api/v1/form-submissions")
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(objectMapper.writeValueAsString(draftSubmission)))
@@ -196,14 +196,14 @@ class FormSubmissionIntegrationTest {
                 .content(objectMapper.writeValueAsString(completedSubmission)))
                 .andExpect(status().isCreated());
 
-        // Then - Verificar filtrado por estado DRAFT
+        // Then - filtering by DRAFT
         mockMvc.perform(get("/api/v1/form-submissions/by-status/{status}", "DRAFT"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$").isArray())
                 .andExpect(jsonPath("$.length()").value(1))
                 .andExpect(jsonPath("$[0].status").value("DRAFT"));
 
-        // Then - Verificar filtrado por estado SUBMITTED
+        // Then - filtering by SUBMITTED
         mockMvc.perform(get("/api/v1/form-submissions/by-status/{status}", "SUBMITTED"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.length()").value(1))
@@ -212,7 +212,7 @@ class FormSubmissionIntegrationTest {
 
     @Test
     void shouldUpdateFormSubmission() throws Exception {
-        // Given - Crear una submission
+        // Given - a submission
         FormSubmissionDTO submissionToCreate = new FormSubmissionDTO();
         submissionToCreate.setFormDefinitionId(formDefinitionId);
         submissionToCreate.setFormCode(formCode);
@@ -230,7 +230,7 @@ class FormSubmissionIntegrationTest {
                 FormSubmissionDTO.class);
         Long submissionId = createdSubmission.getId();
 
-        // When - Actualizar el estado a SUBMITTED
+        // When - moving the status to SUBMITTED
         FormSubmissionDTO submissionToUpdate = new FormSubmissionDTO();
         submissionToUpdate.setFormDefinitionId(formDefinitionId);
         submissionToUpdate.setFormCode(formCode);
@@ -244,7 +244,7 @@ class FormSubmissionIntegrationTest {
                 .andExpect(jsonPath("$.id").value(submissionId))
                 .andExpect(jsonPath("$.status").value("SUBMITTED"));
 
-        // Then - Verificar cambios en la BD
+        // Then - the changes are persisted
         mockMvc.perform(get("/api/v1/form-submissions/{id}", submissionId))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.status").value("SUBMITTED"));
@@ -252,7 +252,7 @@ class FormSubmissionIntegrationTest {
 
     @Test
     void shouldDeleteFormSubmission() throws Exception {
-        // Given - Crear una submission
+        // Given - a submission
         FormSubmissionDTO submissionToCreate = new FormSubmissionDTO();
         submissionToCreate.setFormDefinitionId(formDefinitionId);
         submissionToCreate.setFormCode(formCode);
@@ -270,11 +270,11 @@ class FormSubmissionIntegrationTest {
                 FormSubmissionDTO.class);
         Long submissionId = createdSubmission.getId();
 
-        // When - Eliminar la submission
+        // When - deleting the submission
         mockMvc.perform(delete("/api/v1/form-submissions/{id}", submissionId))
                 .andExpect(status().isNoContent());
 
-        // Then - Verificar que no existe en la BD
+        // Then - it is gone
         mockMvc.perform(get("/api/v1/form-submissions/{id}", submissionId))
                 .andExpect(status().isNotFound());
     }

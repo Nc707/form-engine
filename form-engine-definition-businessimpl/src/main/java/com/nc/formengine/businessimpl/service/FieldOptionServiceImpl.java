@@ -3,6 +3,7 @@ package com.nc.formengine.businessimpl.service;
 import com.nc.formengine.business.service.FieldOptionService;
 import com.nc.formengine.data.dao.FieldOptionDao;
 import com.nc.formengine.model.dto.FieldOptionDTO;
+import com.nc.formengine.model.exception.FieldOptionNotFoundException;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -29,7 +30,7 @@ public class FieldOptionServiceImpl implements FieldOptionService {
     public FieldOptionDTO update(Long id, FieldOptionDTO fieldOptionDTO) {
         // Existence check: throws if the id is unknown.
         fieldOptionDao.findById(id)
-                .orElseThrow(() -> new RuntimeException("Field option not found with id: " + id));
+                .orElseThrow(() -> new FieldOptionNotFoundException(id));
         
         fieldOptionDTO.setId(id);
         return fieldOptionDao.save(fieldOptionDTO);

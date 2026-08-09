@@ -9,6 +9,7 @@ import com.nc.formengine.dataimpl.repository.FormRepository;
 import com.nc.formengine.model.dto.FormLayoutDTO;
 import com.nc.formengine.model.dto.FieldLayoutDTO;
 import com.nc.formengine.model.enums.DeviceType;
+import com.nc.formengine.model.exception.FormDefinitionNotFoundException;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -90,7 +91,7 @@ public class LayoutResolutionServiceImpl implements LayoutResolutionService {
         log.info("Creating default layout for form {}", formDefinitionId);
         
         FormDefinition formDefinition = formRepository.findById(formDefinitionId)
-                .orElseThrow(() -> new RuntimeException("Form definition not found: " + formDefinitionId));
+                .orElseThrow(() -> new FormDefinitionNotFoundException(formDefinitionId));
 
         FormLayoutDTO defaultLayout = FormLayoutDTO.builder()
                 .formDefinitionId(formDefinitionId)

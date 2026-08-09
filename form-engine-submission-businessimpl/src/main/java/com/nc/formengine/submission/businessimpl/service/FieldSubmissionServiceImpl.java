@@ -3,6 +3,7 @@ package com.nc.formengine.submission.businessimpl.service;
 import com.nc.formengine.submission.business.service.FieldSubmissionService;
 import com.nc.formengine.submission.data.dao.FieldSubmissionDao;
 import com.nc.formengine.submission.model.dto.FieldSubmissionDTO;
+import com.nc.formengine.submission.model.exception.FieldSubmissionNotFoundException;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -29,7 +30,7 @@ public class FieldSubmissionServiceImpl implements FieldSubmissionService {
     public FieldSubmissionDTO update(Long id, FieldSubmissionDTO fieldSubmissionDTO) {
         // Existence check: throws if the id is unknown.
         fieldSubmissionDao.findById(id)
-                .orElseThrow(() -> new RuntimeException("Field submission not found with id: " + id));
+                .orElseThrow(() -> new FieldSubmissionNotFoundException(id));
         
         fieldSubmissionDTO.setId(id);
         return fieldSubmissionDao.save(fieldSubmissionDTO);

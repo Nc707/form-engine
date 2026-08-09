@@ -3,6 +3,7 @@ package com.nc.formengine.businessimpl.service;
 import com.nc.formengine.business.service.FieldDependencyService;
 import com.nc.formengine.data.dao.FieldDependencyDao;
 import com.nc.formengine.model.dto.FieldDependencyDTO;
+import com.nc.formengine.model.exception.FieldDependencyNotFoundException;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -29,7 +30,7 @@ public class FieldDependencyServiceImpl implements FieldDependencyService {
     public FieldDependencyDTO update(Long id, FieldDependencyDTO fieldDependencyDTO) {
         // Existence check: throws if the id is unknown.
         fieldDependencyDao.findById(id)
-                .orElseThrow(() -> new RuntimeException("Field dependency not found with id: " + id));
+                .orElseThrow(() -> new FieldDependencyNotFoundException(id));
         
         fieldDependencyDTO.setId(id);
         return fieldDependencyDao.save(fieldDependencyDTO);

@@ -7,6 +7,7 @@ import com.nc.formengine.submission.dataimpl.mapper.FieldSubmissionMapper;
 import com.nc.formengine.submission.dataimpl.repository.FieldSubmissionRepository;
 import com.nc.formengine.submission.dataimpl.repository.FormSubmissionRepository;
 import com.nc.formengine.submission.model.dto.FieldSubmissionDTO;
+import com.nc.formengine.submission.model.exception.FormSubmissionNotFoundException;
 
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
@@ -29,7 +30,8 @@ public class FieldSubmissionDaoImpl implements FieldSubmissionDao {
 
         if (fieldSubmissionDTO.getFormSubmissionId() != null) {
             FormSubmission formSubmission = formSubmissionRepository.findById(fieldSubmissionDTO.getFormSubmissionId())
-                    .orElseThrow(() -> new RuntimeException("Form submission not found"));
+                    .orElseThrow(() -> new FormSubmissionNotFoundException(
+                            fieldSubmissionDTO.getFormSubmissionId()));
             mapper.setFormSubmission(entity, formSubmission);
         }
 

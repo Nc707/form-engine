@@ -32,7 +32,7 @@ class FieldDefinitionIntegrationTest {
 
     @BeforeEach
     void setUp() throws Exception {
-        // Crear un formulario para asociar los campos
+        // Create a form to attach the fields to
         FormDefinitionDTO form = new FormDefinitionDTO();
         form.setCode("TEST_FORM");
         form.setTitle("Test Form");
@@ -52,7 +52,7 @@ class FieldDefinitionIntegrationTest {
 
     @Test
     void shouldCreateFieldDefinitionAndRetrieveIt() throws Exception {
-        // Given - Crear un campo
+        // Given - a field
         FieldDefinitionDTO fieldToCreate = new FieldDefinitionDTO();
         fieldToCreate.setFormDefinitionId(formDefinitionId);
         fieldToCreate.setName("email");
@@ -63,7 +63,7 @@ class FieldDefinitionIntegrationTest {
 
         String fieldJson = objectMapper.writeValueAsString(fieldToCreate);
 
-        // When - POST para crear el campo
+        // When - POST to create the field
         MvcResult createResult = mockMvc.perform(post("/api/v1/field-definitions")
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(fieldJson))
@@ -80,7 +80,7 @@ class FieldDefinitionIntegrationTest {
         FieldDefinitionDTO createdField = objectMapper.readValue(responseJson, FieldDefinitionDTO.class);
         Long fieldId = createdField.getId();
 
-        // Then - Verificar que se guardó en la BD con GET por ID
+        // Then - it is persisted, fetched by id
         mockMvc.perform(get("/api/v1/field-definitions/{id}", fieldId))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.id").value(fieldId))
@@ -88,7 +88,7 @@ class FieldDefinitionIntegrationTest {
                 .andExpect(jsonPath("$.label").value("Email Address"))
                 .andExpect(jsonPath("$.formDefinitionId").value(formDefinitionId));
 
-        // Then - Verificar que aparece en la lista por form definition
+        // Then - it shows up in the list for the form definition
         mockMvc.perform(get("/api/v1/field-definitions/by-form-definition/{formDefinitionId}", formDefinitionId))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$").isArray())
@@ -97,7 +97,7 @@ class FieldDefinitionIntegrationTest {
 
     @Test
     void shouldCreateMultipleFieldsAndRetrieveByFormDefinition() throws Exception {
-        // Given - Crear varios campos para el mismo formulario
+        // Given - several fields on the same form
         FieldDefinitionDTO field1 = new FieldDefinitionDTO();
         field1.setFormDefinitionId(formDefinitionId);
         field1.setName("name");
@@ -122,7 +122,7 @@ class FieldDefinitionIntegrationTest {
         field3.setRequired(false);
         field3.setOrderIndex(3);
 
-        // When - Crear los tres campos
+        // When - creating the three fields
         mockMvc.perform(post("/api/v1/field-definitions")
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(objectMapper.writeValueAsString(field1)))
@@ -138,7 +138,7 @@ class FieldDefinitionIntegrationTest {
                 .content(objectMapper.writeValueAsString(field3)))
                 .andExpect(status().isCreated());
 
-        // Then - Verificar que los 3 campos aparecen en la BD
+        // Then - all 3 fields are persisted
         mockMvc.perform(get("/api/v1/field-definitions/by-form-definition/{formDefinitionId}", formDefinitionId))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$").isArray())
@@ -150,7 +150,7 @@ class FieldDefinitionIntegrationTest {
 
     @Test
     void shouldUpdateFieldDefinition() throws Exception {
-        // Given - Crear un campo
+        // Given - a field
         FieldDefinitionDTO fieldToCreate = new FieldDefinitionDTO();
         fieldToCreate.setFormDefinitionId(formDefinitionId);
         fieldToCreate.setName("phone");
@@ -170,7 +170,7 @@ class FieldDefinitionIntegrationTest {
                 FieldDefinitionDTO.class);
         Long fieldId = createdField.getId();
 
-        // When - Actualizar el campo
+        // When - updating the field
         FieldDefinitionDTO fieldToUpdate = new FieldDefinitionDTO();
         fieldToUpdate.setFormDefinitionId(formDefinitionId);
         fieldToUpdate.setName("phone");
@@ -188,7 +188,7 @@ class FieldDefinitionIntegrationTest {
                 .andExpect(jsonPath("$.type").value("TEXT"))
                 .andExpect(jsonPath("$.required").value(true));
 
-        // Then - Verificar cambios en la BD
+        // Then - the changes are persisted
         mockMvc.perform(get("/api/v1/field-definitions/{id}", fieldId))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.label").value("Phone Number"))
@@ -198,7 +198,7 @@ class FieldDefinitionIntegrationTest {
 
     @Test
     void shouldDeleteFieldDefinition() throws Exception {
-        // Given - Crear un campo
+        // Given - a field
         FieldDefinitionDTO fieldToCreate = new FieldDefinitionDTO();
         fieldToCreate.setFormDefinitionId(formDefinitionId);
         fieldToCreate.setName("temp");
@@ -217,18 +217,18 @@ class FieldDefinitionIntegrationTest {
                 FieldDefinitionDTO.class);
         Long fieldId = createdField.getId();
 
-        // When - Eliminar el campo
+        // When - deleting the field
         mockMvc.perform(delete("/api/v1/field-definitions/{id}", fieldId))
                 .andExpect(status().isNoContent());
 
-        // Then - Verificar que no existe en la BD
+        // Then - it is gone
         mockMvc.perform(get("/api/v1/field-definitions/{id}", fieldId))
                 .andExpect(status().isNotFound());
     }
 
     @Test
     void shouldDeleteAllFieldsByFormDefinition() throws Exception {
-        // Given - Crear varios campos
+        // Given - several fields
         for (int i = 1; i <= 3; i++) {
             FieldDefinitionDTO field = new FieldDefinitionDTO();
             field.setFormDefinitionId(formDefinitionId);
@@ -243,16 +243,16 @@ class FieldDefinitionIntegrationTest {
                     .andExpect(status().isCreated());
         }
 
-        // Verificar que hay 3 campos
+        // Confirm there are 3 fields
         mockMvc.perform(get("/api/v1/field-definitions/by-form-definition/{formDefinitionId}", formDefinitionId))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.length()").value(3));
 
-        // When - Eliminar todos los campos del formulario
+        // When - deleting every field of the form
         mockMvc.perform(delete("/api/v1/field-definitions/by-form-definition/{formDefinitionId}", formDefinitionId))
                 .andExpect(status().isNoContent());
 
-        // Then - Verificar que no hay campos en la BD
+        // Then - the form has no fields left
         mockMvc.perform(get("/api/v1/field-definitions/by-form-definition/{formDefinitionId}", formDefinitionId))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.length()").value(0));

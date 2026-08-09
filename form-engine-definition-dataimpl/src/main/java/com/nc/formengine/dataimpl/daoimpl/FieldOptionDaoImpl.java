@@ -7,6 +7,7 @@ import com.nc.formengine.dataimpl.mapper.FieldOptionMapper;
 import com.nc.formengine.dataimpl.repository.FieldOptionRepository;
 import com.nc.formengine.dataimpl.repository.FieldRepository;
 import com.nc.formengine.model.dto.FieldOptionDTO;
+import com.nc.formengine.model.exception.FieldDefinitionNotFoundException;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
 
@@ -28,7 +29,8 @@ public class FieldOptionDaoImpl implements FieldOptionDao {
         
         if (fieldOptionDTO.getFieldDefinitionId() != null) {
             FieldDefinition fieldDefinition = fieldRepository.findById(fieldOptionDTO.getFieldDefinitionId())
-                    .orElseThrow(() -> new RuntimeException("Field not found"));
+                    .orElseThrow(() -> new FieldDefinitionNotFoundException(
+                            fieldOptionDTO.getFieldDefinitionId()));
             mapper.setFieldDefinition(entity, fieldDefinition);
         }
         

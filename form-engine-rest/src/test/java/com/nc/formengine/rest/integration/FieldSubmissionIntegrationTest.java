@@ -38,7 +38,7 @@ class FieldSubmissionIntegrationTest {
 
     @BeforeEach
     void setUp() throws Exception {
-        // 1. Crear un formulario
+        // 1. Create a form
         FormDefinitionDTO form = new FormDefinitionDTO();
         form.setCode("SURVEY_FORM");
         form.setTitle("Survey Form");
@@ -55,7 +55,7 @@ class FieldSubmissionIntegrationTest {
                 FormDefinitionDTO.class);
         formDefinitionId = createdForm.getId();
 
-        // 2. Crear campos del formulario
+        // 2. Create the form's fields
         FieldDefinitionDTO emailField = new FieldDefinitionDTO();
         emailField.setFormDefinitionId(formDefinitionId);
         emailField.setName("email");
@@ -94,7 +94,7 @@ class FieldSubmissionIntegrationTest {
                 FieldDefinitionDTO.class);
         nameFieldDefinitionId = createdNameField.getId();
 
-        // 3. Crear una submission del formulario
+        // 3. Create a submission of the form
         FormSubmissionDTO formSubmission = new FormSubmissionDTO();
         formSubmission.setFormDefinitionId(formDefinitionId);
         formSubmission.setFormCode("SURVEY_FORM");
@@ -115,7 +115,7 @@ class FieldSubmissionIntegrationTest {
 
     @Test
     void shouldCreateFieldSubmissionAndRetrieveIt() throws Exception {
-        // Given - Crear una field submission
+        // Given - a field submission
         FieldSubmissionDTO fieldSubmissionToCreate = new FieldSubmissionDTO();
         fieldSubmissionToCreate.setFormSubmissionId(formSubmissionId);
         fieldSubmissionToCreate.setFieldDefinitionId(emailFieldDefinitionId);
@@ -123,7 +123,7 @@ class FieldSubmissionIntegrationTest {
 
         String fieldSubmissionJson = objectMapper.writeValueAsString(fieldSubmissionToCreate);
 
-        // When - POST para crear la field submission
+        // When - POST to create the field submission
         MvcResult createResult = mockMvc.perform(post("/api/v1/field-submissions")
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(fieldSubmissionJson))
@@ -138,13 +138,13 @@ class FieldSubmissionIntegrationTest {
         FieldSubmissionDTO createdFieldSubmission = objectMapper.readValue(responseJson, FieldSubmissionDTO.class);
         Long fieldSubmissionId = createdFieldSubmission.getId();
 
-        // Then - Verificar que se guardó en la BD con GET por ID
+        // Then - it is persisted, fetched by id
         mockMvc.perform(get("/api/v1/field-submissions/{id}", fieldSubmissionId))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.id").value(fieldSubmissionId))
                 .andExpect(jsonPath("$.value").value("user@example.com"));
 
-        // Then - Verificar que aparece en la lista por form submission
+        // Then - it shows up in the list for the form submission
         mockMvc.perform(get("/api/v1/field-submissions/by-form-submission/{formSubmissionId}", formSubmissionId))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$").isArray())
@@ -153,7 +153,7 @@ class FieldSubmissionIntegrationTest {
 
     @Test
     void shouldCreateCompleteFormSubmissionWithAllFields() throws Exception {
-        // Given - Crear field submissions para todos los campos
+        // Given - a field submission for every field
         FieldSubmissionDTO emailSubmission = new FieldSubmissionDTO();
         emailSubmission.setFormSubmissionId(formSubmissionId);
         emailSubmission.setFieldDefinitionId(emailFieldDefinitionId);
@@ -164,7 +164,7 @@ class FieldSubmissionIntegrationTest {
         nameSubmission.setFieldDefinitionId(nameFieldDefinitionId);
         nameSubmission.setValue("John Doe");
 
-        // When - Crear las field submissions
+        // When - creating the field submissions
         mockMvc.perform(post("/api/v1/field-submissions")
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(objectMapper.writeValueAsString(emailSubmission)))
@@ -177,7 +177,7 @@ class FieldSubmissionIntegrationTest {
                 .andExpect(status().isCreated())
                 .andExpect(jsonPath("$.value").value("John Doe"));
 
-        // Then - Verificar que ambas submissions están en la BD
+        // Then - both submissions are persisted
         mockMvc.perform(get("/api/v1/field-submissions/by-form-submission/{formSubmissionId}", formSubmissionId))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$").isArray())
@@ -188,7 +188,7 @@ class FieldSubmissionIntegrationTest {
 
     @Test
     void shouldFilterFieldSubmissionsByFieldDefinition() throws Exception {
-        // Given - Crear otra form submission
+        // Given - a second form submission
         FormSubmissionDTO formSubmission2 = new FormSubmissionDTO();
         formSubmission2.setFormDefinitionId(formDefinitionId);
         formSubmission2.setFormCode("SURVEY_FORM");
@@ -206,7 +206,7 @@ class FieldSubmissionIntegrationTest {
                 FormSubmissionDTO.class);
         Long formSubmissionId2 = createdSubmission2.getId();
 
-        // Crear field submissions para el campo email en ambas form submissions
+        // Create an email field submission in both form submissions
         FieldSubmissionDTO emailSubmission1 = new FieldSubmissionDTO();
         emailSubmission1.setFormSubmissionId(formSubmissionId);
         emailSubmission1.setFieldDefinitionId(emailFieldDefinitionId);
@@ -217,7 +217,7 @@ class FieldSubmissionIntegrationTest {
         emailSubmission2.setFieldDefinitionId(emailFieldDefinitionId);
         emailSubmission2.setValue("second@example.com");
 
-        // When - Crear las submissions
+        // When - creating the submissions
         mockMvc.perform(post("/api/v1/field-submissions")
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(objectMapper.writeValueAsString(emailSubmission1)))
@@ -228,7 +228,7 @@ class FieldSubmissionIntegrationTest {
                 .content(objectMapper.writeValueAsString(emailSubmission2)))
                 .andExpect(status().isCreated());
 
-        // Then - Verificar que ambas submissions del campo email están en la BD
+        // Then - both email field submissions are persisted
         mockMvc.perform(get("/api/v1/field-submissions/by-field-definition/{fieldDefinitionId}", emailFieldDefinitionId))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$").isArray())
@@ -239,7 +239,7 @@ class FieldSubmissionIntegrationTest {
 
     @Test
     void shouldUpdateFieldSubmission() throws Exception {
-        // Given - Crear una field submission
+        // Given - a field submission
         FieldSubmissionDTO fieldSubmissionToCreate = new FieldSubmissionDTO();
         fieldSubmissionToCreate.setFormSubmissionId(formSubmissionId);
         fieldSubmissionToCreate.setFieldDefinitionId(emailFieldDefinitionId);
@@ -256,7 +256,7 @@ class FieldSubmissionIntegrationTest {
                 FieldSubmissionDTO.class);
         Long fieldSubmissionId = createdFieldSubmission.getId();
 
-        // When - Actualizar el valor
+        // When - updating the value
         FieldSubmissionDTO fieldSubmissionToUpdate = new FieldSubmissionDTO();
         fieldSubmissionToUpdate.setFormSubmissionId(formSubmissionId);
         fieldSubmissionToUpdate.setFieldDefinitionId(emailFieldDefinitionId);
@@ -269,7 +269,7 @@ class FieldSubmissionIntegrationTest {
                 .andExpect(jsonPath("$.id").value(fieldSubmissionId))
                 .andExpect(jsonPath("$.value").value("new@example.com"));
 
-        // Then - Verificar cambios en la BD
+        // Then - the changes are persisted
         mockMvc.perform(get("/api/v1/field-submissions/{id}", fieldSubmissionId))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.value").value("new@example.com"));
@@ -277,7 +277,7 @@ class FieldSubmissionIntegrationTest {
 
     @Test
     void shouldDeleteFieldSubmission() throws Exception {
-        // Given - Crear una field submission
+        // Given - a field submission
         FieldSubmissionDTO fieldSubmissionToCreate = new FieldSubmissionDTO();
         fieldSubmissionToCreate.setFormSubmissionId(formSubmissionId);
         fieldSubmissionToCreate.setFieldDefinitionId(emailFieldDefinitionId);
@@ -294,18 +294,18 @@ class FieldSubmissionIntegrationTest {
                 FieldSubmissionDTO.class);
         Long fieldSubmissionId = createdFieldSubmission.getId();
 
-        // When - Eliminar la field submission
+        // When - deleting the field submission
         mockMvc.perform(delete("/api/v1/field-submissions/{id}", fieldSubmissionId))
                 .andExpect(status().isNoContent());
 
-        // Then - Verificar que no existe en la BD
+        // Then - it is gone
         mockMvc.perform(get("/api/v1/field-submissions/{id}", fieldSubmissionId))
                 .andExpect(status().isNotFound());
     }
 
     @Test
     void shouldDeleteAllFieldSubmissionsByFormSubmission() throws Exception {
-        // Given - Crear varias field submissions
+        // Given - several field submissions
         FieldSubmissionDTO emailSubmission = new FieldSubmissionDTO();
         emailSubmission.setFormSubmissionId(formSubmissionId);
         emailSubmission.setFieldDefinitionId(emailFieldDefinitionId);
@@ -326,16 +326,16 @@ class FieldSubmissionIntegrationTest {
                 .content(objectMapper.writeValueAsString(nameSubmission)))
                 .andExpect(status().isCreated());
 
-        // Verificar que hay 2 field submissions
+        // Confirm there are 2 field submissions
         mockMvc.perform(get("/api/v1/field-submissions/by-form-submission/{formSubmissionId}", formSubmissionId))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.length()").value(2));
 
-        // When - Eliminar todas las field submissions de la form submission
+        // When - deleting every field submission of the form submission
         mockMvc.perform(delete("/api/v1/field-submissions/by-form-submission/{formSubmissionId}", formSubmissionId))
                 .andExpect(status().isNoContent());
 
-        // Then - Verificar que no hay field submissions en la BD
+        // Then - none are left
         mockMvc.perform(get("/api/v1/field-submissions/by-form-submission/{formSubmissionId}", formSubmissionId))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.length()").value(0));

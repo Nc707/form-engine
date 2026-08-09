@@ -7,6 +7,7 @@ import com.nc.formengine.dataimpl.mapper.FieldDependencyMapper;
 import com.nc.formengine.dataimpl.repository.FieldDependencyRepository;
 import com.nc.formengine.dataimpl.repository.FieldRepository;
 import com.nc.formengine.model.dto.FieldDependencyDTO;
+import com.nc.formengine.model.exception.FieldDefinitionNotFoundException;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
 
@@ -28,13 +29,15 @@ public class FieldDependencyDaoImpl implements FieldDependencyDao {
         
         if (fieldDependencyDTO.getDependentFieldId() != null) {
             FieldDefinition dependentField = fieldRepository.findById(fieldDependencyDTO.getDependentFieldId())
-                    .orElseThrow(() -> new RuntimeException("Dependent field not found"));
+                    .orElseThrow(() -> new FieldDefinitionNotFoundException(
+                            fieldDependencyDTO.getDependentFieldId()));
             mapper.setDependentField(entity, dependentField);
         }
         
         if (fieldDependencyDTO.getTriggerFieldId() != null) {
             FieldDefinition triggerField = fieldRepository.findById(fieldDependencyDTO.getTriggerFieldId())
-                    .orElseThrow(() -> new RuntimeException("Trigger field not found"));
+                    .orElseThrow(() -> new FieldDefinitionNotFoundException(
+                            fieldDependencyDTO.getTriggerFieldId()));
             mapper.setTriggerField(entity, triggerField);
         }
         

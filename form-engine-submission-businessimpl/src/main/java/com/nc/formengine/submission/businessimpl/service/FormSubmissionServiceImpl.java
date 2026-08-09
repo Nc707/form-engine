@@ -3,6 +3,9 @@ package com.nc.formengine.submission.businessimpl.service;
 import com.nc.formengine.submission.business.service.FormSubmissionService;
 import com.nc.formengine.submission.data.dao.FormSubmissionDao;
 import com.nc.formengine.submission.model.dto.FormSubmissionDTO;
+import com.nc.formengine.submission.model.enums.SubmissionStatus;
+import com.nc.formengine.submission.model.exception.FormSubmissionNotFoundException;
+import com.nc.formengine.submission.model.exception.InvalidSubmissionStatusException;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -31,7 +34,7 @@ public class FormSubmissionServiceImpl implements FormSubmissionService {
     public FormSubmissionDTO update(Long id, FormSubmissionDTO formSubmissionDTO) {
         // Existence check: throws if the id is unknown.
         formSubmissionDao.findById(id)
-                .orElseThrow(() -> new RuntimeException("Form submission not found with id: " + id));
+                .orElseThrow(() -> new FormSubmissionNotFoundException(id));
         
         formSubmissionDTO.setId(id);
         return formSubmissionDao.save(formSubmissionDTO);
@@ -64,7 +67,17 @@ public class FormSubmissionServiceImpl implements FormSubmissionService {
     @Override
     @Transactional(readOnly = true)
     public List<FormSubmissionDTO> findByStatus(String status) {
-        return formSubmissionDao.findByStatus(status);
+        // The DAO parses this back into the enum, so reject unknown values here where we can
+        // still say what would have been accepted.
+        return formSubmissionDao.findByStatus(parseStatus(status).name());
+    }
+
+    private SubmissionStatus parseStatus(String status) {
+        try {
+            return SubmissionStatus.valueOf(status);
+        } catch (IllegalArgumentException | NullPointerException ex) {
+            throw new InvalidSubmissionStatusException(status);
+        }
     }
 
     @Override

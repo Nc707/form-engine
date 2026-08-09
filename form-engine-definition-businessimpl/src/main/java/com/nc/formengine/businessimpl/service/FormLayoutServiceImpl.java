@@ -13,6 +13,10 @@ import com.nc.formengine.dataimpl.repository.FormRepository;
 import com.nc.formengine.model.dto.FieldLayoutDTO;
 import com.nc.formengine.model.dto.FormLayoutDTO;
 import com.nc.formengine.model.enums.DeviceType;
+import com.nc.formengine.model.exception.FieldDefinitionNotFoundException;
+import com.nc.formengine.model.exception.FormDefinitionNotFoundException;
+import com.nc.formengine.model.exception.FormLayoutNotFoundException;
+import com.nc.formengine.model.exception.ValidationFailedException;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -52,7 +56,7 @@ public class FormLayoutServiceImpl implements FormLayoutService {
         validateLayout(layoutDTO);
 
         FormDefinition formDefinition = formRepository.findById(layoutDTO.getFormDefinitionId())
-                .orElseThrow(() -> new RuntimeException("Form definition not found"));
+                .orElseThrow(() -> new FormDefinitionNotFoundException(layoutDTO.getFormDefinitionId()));
 
         FormLayout formLayout = formLayoutMapper.toEntity(layoutDTO);
         formLayout.setFormDefinition(formDefinition);
@@ -61,7 +65,7 @@ public class FormLayoutServiceImpl implements FormLayoutService {
             List<FieldLayout> fieldLayouts = new ArrayList<>();
             for (FieldLayoutDTO fieldLayoutDTO : layoutDTO.getFieldLayouts()) {
                 FieldDefinition fieldDefinition = fieldRepository.findById(fieldLayoutDTO.getFieldDefinitionId())
-                        .orElseThrow(() -> new RuntimeException("Field definition not found"));
+                        .orElseThrow(() -> new FieldDefinitionNotFoundException(fieldLayoutDTO.getFieldDefinitionId()));
 
                 FieldLayout fieldLayout = fieldLayoutMapper.toEntity(fieldLayoutDTO);
                 fieldLayout.setFormLayout(formLayout);
@@ -83,7 +87,7 @@ public class FormLayoutServiceImpl implements FormLayoutService {
         validateLayout(layoutDTO);
 
         FormLayout existingLayout = formLayoutRepository.findById(layoutId)
-                .orElseThrow(() -> new RuntimeException("Layout not found"));
+                .orElseThrow(() -> new FormLayoutNotFoundException(layoutId));
 
         existingLayout.setDeviceType(layoutDTO.getDeviceType());
         existingLayout.setCustomDeviceName(layoutDTO.getCustomDeviceName());
@@ -93,7 +97,7 @@ public class FormLayoutServiceImpl implements FormLayoutService {
         if (layoutDTO.getFieldLayouts() != null) {
             for (FieldLayoutDTO fieldLayoutDTO : layoutDTO.getFieldLayouts()) {
                 FieldDefinition fieldDefinition = fieldRepository.findById(fieldLayoutDTO.getFieldDefinitionId())
-                        .orElseThrow(() -> new RuntimeException("Field definition not found"));
+                        .orElseThrow(() -> new FieldDefinitionNotFoundException(fieldLayoutDTO.getFieldDefinitionId()));
 
                 FieldLayout fieldLayout = fieldLayoutMapper.toEntity(fieldLayoutDTO);
                 fieldLayout.setFormLayout(existingLayout);
@@ -147,7 +151,7 @@ public class FormLayoutServiceImpl implements FormLayoutService {
         }
 
         FormDefinition formDefinition = formRepository.findById(layoutDTO.getFormDefinitionId())
-                .orElseThrow(() -> new RuntimeException("Form definition not found"));
+                .orElseThrow(() -> new FormDefinitionNotFoundException(layoutDTO.getFormDefinitionId()));
 
         if (layoutDTO.getFieldLayouts() != null && !layoutDTO.getFieldLayouts().isEmpty()) {
             Set<Long> formFieldIds = formDefinition.getFields().stream()
@@ -170,7 +174,14 @@ public class FormLayoutServiceImpl implements FormLayoutService {
             invalidFields.removeAll(formFieldIds);
 
             if (!invalidFields.isEmpty()) {
-                throw new IllegalArgumentException("Layout contains invalid field IDs: " + invalidFields);
+                // Syntactically valid request, but the fields belong to a different form: 422.
+                List<String> reasons = invalidFields.stream()
+                        .sorted()
+                        .map(fieldId -> "Field " + fieldId + " does not belong to form "
+                                + layoutDTO.getFormDefinitionId())
+                        .toList();
+                throw new ValidationFailedException(
+                        "Layout contains invalid field IDs: " + invalidFields, reasons);
             }
         }
     }

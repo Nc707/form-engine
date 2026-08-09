@@ -59,6 +59,16 @@
       <artifactId>spring-boot-starter-validation</artifactId>
     </dependency>
     
+    <!-- OpenAPI / Swagger UI.
+         springdoc is not part of the Spring Boot BOM, so the version is pinned here. The 3.0.x
+         line is the one built for Spring Boot 4.0.x (3.1.x targets Boot 4.1); keep this in step
+         with ${spring-boot.version} in the root pom when Boot is upgraded. -->
+    <dependency>
+      <groupId>org.springdoc</groupId>
+      <artifactId>springdoc-openapi-starter-webmvc-ui</artifactId>
+      <version>3.0.3</version>
+    </dependency>
+
     <!-- Database -->
     <dependency>
       <groupId>com.h2database</groupId>
