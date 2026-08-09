@@ -28,7 +28,9 @@ final class FieldListPanel extends VerticalLayout {
     private final BiConsumer<FieldDefinitionDTO, Integer> onMove;
     private final Consumer<FieldDefinitionDTO> onDelete;
 
+    private final Button addButton;
     private List<FieldDefinitionDTO> fields = List.of();
+    private boolean editable = true;
 
     FieldListPanel(Runnable onAdd,
                    Consumer<FieldDefinitionDTO> onEdit,
@@ -41,10 +43,10 @@ final class FieldListPanel extends VerticalLayout {
         setPadding(false);
         setSpacing(false);
 
-        var add = new Button("Add field", VaadinIcon.PLUS.create(), event -> onAdd.run());
-        add.addThemeVariants(ButtonVariant.LUMO_SMALL);
+        addButton = new Button("Add field", VaadinIcon.PLUS.create(), event -> onAdd.run());
+        addButton.addThemeVariants(ButtonVariant.LUMO_SMALL);
 
-        var header = new HorizontalLayout(new H4("Fields"), add);
+        var header = new HorizontalLayout(new H4("Fields"), addButton);
         header.setWidthFull();
         header.setJustifyContentMode(JustifyContentMode.BETWEEN);
         header.setAlignItems(Alignment.CENTER);
@@ -85,21 +87,35 @@ final class FieldListPanel extends VerticalLayout {
         int index = fields.indexOf(field);
 
         var edit = iconButton(VaadinIcon.EDIT, "Edit", () -> onEdit.accept(field));
+        edit.setEnabled(editable);
         var up = iconButton(VaadinIcon.ARROW_UP, "Move up", () -> onMove.accept(field, -1));
-        up.setEnabled(index > 0);
+        up.setEnabled(editable && index > 0);
         var down = iconButton(VaadinIcon.ARROW_DOWN, "Move down", () -> onMove.accept(field, 1));
-        down.setEnabled(index >= 0 && index < fields.size() - 1);
+        down.setEnabled(editable && index >= 0 && index < fields.size() - 1);
         var remove = iconButton(VaadinIcon.TRASH, "Delete", () -> onDelete.accept(field));
         remove.addThemeVariants(ButtonVariant.LUMO_ERROR);
+        remove.setEnabled(editable);
 
         var row = new HorizontalLayout(edit, up, down, remove);
         row.setSpacing(false);
         return row;
     }
 
-    /** Shows the fields as they now stand. */
-    void setFields(List<FieldDefinitionDTO> updated) {
+    /**
+     * Shows the fields as they now stand.
+     *
+     * <p>The editable flag is applied to each button rather than left to the disabled pane around
+     * this panel. Flow refuses a click from anything inside a disabled container, so the pane alone
+     * is enough to keep a frozen form safe — but a row of buttons that still look pressable on a
+     * published form is telling the user something untrue.
+     *
+     * @param updated  the fields to show
+     * @param editable whether the form may still be changed
+     */
+    void setFields(List<FieldDefinitionDTO> updated, boolean editable) {
         this.fields = updated == null ? List.of() : updated;
+        this.editable = editable;
+        addButton.setEnabled(editable);
         grid.setItems(this.fields);
     }
 

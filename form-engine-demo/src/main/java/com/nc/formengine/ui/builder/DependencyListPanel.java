@@ -31,6 +31,7 @@ final class DependencyListPanel extends VerticalLayout {
     private final Span hint = new Span();
 
     private Map<Long, FieldDefinitionDTO> fieldsById = Map.of();
+    private boolean editable = true;
 
     DependencyListPanel(Runnable onAdd,
                         Consumer<FieldDependencyDTO> onEdit,
@@ -53,8 +54,10 @@ final class DependencyListPanel extends VerticalLayout {
         grid.addColumn(this::sentence).setHeader("Rule").setFlexGrow(1);
         grid.addComponentColumn(dependency -> {
             var edit = iconButton(VaadinIcon.EDIT, "Edit", () -> onEdit.accept(dependency));
+            edit.setEnabled(editable);
             var remove = iconButton(VaadinIcon.TRASH, "Delete", () -> onDelete.accept(dependency));
             remove.addThemeVariants(ButtonVariant.LUMO_ERROR);
+            remove.setEnabled(editable);
             var actions = new HorizontalLayout(edit, remove);
             actions.setSpacing(false);
             return actions;
@@ -68,15 +71,19 @@ final class DependencyListPanel extends VerticalLayout {
      *
      * @param dependencies the form's rules
      * @param fields       the form's fields, needed to turn ids back into labels
+     * @param editable     whether the form may still be changed
      */
-    void setDependencies(List<FieldDependencyDTO> dependencies, Map<Long, FieldDefinitionDTO> fields) {
+    void setDependencies(List<FieldDependencyDTO> dependencies,
+                         Map<Long, FieldDefinitionDTO> fields,
+                         boolean editable) {
         this.fieldsById = fields;
+        this.editable = editable;
         grid.setItems(dependencies);
         grid.setVisible(!dependencies.isEmpty());
 
         // A rule needs one field to watch and a different one to affect, so two is the floor.
         boolean possible = fields.size() >= 2;
-        add.setEnabled(possible);
+        add.setEnabled(editable && possible);
         if (!possible) {
             hint.setText("Add at least two fields before making one depend on another.");
         } else if (dependencies.isEmpty()) {

@@ -10,6 +10,7 @@ import com.nc.formengine.model.dto.FieldOptionDTO;
 import com.nc.formengine.model.dto.FieldRestrictionDTO;
 import com.nc.formengine.ui.shared.Notifications;
 import com.nc.formengine.ui.shared.ViewToolbar;
+import com.vaadin.flow.component.Component;
 import com.vaadin.flow.component.button.Button;
 import com.vaadin.flow.component.button.ButtonVariant;
 import com.vaadin.flow.component.confirmdialog.ConfirmDialog;
@@ -17,6 +18,7 @@ import com.vaadin.flow.component.html.Div;
 import com.vaadin.flow.component.html.H4;
 import com.vaadin.flow.component.html.Span;
 import com.vaadin.flow.component.orderedlayout.HorizontalLayout;
+import com.vaadin.flow.component.orderedlayout.Scroller;
 import com.vaadin.flow.component.orderedlayout.VerticalLayout;
 import com.vaadin.flow.component.splitlayout.SplitLayout;
 import com.vaadin.flow.component.textfield.TextArea;
@@ -175,12 +177,22 @@ class FormBuilderView extends VerticalLayout implements BeforeEnterObserver, Bef
         var previewPane = new VerticalLayout(new H4("Preview"), preview);
         previewPane.setPadding(true);
         previewPane.setSpacing(false);
-        previewPane.setSizeFull();
+        previewPane.setWidthFull();
 
-        var split = new SplitLayout(editorPane, previewPane);
+        // Both halves outgrow the window on any real form, and a split layout hands its children a
+        // fixed height. Left to themselves the two vertical layouts would squash their contents to
+        // fit rather than overflow, so the bottom of a long form could not be reached at all; a
+        // scroller keeps the content at its natural height and scrolls to it instead.
+        var split = new SplitLayout(scrolling(editorPane), scrolling(previewPane));
         split.setSizeFull();
         split.setSplitterPosition(55);
         return split;
+    }
+
+    private static Scroller scrolling(Component content) {
+        var scroller = new Scroller(content);
+        scroller.setSizeFull();
+        return scroller;
     }
 
     // --- navigation --------------------------------------------------------------------------
@@ -401,11 +413,13 @@ class FormBuilderView extends VerticalLayout implements BeforeEnterObserver, Bef
         title.setValue(nullToEmpty(form.getTitle()));
         description.setValue(nullToEmpty(form.getDescription()));
 
-        fieldList.setFields(session.fields());
-        dependencyList.setDependencies(session.dependencies(), session.fieldsById());
+        fieldList.setFields(session.fields(), actions.editable());
+        dependencyList.setDependencies(session.dependencies(), session.fieldsById(), actions.editable());
         preview.refresh(form, session.dependencies());
 
-        // One call, one pane: whatever is added to the editor from now on is covered by it.
+        // One call, one pane: whatever is added to the editor from now on is covered by it, whether
+        // or not whoever adds it remembers to ask. The panels above grey their own buttons on top of
+        // this, because a control rendered inside a grid row is drawn from its own enabled flag.
         editorPane.setVisible(true);
         editorPane.setEnabled(actions.editable());
 
