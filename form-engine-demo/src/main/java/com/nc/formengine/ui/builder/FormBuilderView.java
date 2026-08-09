@@ -4,6 +4,10 @@ import com.nc.formengine.business.service.FieldDependencyService;
 import com.nc.formengine.business.service.FieldDefinitionService;
 import com.nc.formengine.business.service.FormDefinitionService;
 import com.nc.formengine.business.service.FormLayoutService;
+import com.nc.formengine.model.dto.FieldDefinitionDTO;
+import com.nc.formengine.model.dto.FieldDependencyDTO;
+import com.nc.formengine.model.dto.FieldOptionDTO;
+import com.nc.formengine.model.dto.FieldRestrictionDTO;
 import com.nc.formengine.ui.shared.Notifications;
 import com.nc.formengine.ui.shared.ViewToolbar;
 import com.vaadin.flow.component.button.Button;
@@ -26,8 +30,12 @@ import com.vaadin.flow.router.PageTitle;
 import com.vaadin.flow.router.Route;
 import com.vaadin.flow.theme.lumo.LumoUtility;
 
+import java.util.ArrayList;
+import java.util.LinkedHashMap;
+import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.stream.Collectors;
 
 /**
  * Edits one form definition.
@@ -64,6 +72,8 @@ class FormBuilderView extends VerticalLayout implements BeforeEnterObserver, Bef
     private final Div banner = new Div();
     private final VerticalLayout editorPane = new VerticalLayout();
     private final FormPreview preview = new FormPreview();
+    private final FieldListPanel fieldList = new FieldListPanel(
+            this::addField, this::editField, this::moveField, this::deleteField);
 
     private final Button publish = new Button("Publish");
     private final Button newVersion = new Button("New version");
@@ -158,7 +168,7 @@ class FormBuilderView extends VerticalLayout implements BeforeEnterObserver, Bef
                 new HorizontalLayout(saveDetails));
         details.setPadding(false);
         details.setSpacing(false);
-        editorPane.add(details);
+        editorPane.add(details, fieldList);
 
         var previewPane = new VerticalLayout(new H4("Preview"), preview);
         previewPane.setPadding(true);
@@ -247,6 +257,86 @@ class FormBuilderView extends VerticalLayout implements BeforeEnterObserver, Bef
                         nullToEmpty(session.form().getDescription()));
     }
 
+    // --- fields ------------------------------------------------------------------------------
+
+    private void addField() {
+        new FieldDialog(null, session.fields(),
+                field -> mutate(() -> session.addField(field), "Added '" + field.getLabel() + "'."))
+                .open();
+    }
+
+    private void editField(FieldDefinitionDTO field) {
+        // The dialog edits a copy, so cancelling leaves the list showing what is actually stored.
+        List<FieldDefinitionDTO> others = session.fields().stream()
+                .filter(other -> !Objects.equals(other.getId(), field.getId()))
+                .toList();
+        new FieldDialog(copyOf(field), others,
+                edited -> mutate(() -> session.saveField(edited), "Saved '" + edited.getLabel() + "'."))
+                .open();
+    }
+
+    private void moveField(FieldDefinitionDTO field, int delta) {
+        mutate(() -> session.moveField(field.getId(), delta), "Reordered.");
+    }
+
+    private void deleteField(FieldDefinitionDTO field) {
+        List<FieldDependencyDTO> affected = session.dependencies().stream()
+                .filter(dependency -> Objects.equals(dependency.getTriggerFieldId(), field.getId())
+                        || Objects.equals(dependency.getDependentFieldId(), field.getId()))
+                .toList();
+
+        String consequence = affected.isEmpty()
+                ? "'" + field.getLabel() + "' will be removed from this form."
+                : "'" + field.getLabel() + "' will be removed, along with "
+                        + affected.size() + " conditional rule" + (affected.size() > 1 ? "s" : "")
+                        + " that mention it.";
+
+        confirm("Delete this field?", consequence, "Delete",
+                () -> mutate(() -> session.deleteField(field.getId()),
+                        "Deleted '" + field.getLabel() + "'."));
+    }
+
+    /** A field the dialog can edit freely without touching what the list is showing. */
+    private static FieldDefinitionDTO copyOf(FieldDefinitionDTO field) {
+        return FieldDefinitionDTO.builder()
+                .id(field.getId())
+                .formDefinitionId(field.getFormDefinitionId())
+                .name(field.getName())
+                .label(field.getLabel())
+                .type(field.getType())
+                .orderIndex(field.getOrderIndex())
+                .required(field.getRequired())
+                .restrictions(field.getRestrictions() == null ? new ArrayList<>()
+                        : field.getRestrictions().stream().map(FormBuilderView::copyOf).collect(
+                                Collectors.toCollection(ArrayList::new)))
+                .options(field.getOptions() == null ? new ArrayList<>()
+                        : field.getOptions().stream().map(FormBuilderView::copyOf).collect(
+                                Collectors.toCollection(ArrayList::new)))
+                .build();
+    }
+
+    private static FieldRestrictionDTO copyOf(FieldRestrictionDTO restriction) {
+        return FieldRestrictionDTO.builder()
+                .id(restriction.getId())
+                .fieldDefinitionId(restriction.getFieldDefinitionId())
+                .restrictionType(restriction.getRestrictionType())
+                .parameters(restriction.getParameters() == null
+                        ? new LinkedHashMap<>() : new LinkedHashMap<>(restriction.getParameters()))
+                .errorMessage(restriction.getErrorMessage())
+                .orderIndex(restriction.getOrderIndex())
+                .build();
+    }
+
+    private static FieldOptionDTO copyOf(FieldOptionDTO option) {
+        return FieldOptionDTO.builder()
+                .id(option.getId())
+                .fieldDefinitionId(option.getFieldDefinitionId())
+                .label(option.getLabel())
+                .value(option.getValue())
+                .orderIndex(option.getOrderIndex())
+                .build();
+    }
+
     // --- the one place anything is re-rendered -----------------------------------------------
 
     /**
@@ -274,6 +364,7 @@ class FormBuilderView extends VerticalLayout implements BeforeEnterObserver, Bef
         title.setValue(nullToEmpty(form.getTitle()));
         description.setValue(nullToEmpty(form.getDescription()));
 
+        fieldList.setFields(session.fields());
         preview.refresh(form, session.dependencies());
 
         // One call, one pane: whatever is added to the editor from now on is covered by it.
