@@ -74,6 +74,8 @@ class FormBuilderView extends VerticalLayout implements BeforeEnterObserver, Bef
     private final FormPreview preview = new FormPreview();
     private final FieldListPanel fieldList = new FieldListPanel(
             this::addField, this::editField, this::moveField, this::deleteField);
+    private final DependencyListPanel dependencyList = new DependencyListPanel(
+            this::addDependency, this::editDependency, this::deleteDependency);
 
     private final Button publish = new Button("Publish");
     private final Button newVersion = new Button("New version");
@@ -168,7 +170,7 @@ class FormBuilderView extends VerticalLayout implements BeforeEnterObserver, Bef
                 new HorizontalLayout(saveDetails));
         details.setPadding(false);
         details.setSpacing(false);
-        editorPane.add(details, fieldList);
+        editorPane.add(details, fieldList, dependencyList);
 
         var previewPane = new VerticalLayout(new H4("Preview"), preview);
         previewPane.setPadding(true);
@@ -337,6 +339,41 @@ class FormBuilderView extends VerticalLayout implements BeforeEnterObserver, Bef
                 .build();
     }
 
+    // --- conditional rules ---------------------------------------------------------------------
+
+    private void addDependency() {
+        new DependencyDialog(null, session.fields(),
+                dependency -> mutate(() -> session.addDependency(dependency), "Added the rule."))
+                .open();
+    }
+
+    private void editDependency(FieldDependencyDTO dependency) {
+        new DependencyDialog(dependency, session.fields(),
+                edited -> mutate(() -> session.saveDependency(edited), "Saved the rule."))
+                .open();
+    }
+
+    private void deleteDependency(FieldDependencyDTO dependency) {
+        confirm("Delete this rule?",
+                dependencySentence(dependency) + " will no longer apply.",
+                "Delete",
+                () -> mutate(() -> session.deleteDependency(dependency.getId()), "Deleted the rule."));
+    }
+
+    private String dependencySentence(FieldDependencyDTO dependency) {
+        var byId = session.fieldsById();
+        return DependencyText.sentence(dependency,
+                labelOf(byId.get(dependency.getTriggerFieldId())),
+                labelOf(byId.get(dependency.getDependentFieldId())));
+    }
+
+    private static String labelOf(FieldDefinitionDTO field) {
+        if (field == null) {
+            return "a deleted field";
+        }
+        return field.getLabel() == null ? field.getName() : field.getLabel();
+    }
+
     // --- the one place anything is re-rendered -----------------------------------------------
 
     /**
@@ -365,6 +402,7 @@ class FormBuilderView extends VerticalLayout implements BeforeEnterObserver, Bef
         description.setValue(nullToEmpty(form.getDescription()));
 
         fieldList.setFields(session.fields());
+        dependencyList.setDependencies(session.dependencies(), session.fieldsById());
         preview.refresh(form, session.dependencies());
 
         // One call, one pane: whatever is added to the editor from now on is covered by it.
