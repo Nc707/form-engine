@@ -78,7 +78,9 @@
             <optional>true</optional>
         </dependency>
 
-        <!-- Testing -->
+        <!-- Testing. The views themselves are not tested; what is, is the logic they sit on:
+             resolving a submission's answers against the definition it was filled in against,
+             reading the stored encoding back out, and writing CSV. -->
         <dependency>
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-test</artifactId>
