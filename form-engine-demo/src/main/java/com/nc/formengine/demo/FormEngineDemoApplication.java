@@ -2,6 +2,7 @@ package com.nc.formengine.demo;
 
 import com.vaadin.flow.component.dependency.StyleSheet;
 import com.vaadin.flow.component.page.AppShellConfigurator;
+import com.vaadin.flow.spring.annotation.EnableVaadin;
 import com.vaadin.flow.theme.lumo.Lumo;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
@@ -31,6 +32,10 @@ import org.springframework.data.jpa.repository.config.EnableJpaRepositories;
         "com.nc.formengine.dataimpl.entity",
         "com.nc.formengine.submission.dataimpl.entity"
 })
+// Component scanning is not enough to find a @Route: under Spring Boot, Vaadin looks for routes and
+// layouts only in the package of this class, and every view lives in com.nc.formengine.ui. Without
+// this the application starts perfectly well and serves "No views found" for every URL.
+@EnableVaadin({"com.nc.formengine.demo", "com.nc.formengine.ui"})
 @StyleSheet(Lumo.STYLESHEET)
 @StyleSheet(Lumo.UTILITY_STYLESHEET)
 @StyleSheet("styles.css")

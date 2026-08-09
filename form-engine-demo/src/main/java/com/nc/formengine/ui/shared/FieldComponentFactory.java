@@ -130,6 +130,11 @@ public final class FieldComponentFactory {
 
     /** Options carry a label for people and a value for the engine; the widget shows the label. */
     private static String labelFor(FieldDefinitionDTO field, String value) {
+        // A Select that allows an empty selection asks its generator to label that item too, and the
+        // value it passes for it is null.
+        if (value == null) {
+            return "";
+        }
         if (field.getOptions() == null) {
             return value;
         }
