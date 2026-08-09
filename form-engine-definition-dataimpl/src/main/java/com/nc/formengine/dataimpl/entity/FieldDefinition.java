@@ -9,6 +9,7 @@ import lombok.NoArgsConstructor;
 import lombok.Setter;
 import lombok.ToString;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
 
@@ -46,11 +47,25 @@ public class FieldDefinition {
     @Builder.Default
     private Boolean required = false;
 
-    private Integer minLength;
-    private Integer maxLength;
-    private Double minValue;
-    private Double maxValue;
-    private String regexPattern;
+    /**
+     * The validation rules of this field, owned by it: deleting the field deletes them, and dropping
+     * one from the list deletes that row.
+     */
+    @OneToMany(mappedBy = "fieldDefinition", cascade = CascadeType.ALL, orphanRemoval = true)
+    @OrderBy("orderIndex ASC")
+    @Builder.Default
+    @ToString.Exclude
+    private List<FieldRestriction> restrictions = new ArrayList<>();
+
+    /**
+     * The choices offered by a SELECT or MULTI_SELECT field, owned the same way. Reading them with
+     * the field is what lets a client render it from a single request.
+     */
+    @OneToMany(mappedBy = "fieldDefinition", cascade = CascadeType.ALL, orphanRemoval = true)
+    @OrderBy("orderIndex ASC")
+    @Builder.Default
+    @ToString.Exclude
+    private List<FieldOption> options = new ArrayList<>();
 
     @OneToMany(mappedBy = "triggerField", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
     @ToString.Exclude

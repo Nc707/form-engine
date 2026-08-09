@@ -1,19 +1,40 @@
 package com.nc.formengine.dataimpl.mapper;
 
 import com.nc.formengine.dataimpl.entity.FieldDefinition;
+import com.nc.formengine.dataimpl.entity.FieldOption;
+import com.nc.formengine.dataimpl.entity.FieldRestriction;
 import com.nc.formengine.dataimpl.entity.FormDefinition;
 import com.nc.formengine.model.dto.FieldDefinitionDTO;
+import com.nc.formengine.model.dto.FieldOptionDTO;
 import com.nc.formengine.model.dto.FieldRestrictionDTO;
-import com.nc.formengine.model.enums.RestrictionType;
-import com.nc.formengine.model.specification.RestrictionTypeRegistry;
 import org.springframework.stereotype.Component;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.function.Function;
+import java.util.stream.Collectors;
 
+/**
+ * Maps {@link FieldDefinition} to its DTO, together with the two collections it owns.
+ *
+ * <p><b>Absent is not empty.</b> A null {@code restrictions} or {@code options} on an incoming DTO
+ * means "this request says nothing about them", so what is stored is kept; an empty list means
+ * "there are none", so what is stored is deleted. Without that distinction, any client PUTting a
+ * field it built by hand would silently wipe the rules attached to it.
+ */
 @Component
 public class FieldDefinitionMapper {
+
+    private final FieldRestrictionMapper fieldRestrictionMapper;
+    private final FieldOptionMapper fieldOptionMapper;
+
+    public FieldDefinitionMapper(FieldRestrictionMapper fieldRestrictionMapper,
+                                 FieldOptionMapper fieldOptionMapper) {
+        this.fieldRestrictionMapper = fieldRestrictionMapper;
+        this.fieldOptionMapper = fieldOptionMapper;
+    }
 
     public FieldDefinitionDTO toDTO(FieldDefinition entity) {
         if (entity == null) {
@@ -22,14 +43,21 @@ public class FieldDefinitionMapper {
 
         return FieldDefinitionDTO.builder()
                 .id(entity.getId())
-                .formDefinitionId(entity.getFormDefinition() != null ? 
+                .formDefinitionId(entity.getFormDefinition() != null ?
                     entity.getFormDefinition().getId() : null)
                 .name(entity.getName())
                 .label(entity.getLabel())
                 .type(entity.getType())
                 .orderIndex(entity.getOrderIndex())
                 .required(entity.getRequired())
-                .restrictions(toRestrictions(entity))
+                .restrictions(entity.getRestrictions() != null
+                    ? entity.getRestrictions().stream()
+                        .map(fieldRestrictionMapper::toDTO)
+                        .collect(Collectors.toList()) : new ArrayList<>())
+                .options(entity.getOptions() != null
+                    ? entity.getOptions().stream()
+                        .map(fieldOptionMapper::toDTO)
+                        .collect(Collectors.toList()) : new ArrayList<>())
                 .build();
     }
 
@@ -40,12 +68,9 @@ public class FieldDefinitionMapper {
 
         FieldDefinition entity = new FieldDefinition();
         entity.setId(dto.getId());
-        entity.setName(dto.getName());
-        entity.setLabel(dto.getLabel());
-        entity.setType(dto.getType());
-        entity.setOrderIndex(dto.getOrderIndex());
-        entity.setRequired(dto.getRequired());
-        applyRestrictions(dto.getRestrictions(), entity);
+        entity.setRestrictions(new ArrayList<>());
+        entity.setOptions(new ArrayList<>());
+        updateEntity(dto, entity);
 
         return entity;
     }
@@ -61,6 +86,7 @@ public class FieldDefinitionMapper {
         entity.setOrderIndex(dto.getOrderIndex());
         entity.setRequired(dto.getRequired());
         applyRestrictions(dto.getRestrictions(), entity);
+        applyOptions(dto.getOptions(), entity);
     }
 
     public void setFormDefinition(FieldDefinition entity, FormDefinition formDefinition) {
@@ -70,82 +96,90 @@ public class FieldDefinitionMapper {
     }
 
     /**
-     * Expands the inline validation columns of the entity into restriction DTOs.
-     * Parameter keys follow the convention used by the specification implementations.
-     */
-    private List<FieldRestrictionDTO> toRestrictions(FieldDefinition entity) {
-        List<FieldRestrictionDTO> restrictions = new ArrayList<>();
-
-        addRestriction(restrictions, entity, RestrictionType.MIN_LENGTH, "minLength", entity.getMinLength());
-        addRestriction(restrictions, entity, RestrictionType.MAX_LENGTH, "maxLength", entity.getMaxLength());
-        addRestriction(restrictions, entity, RestrictionType.MIN_VALUE, "minValue", entity.getMinValue());
-        addRestriction(restrictions, entity, RestrictionType.MAX_VALUE, "maxValue", entity.getMaxValue());
-        addRestriction(restrictions, entity, RestrictionType.PATTERN, "pattern", entity.getRegexPattern());
-
-        return restrictions;
-    }
-
-    private void addRestriction(List<FieldRestrictionDTO> restrictions, FieldDefinition entity,
-                                RestrictionType type, String parameterName, Object value) {
-        if (value == null) {
-            return;
-        }
-
-        restrictions.add(FieldRestrictionDTO.builder()
-                .fieldDefinitionId(entity.getId())
-                .restrictionType(type)
-                .parameters(Map.of(parameterName, value))
-                .applicableFieldTypes(RestrictionTypeRegistry.getApplicableFieldTypes(type))
-                .orderIndex(restrictions.size())
-                .build());
-    }
-
-    /**
-     * Collapses restriction DTOs back into the inline validation columns of the entity.
-     * Restrictions absent from the list clear their corresponding column.
+     * Reconciles the stored restrictions with the ones the DTO carries.
+     *
+     * <p>A restriction already belonging to this field is updated in place, so its row and its id
+     * survive the request. The collection is then rebuilt in the order of the DTO: whatever the DTO
+     * dropped is gone from it, and {@code orphanRemoval} turns that into a delete.
      */
     private void applyRestrictions(List<FieldRestrictionDTO> restrictions, FieldDefinition entity) {
-        entity.setMinLength(null);
-        entity.setMaxLength(null);
-        entity.setMinValue(null);
-        entity.setMaxValue(null);
-        entity.setRegexPattern(null);
-
         if (restrictions == null) {
             return;
         }
 
-        for (FieldRestrictionDTO restriction : restrictions) {
-            if (restriction == null || restriction.getRestrictionType() == null) {
+        Map<Long, FieldRestriction> stored = byId(entity.getRestrictions(), FieldRestriction::getId);
+        List<FieldRestriction> updated = new ArrayList<>();
+
+        for (FieldRestrictionDTO dto : restrictions) {
+            if (dto == null) {
                 continue;
             }
 
-            Map<String, Object> parameters = restriction.getParameters();
-            switch (restriction.getRestrictionType()) {
-                case MIN_LENGTH -> entity.setMinLength(intParameter(parameters, "minLength"));
-                case MAX_LENGTH -> entity.setMaxLength(intParameter(parameters, "maxLength"));
-                case MIN_VALUE -> entity.setMinValue(doubleParameter(parameters, "minValue"));
-                case MAX_VALUE -> entity.setMaxValue(doubleParameter(parameters, "maxValue"));
-                case PATTERN -> entity.setRegexPattern(stringParameter(parameters, "pattern"));
-                default -> {
-                    // NOT_NULL, NOT_EMPTY and EMAIL have no dedicated column on the entity
-                }
+            FieldRestriction target = dto.getId() != null ? stored.get(dto.getId()) : null;
+            if (target != null) {
+                fieldRestrictionMapper.updateEntity(dto, target);
+            } else {
+                target = fieldRestrictionMapper.toEntity(dto);
+                // An id naming a restriction of some other field is not ours to reuse: this one is
+                // new here, and cascading it with an assigned id would fail as a detached entity.
+                target.setId(null);
+            }
+            fieldRestrictionMapper.setFieldDefinition(target, entity);
+            updated.add(target);
+        }
+
+        replaceInPlace(entity.getRestrictions(), updated);
+    }
+
+    private void applyOptions(List<FieldOptionDTO> options, FieldDefinition entity) {
+        if (options == null) {
+            return;
+        }
+
+        Map<Long, FieldOption> stored = byId(entity.getOptions(), FieldOption::getId);
+        List<FieldOption> updated = new ArrayList<>();
+
+        for (FieldOptionDTO dto : options) {
+            if (dto == null) {
+                continue;
+            }
+
+            FieldOption target = dto.getId() != null ? stored.get(dto.getId()) : null;
+            if (target != null) {
+                fieldOptionMapper.updateEntity(dto, target);
+            } else {
+                target = fieldOptionMapper.toEntity(dto);
+                target.setId(null);
+            }
+            fieldOptionMapper.setFieldDefinition(target, entity);
+            updated.add(target);
+        }
+
+        replaceInPlace(entity.getOptions(), updated);
+    }
+
+    private <T> Map<Long, T> byId(List<T> stored, Function<T, Long> idOf) {
+        Map<Long, T> index = new HashMap<>();
+        if (stored == null) {
+            return index;
+        }
+
+        for (T element : stored) {
+            Long id = idOf.apply(element);
+            if (id != null) {
+                index.put(id, element);
             }
         }
+        return index;
     }
 
-    private Integer intParameter(Map<String, Object> parameters, String name) {
-        Object value = parameters != null ? parameters.get(name) : null;
-        return value instanceof Number number ? number.intValue() : null;
-    }
-
-    private Double doubleParameter(Map<String, Object> parameters, String name) {
-        Object value = parameters != null ? parameters.get(name) : null;
-        return value instanceof Number number ? number.doubleValue() : null;
-    }
-
-    private String stringParameter(Map<String, Object> parameters, String name) {
-        Object value = parameters != null ? parameters.get(name) : null;
-        return value != null ? value.toString() : null;
+    /**
+     * Rewrites a collection without swapping the instance, which is what {@code orphanRemoval}
+     * requires: handing the entity a brand new list would leave Hibernate unable to tell what was
+     * removed.
+     */
+    private <T> void replaceInPlace(List<T> target, List<T> replacement) {
+        target.clear();
+        target.addAll(replacement);
     }
 }

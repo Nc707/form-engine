@@ -108,6 +108,27 @@ FieldSpecification combined = new MinLengthSpecification(5)
 SpecificationResult result = combined.isSatisfiedBy("user123", context);
 ```
 
+### Construir specifications desde restricciones persistidas
+
+`FieldSpecificationFactory` es el puente entre los datos y el comportamiento: toma los
+`FieldRestrictionDTO` guardados con el campo y devuelve la specification que los hace cumplir.
+
+```java
+// Una sola restricción
+FieldSpecification spec = FieldSpecificationFactory.from(restriction);
+
+// Todas las de un campo, combinadas con AND en orden de orderIndex
+FieldSpecification all = FieldSpecificationFactory.composite(field.getRestrictions());
+```
+
+La factory es permisiva ante restricciones mal formadas: un tipo desconocido, o un parámetro faltante
+o ilegible, produce una specification que acepta todo. Una regla imposible de cumplir dejaría el
+formulario sin poder enviarse y sin forma de que el usuario lo resuelva.
+
+Como `and` corta en la primera falla, `composite` responde si el valor es aceptable, no todo lo que
+está mal. Para un error por regla rota —lo que hace `FormValidationService`— se evalúa cada
+restricción por separado con `from`.
+
 ### Filtrar restricciones por tipo de campo
 
 ```java
@@ -131,6 +152,9 @@ Para crear una nueva restriction:
 3. Implementar el método `isSatisfiedBy`
 4. Agregar el tipo al enum `RestrictionType`
 5. Registrar en `RestrictionTypeRegistry`
+6. Agregar el caso al `switch` de `FieldSpecificationFactory.from`, que es donde el tipo persistido
+   se convierte en la specification. Sin este paso la restricción se guarda pero nunca se aplica; el
+   `switch` no tiene rama `default`, así que el compilador avisa al agregar el valor al enum.
 
 Ejemplo:
 
@@ -175,6 +199,7 @@ form-engine-definition-model/
 │   ├── FieldContext.java            (Contexto de validación)
 │   ├── SpecificationResult.java     (Resultado)
 │   ├── RestrictionTypeRegistry.java (Registro de aplicabilidad)
+│   ├── FieldSpecificationFactory.java (DTO persistido -> specification)
 │   └── impl/
 │       ├── NotNullSpecification.java
 │       ├── NotEmptySpecification.java
@@ -187,10 +212,18 @@ form-engine-definition-model/
 ├── dto/
 │   ├── FieldDefinitionDTO.java      (Usa List<FieldRestrictionDTO>)
 │   └── FieldRestrictionDTO.java     (Configuración de restricción)
+├── validation/
+│   ├── ValidationMode.java          (DRAFT / SUBMIT)
+│   ├── ValidationReport.java        (Resultado de validar un formulario)
+│   └── FieldValidationError.java    (Una regla rota de un campo)
 └── enums/
     ├── FieldType.java
     └── RestrictionType.java
 ```
+
+Las restricciones se persisten en la entidad `FieldRestriction`
+(`form-engine-definition-dataimpl`), y `FormValidationService`
+(`form-engine-definition-business`) es quien las aplica a las respuestas de un formulario.
 
 ## ✅ Ventajas de este Diseño
 
