@@ -32,10 +32,20 @@ import org.springframework.data.jpa.repository.config.EnableJpaRepositories;
         "com.nc.formengine.dataimpl.entity",
         "com.nc.formengine.submission.dataimpl.entity"
 })
-// Component scanning is not enough to find a @Route: under Spring Boot, Vaadin looks for routes and
-// layouts only in the package of this class, and every view lives in com.nc.formengine.ui. Without
-// this the application starts perfectly well and serves "No views found" for every URL.
-@EnableVaadin({"com.nc.formengine.demo", "com.nc.formengine.ui"})
+/**
+ * Where Vaadin looks for {@code @Route} classes.
+ *
+ * <p>Component scanning is not enough. Without this, Vaadin scans the auto-configuration package —
+ * the package of this class, {@code com.nc.formengine.demo} — and every view lives in
+ * {@code com.nc.formengine.ui}, so it finds none of them: the application starts perfectly well and
+ * serves "No views found" for every URL. The {@code vaadin.allowed-packages} property does not
+ * cover this; it filters what the frontend resource scan reads, it does not widen the set of
+ * packages the route scan starts from.
+ *
+ * <p>Vaadin's own packages have to stay on the list, since overriding this replaces the default set
+ * rather than adding to it.
+ */
+@EnableVaadin({"com.vaadin", "org.vaadin", "com.nc.formengine"})
 @StyleSheet(Lumo.STYLESHEET)
 @StyleSheet(Lumo.UTILITY_STYLESHEET)
 @StyleSheet("styles.css")
