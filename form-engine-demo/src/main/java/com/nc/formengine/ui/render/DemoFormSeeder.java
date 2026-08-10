@@ -63,9 +63,10 @@ class DemoFormSeeder {
         if (!enabled) {
             return;
         }
-        // Anything already published is a better demo than a fixture, and re-seeding on top of a
-        // form someone is filling in would be worse than doing nothing.
-        if (!formService.findByStatus(FormDefinitionStatus.PUBLISHED).isEmpty() || formService.existsByCode(CODE)) {
+        // Only this seeder's own form is checked. Standing down whenever *any* published form exists
+        // would mean standing down whenever another seeder got there first — and one does: the
+        // responses demo data runs as a CommandLineRunner, which is before this event fires.
+        if (formService.existsByCode(CODE)) {
             return;
         }
 
