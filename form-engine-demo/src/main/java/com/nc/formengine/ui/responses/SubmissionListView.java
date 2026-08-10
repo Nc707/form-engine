@@ -11,8 +11,8 @@ import com.vaadin.flow.router.Route;
 
 /** Every submission the engine has stored, across all forms and versions. */
 @Route("responses")
-@PageTitle("Respuestas")
-@Menu(order = 1, icon = "vaadin:records", title = "Respuestas")
+@PageTitle("Responses")
+@Menu(order = 2, icon = "vaadin:records", title = "Responses")
 class SubmissionListView extends VerticalLayout {
 
     SubmissionListView(FormSubmissionService submissionService,
@@ -26,7 +26,7 @@ class SubmissionListView extends VerticalLayout {
         var browser = new SubmissionBrowser(
                 submissionService, formDefinitionService, fieldDefinitionService, answerResolver);
 
-        add(new ViewToolbar("Respuestas"), browser);
+        add(new ViewToolbar("Responses"), browser);
         setFlexGrow(1, browser);
     }
 }

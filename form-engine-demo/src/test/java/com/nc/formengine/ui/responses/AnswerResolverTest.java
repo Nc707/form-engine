@@ -60,7 +60,7 @@ class AnswerResolverTest {
                 new ResolvedAnswer("Edad", "34", true, false),
                 new ResolvedAnswer("¿Acepta términos?", "", false, false),
                 new ResolvedAnswer("motivo", "mudanza", true, true),
-                new ResolvedAnswer("Campo #98", "x", true, true));
+                new ResolvedAnswer("Field #98", "x", true, true));
     }
 
     @Test

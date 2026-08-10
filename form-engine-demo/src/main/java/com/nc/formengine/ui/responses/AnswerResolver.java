@@ -126,7 +126,7 @@ public class AnswerResolver {
         if (field.getLabel() != null && !field.getLabel().isBlank()) {
             return field.getLabel();
         }
-        return field.getName() != null ? field.getName() : "Campo #" + field.getId();
+        return field.getName() != null ? field.getName() : "Field #" + field.getId();
     }
 
     /**
@@ -138,6 +138,6 @@ public class AnswerResolver {
         if (answer.getFieldName() != null && !answer.getFieldName().isBlank()) {
             return answer.getFieldName();
         }
-        return "Campo #" + answer.getFieldDefinitionId();
+        return "Field #" + answer.getFieldDefinitionId();
     }
 }

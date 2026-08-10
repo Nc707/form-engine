@@ -36,7 +36,7 @@ import java.util.List;
  * not what the form asks today.
  */
 @Route("responses/submission/:submissionId([0-9]+)")
-@PageTitle("Detalle de respuesta")
+@PageTitle("Submission detail")
 class SubmissionDetailView extends VerticalLayout implements BeforeEnterObserver {
 
     static final String SUBMISSION_ID = "submissionId";
@@ -77,12 +77,12 @@ class SubmissionDetailView extends VerticalLayout implements BeforeEnterObserver
     private void show(FormSubmissionDTO submission) {
         removeAll();
 
-        var cancelButton = new Button("Cancelar respuesta", click -> confirmCancel(submission));
+        var cancelButton = new Button("Cancel submission", click -> confirmCancel(submission));
         cancelButton.addThemeVariants(ButtonVariant.LUMO_ERROR);
         // CANCELED is terminal, so there is nothing this button could do from there.
         cancelButton.setEnabled(submission.getStatus() != SubmissionStatus.CANCELED);
 
-        add(new ViewToolbar("Detalle de respuesta", cancelButton),
+        add(new ViewToolbar("Submission detail", cancelButton),
                 metadata(submission),
                 answers(submission));
     }
@@ -94,19 +94,19 @@ class SubmissionDetailView extends VerticalLayout implements BeforeEnterObserver
 
         var layout = new FormLayout();
         layout.addClassNames(LumoUtility.Padding.MEDIUM);
-        layout.addFormItem(new Span(SubmissionBrowser.describe(form)), "Formulario");
-        layout.addFormItem(new Span(orDash(submission.getFormCode())), "Código");
-        layout.addFormItem(new Span(orDash(submission.getSubmittedBy())), "Autor");
+        layout.addFormItem(new Span(SubmissionBrowser.describe(form)), "Form");
+        layout.addFormItem(new Span(orDash(submission.getFormCode())), "Code");
+        layout.addFormItem(new Span(orDash(submission.getSubmittedBy())), "Author");
         layout.addFormItem(new Span(submission.getStatus() == SubmissionStatus.DRAFT
                         || submission.getSubmittedAt() == null
                         ? "—"
                         : submission.getSubmittedAt().format(TIMESTAMP)),
-                "Enviada");
-        layout.addFormItem(SubmissionBrowser.statusBadge(submission.getStatus()), "Estado");
+                "Submitted");
+        layout.addFormItem(SubmissionBrowser.statusBadge(submission.getStatus()), "Status");
 
         if (form != null && form.getStatus() == FormDefinitionStatus.ARCHIVED) {
             layout.addFormItem(
-                    note("Esta respuesta pertenece a una versión archivada. Las etiquetas de abajo son "
+                    note("This answer belongs to an archived version. The labels below are "
                             + "las de esa versión, no las de la versión publicada hoy."),
                     "");
         }
@@ -122,11 +122,11 @@ class SubmissionDetailView extends VerticalLayout implements BeforeEnterObserver
         layout.setSpacing(false);
 
         if (fields.isEmpty() && !resolved.isEmpty()) {
-            layout.add(note("La definición de este formulario ya no existe, así que ningún campo pudo "
-                    + "resolverse. Se muestra lo que la respuesta guardó."));
+            layout.add(note("This form's definition no longer exists, so no field could be "
+                    + "resolved. What the submission stored is shown instead."));
         }
         if (resolved.isEmpty()) {
-            layout.add(note("Esta respuesta no tiene ningún campo cargado."));
+            layout.add(note("This submission has no answers."));
             return layout;
         }
 
@@ -147,7 +147,7 @@ class SubmissionDetailView extends VerticalLayout implements BeforeEnterObserver
     private com.vaadin.flow.component.Component value(ResolvedAnswer answer) {
         Span text;
         if (!answer.answered()) {
-            text = new Span("(sin respuesta)");
+            text = new Span("(no answer)");
             text.addClassNames(LumoUtility.TextColor.SECONDARY);
         } else {
             text = new Span(answer.displayValue());
@@ -170,17 +170,17 @@ class SubmissionDetailView extends VerticalLayout implements BeforeEnterObserver
     /** Asks before doing it, in a dialog the application owns rather than a browser prompt. */
     private void confirmCancel(FormSubmissionDTO submission) {
         var dialog = new Dialog();
-        dialog.setHeaderTitle("¿Cancelar esta respuesta?");
-        dialog.add(new Span("La respuesta de " + orDash(submission.getSubmittedBy())
-                + " quedará cancelada. Es un estado final: no se puede volver atrás."));
+        dialog.setHeaderTitle("Cancel this submission?");
+        dialog.add(new Span("The submission by " + orDash(submission.getSubmittedBy())
+                + " will be canceled. That is final: there is no way back."));
 
-        var confirm = new Button("Cancelar respuesta", click -> {
+        var confirm = new Button("Cancel submission", click -> {
             dialog.close();
             cancel(submission);
         });
         confirm.addThemeVariants(ButtonVariant.LUMO_PRIMARY, ButtonVariant.LUMO_ERROR);
 
-        var dismiss = new Button("Volver", click -> dialog.close());
+        var dismiss = new Button("Back", click -> dialog.close());
         dismiss.addThemeVariants(ButtonVariant.LUMO_TERTIARY);
 
         dialog.getFooter().add(dismiss, confirm);
@@ -190,7 +190,7 @@ class SubmissionDetailView extends VerticalLayout implements BeforeEnterObserver
     private void cancel(FormSubmissionDTO submission) {
         try {
             FormSubmissionDTO canceled = workflowService.cancel(submission.getId());
-            Notifications.success("Respuesta cancelada");
+            Notifications.success("Submission canceled");
             show(canceled);
         } catch (RuntimeException ex) {
             // The workflow refuses transitions it does not allow; what it says is what the user needs.

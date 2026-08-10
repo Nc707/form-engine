@@ -41,7 +41,7 @@ class AnswerFormatterTest {
     void booleansReadAsWords() {
         FieldDefinitionDTO field = of(FieldType.BOOLEAN);
 
-        assertThat(AnswerFormatter.format(field, "true")).isEqualTo("Sí");
+        assertThat(AnswerFormatter.format(field, "true")).isEqualTo("Yes");
         assertThat(AnswerFormatter.format(field, "false")).isEqualTo("No");
     }
 

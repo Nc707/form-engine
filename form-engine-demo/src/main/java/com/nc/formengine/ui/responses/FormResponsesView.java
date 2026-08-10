@@ -28,8 +28,8 @@ import java.util.Map;
  * counting or exporting them together would mean columns that only some rows have.
  */
 @Route("responses/form/:formId?")
-@PageTitle("Respuestas por formulario")
-@Menu(order = 2, icon = "vaadin:clipboard-text", title = "Por formulario")
+@PageTitle("Responses by form")
+@Menu(order = 3, icon = "vaadin:clipboard-text", title = "Responses by form")
 class FormResponsesView extends VerticalLayout implements BeforeEnterObserver {
 
     static final String FORM_ID = "formId";
@@ -56,7 +56,7 @@ class FormResponsesView extends VerticalLayout implements BeforeEnterObserver {
         setPadding(false);
         setSpacing(false);
 
-        formPicker.setPlaceholder("Elegí un formulario");
+        formPicker.setPlaceholder("Pick a form");
         formPicker.setWidth("22em");
         formPicker.setItems(formDefinitionService.findAll());
         formPicker.setItemLabelGenerator(SubmissionBrowser::describe);
@@ -85,13 +85,13 @@ class FormResponsesView extends VerticalLayout implements BeforeEnterObserver {
 
         Long formId = event.getRouteParameters().get(FORM_ID).map(Long::valueOf).orElse(null);
         if (formId == null) {
-            body.add(hint("Elegí un formulario para ver sus respuestas."));
+            body.add(hint("Pick a form to see its submissions."));
             return;
         }
 
         FormDefinitionDTO form = formDefinitionService.findById(formId).orElse(null);
         if (form == null) {
-            body.add(hint("No existe un formulario con id " + formId + "."));
+            body.add(hint("No form exists with id " + formId + "."));
             return;
         }
 

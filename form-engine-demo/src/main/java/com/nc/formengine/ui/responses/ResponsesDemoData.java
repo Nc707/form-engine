@@ -137,7 +137,7 @@ class ResponsesDemoData implements CommandLineRunner {
         return FormDefinitionDTO.builder()
                 .code(CODE)
                 .title("Alta de cliente")
-                .description("Formulario de ejemplo para el visor de respuestas")
+                .description("Sample form for the response viewer")
                 .version(1)
                 .fields(fields)
                 .build();

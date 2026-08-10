@@ -60,9 +60,9 @@ class SubmissionBrowser extends Composite<VerticalLayout> {
     private final FieldDefinitionService fieldDefinitionService;
     private final AnswerResolver answerResolver;
 
-    private final ComboBox<FormDefinitionDTO> formFilter = new ComboBox<>("Formulario");
-    private final ComboBox<SubmissionStatus> statusFilter = new ComboBox<>("Estado");
-    private final TextField authorFilter = new TextField("Autor");
+    private final ComboBox<FormDefinitionDTO> formFilter = new ComboBox<>("Form");
+    private final ComboBox<SubmissionStatus> statusFilter = new ComboBox<>("Status");
+    private final TextField authorFilter = new TextField("Author");
     private final Grid<FormSubmissionDTO> grid = new Grid<>();
     private final Anchor exportLink;
 
@@ -89,7 +89,7 @@ class SubmissionBrowser extends Composite<VerticalLayout> {
                 .collect(Collectors.toMap(FormDefinitionDTO::getId, form -> form,
                         (a, b) -> a, LinkedHashMap::new));
 
-        this.exportLink = new Anchor(csvDownload(), "Exportar CSV");
+        this.exportLink = new Anchor(csvDownload(), "Export CSV");
 
         configureFilters();
         configureGrid();
@@ -109,15 +109,15 @@ class SubmissionBrowser extends Composite<VerticalLayout> {
         formFilter.setItems(formsById.values());
         formFilter.setItemLabelGenerator(SubmissionBrowser::describe);
         formFilter.setClearButtonVisible(true);
-        formFilter.setPlaceholder("Todos");
+        formFilter.setPlaceholder("All");
         formFilter.addValueChangeListener(event -> refresh());
 
         statusFilter.setItems(SubmissionStatus.values());
         statusFilter.setClearButtonVisible(true);
-        statusFilter.setPlaceholder("Todos");
+        statusFilter.setPlaceholder("All");
         statusFilter.addValueChangeListener(event -> refresh());
 
-        authorFilter.setPlaceholder("Buscar por autor");
+        authorFilter.setPlaceholder("Search by author");
         authorFilter.setClearButtonVisible(true);
         authorFilter.setValueChangeMode(ValueChangeMode.LAZY);
         authorFilter.addValueChangeListener(event -> refresh());
@@ -138,21 +138,21 @@ class SubmissionBrowser extends Composite<VerticalLayout> {
         grid.setSizeFull();
 
         grid.addColumn(submission -> describe(formsById.get(submission.getFormDefinitionId())))
-                .setHeader("Formulario")
+                .setHeader("Form")
                 .setAutoWidth(true);
 
         grid.addColumn(FormSubmissionDTO::getSubmittedBy)
-                .setHeader("Autor")
+                .setHeader("Author")
                 .setSortProperty("submittedBy")
                 .setAutoWidth(true);
 
         grid.addColumn(SubmissionBrowser::describeSubmittedAt)
-                .setHeader("Enviada")
+                .setHeader("Submitted")
                 .setSortProperty("submittedAt")
                 .setAutoWidth(true);
 
         grid.addComponentColumn(submission -> statusBadge(submission.getStatus()))
-                .setHeader("Estado")
+                .setHeader("Status")
                 .setSortProperty("status")
                 .setAutoWidth(true);
 
@@ -227,7 +227,7 @@ class SubmissionBrowser extends Composite<VerticalLayout> {
 
             byte[] csv = buildCsv(filter).getBytes(StandardCharsets.UTF_8);
             FormDefinitionDTO form = formsById.get(filter.formDefinitionId());
-            String fileName = "respuestas-%s-v%s.csv".formatted(
+            String fileName = "responses-%s-v%s.csv".formatted(
                     form == null ? filter.formDefinitionId() : form.getCode(),
                     form == null ? "" : form.getVersion());
 
@@ -240,7 +240,7 @@ class SubmissionBrowser extends Composite<VerticalLayout> {
         List<FieldDefinitionDTO> fields =
                 fieldDefinitionService.findByFormDefinitionId(filter.formDefinitionId());
 
-        List<String> header = new ArrayList<>(List.of("Formulario", "Autor", "Enviada", "Estado"));
+        List<String> header = new ArrayList<>(List.of("Form", "Author", "Submitted", "Status"));
         fields.forEach(field -> header.add(
                 field.getLabel() != null ? field.getLabel() : field.getName()));
 
@@ -274,7 +274,7 @@ class SubmissionBrowser extends Composite<VerticalLayout> {
 
     static String describe(FormDefinitionDTO form) {
         if (form == null) {
-            return "(definición eliminada)";
+            return "(definition deleted)";
         }
         return "%s (v%s · %s)".formatted(form.getTitle(), form.getVersion(), form.getStatus());
     }

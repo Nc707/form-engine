@@ -53,7 +53,7 @@ final class AnswerFormatter {
 
     private static String formatBoolean(String value) {
         if ("true".equalsIgnoreCase(value)) {
-            return "Sí";
+            return "Yes";
         }
         if ("false".equalsIgnoreCase(value)) {
             return "No";
