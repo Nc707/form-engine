@@ -43,10 +43,13 @@
             <artifactId>form-engine-submission-dataimpl</artifactId>
         </dependency>
 
-        <!-- Vaadin -->
+        <!-- Vaadin. vaadin-core, not vaadin: the full artifact drags the commercial
+             components (Charts, GridPro, CRUD, Map, Board, Dashboard, Collaboration
+             Engine) onto the classpath under the Vaadin Commercial License. Nothing
+             here uses them, and this project ships under Apache 2.0. -->
         <dependency>
             <groupId>com.vaadin</groupId>
-            <artifactId>vaadin</artifactId>
+            <artifactId>vaadin-core</artifactId>
         </dependency>
         <dependency>
             <groupId>com.vaadin</groupId>
