@@ -198,9 +198,16 @@ The frontend (Vaadin) should:
 1. Detect device type or receive it from user
 2. Call `/resolve-or-default` endpoint with device type
 3. Render form based on returned layout (row, column, colspan, rowspan)
-4. Use `componentType` to determine which component to render
+4. Pick the component from the field's `FieldType`, and treat `componentType` as an override
 5. Apply `customProperties` to components as needed
 6. Respect `visible` flag to hide/show fields
+
+> **`componentType` is optional and often absent.** `LayoutResolutionServiceImpl.createDefaultLayout`
+> builds a layout for a form that has none — one field per full-width row — and never sets it, so a
+> client that keys its rendering off `componentType` alone draws nothing for every generated layout.
+> The field's `FieldType` is what always has a value and is therefore the source of truth;
+> `componentType` only says "render this field differently than its type would suggest".
+> `FieldComponentFactory` in the demo works exactly this way.
 
 ## Benefits
 

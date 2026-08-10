@@ -1,72 +1,68 @@
-# Field Validation using Specification Pattern
+# Field validation, as specifications
 
-Este módulo implementa el patrón Specification para validación de campos de formularios de manera flexible, reusable y desacoplada.
+A form's rules are data, not code. A field carries a list of `FieldRestrictionDTO` rows, and each row
+is turned into a `FieldSpecification` at evaluation time. Adding a rule to a form is therefore an edit
+to the form, not a change to this package.
 
-## 🎯 Conceptos Clave
+## The pieces
 
-### FieldSpecification
-Interface funcional que define el contrato de validación. Permite composición usando operadores lógicos (AND, OR, NOT).
+**`FieldSpecification`** — a functional interface: does this value satisfy this rule? Specifications
+compose with `and`, `or` and `not`.
 
-### FieldContext
-Contexto de validación que proporciona información adicional como:
-- Tipo de campo
-- Nombre del campo
-- Datos del formulario (para validaciones entre campos)
-- Metadata adicional
+**`FieldContext`** — what a rule needs to know beyond the value itself: the field's type and name, the
+rest of the form's answers (for cross-field rules), and any extra metadata.
 
-### SpecificationResult
-Resultado de la validación con:
-- Estado (satisfecho/no satisfecho)
-- Lista de razones de error
+**`SpecificationResult`** — satisfied or not, with the reasons when not.
 
-### FieldRestrictionDTO
-DTO que almacena la configuración de una restricción:
-- Tipo de restricción
-- Parámetros de configuración
-- Mensaje de error personalizado
-- Tipos de campo aplicables
-- Orden de evaluación
+**`FieldRestrictionDTO`** — the persisted form of a rule: its type, its parameters, an optional custom
+message, which field types it applies to, and its evaluation order.
 
-## 📋 Restricciones Disponibles
+**`FieldSpecificationFactory`** — the bridge from stored data to behaviour.
 
-### Restricciones Universales
-- **NOT_NULL**: Valida que el valor no sea nulo
+**`RestrictionTypeRegistry`** — which restriction types make sense for which field types.
 
-### Restricciones para TEXT
-- **NOT_EMPTY**: Valida que el string no esté vacío
-- **MIN_LENGTH**: Valida longitud mínima
-- **MAX_LENGTH**: Valida longitud máxima
-- **PATTERN**: Valida contra expresión regular
-- **EMAIL**: Valida formato de email
+## Available restrictions
 
-### Restricciones para NUMBER
-- **MIN_VALUE**: Valida valor mínimo
-- **MAX_VALUE**: Valida valor máximo
+| Restriction | Applies to | Parameter key |
+|---|---|---|
+| `NOT_NULL` | every type | — |
+| `NOT_EMPTY` | `TEXT` | — |
+| `EMAIL` | `TEXT` | — |
+| `MIN_LENGTH` | `TEXT` | `minLength` |
+| `MAX_LENGTH` | `TEXT` | `maxLength` |
+| `PATTERN` | `TEXT` | `pattern` |
+| `MIN_VALUE` | `NUMBER` | `minValue` |
+| `MAX_VALUE` | `NUMBER` | `maxValue` |
 
-## 💡 Ejemplos de Uso
+**The parameter key matters and is not checked for you.** The factory is permissive by design: an
+unknown restriction type, or a missing or unreadable parameter, yields a specification that accepts
+every value. A rule nobody can satisfy would leave a form unsubmittable with no way for the user to
+resolve it, so failing open is the right trade — but it does mean a misspelled key produces a rule
+that silently never fires rather than an error. `RestrictionParameterSpec` in the demo's builder is
+where the UI keeps these names in one place, and `RestrictionParameterSpecTest` pins the failure mode.
 
-### Crear una restricción simple
+## Using it
+
+Declaring a rule:
 
 ```java
 FieldRestrictionDTO restriction = FieldRestrictionDTO.builder()
     .restrictionType(RestrictionType.MIN_LENGTH)
     .parameters(Map.of("minLength", 5))
-    .errorMessage("El campo debe tener al menos 5 caracteres")
+    .errorMessage("Must be at least 5 characters")
     .build();
 ```
 
-### Crear un campo con restricciones
+A field with several:
 
 ```java
 FieldDefinitionDTO field = FieldDefinitionDTO.builder()
     .name("username")
-    .label("Nombre de Usuario")
+    .label("Username")
     .type(FieldType.TEXT)
     .required(true)
     .restrictions(List.of(
-        FieldRestrictionDTO.builder()
-            .restrictionType(RestrictionType.NOT_EMPTY)
-            .build(),
+        FieldRestrictionDTO.builder().restrictionType(RestrictionType.NOT_EMPTY).build(),
         FieldRestrictionDTO.builder()
             .restrictionType(RestrictionType.MIN_LENGTH)
             .parameters(Map.of("minLength", 3))
@@ -74,164 +70,76 @@ FieldDefinitionDTO field = FieldDefinitionDTO.builder()
         FieldRestrictionDTO.builder()
             .restrictionType(RestrictionType.MAX_LENGTH)
             .parameters(Map.of("maxLength", 20))
-            .build()
-    ))
+            .build()))
     .build();
 ```
 
-### Validar un valor programáticamente
+Building specifications from what was stored:
 
 ```java
-// Crear la specification
-MinLengthSpecification spec = new MinLengthSpecification(5);
+// One restriction
+FieldSpecification spec = FieldSpecificationFactory.from(restriction);
 
-// Crear el contexto
+// All of a field's, combined with AND in orderIndex order
+FieldSpecification all = FieldSpecificationFactory.composite(field.getRestrictions());
+```
+
+Because `and` short-circuits on the first failure, `composite` answers whether a value is acceptable,
+not everything that is wrong with it. To report one error per broken rule — which is what
+`FormValidationService` does — evaluate each restriction separately with `from`.
+
+Evaluating by hand:
+
+```java
+FieldSpecification spec = new MinLengthSpecification(5);
 FieldContext context = FieldContext.builder()
     .fieldType(FieldType.TEXT)
     .fieldName("username")
     .build();
 
-// Validar
 SpecificationResult result = spec.isSatisfiedBy("abc", context);
 if (!result.isSatisfied()) {
-    System.out.println("Errores: " + result.getReasons());
+    System.out.println(result.getReasons());
 }
 ```
 
-### Combinar specifications con operadores lógicos
+Asking what applies to a field type:
 
 ```java
-FieldSpecification combined = new MinLengthSpecification(5)
-    .and(new MaxLengthSpecification(20))
-    .and(new PatternSpecification("^[a-zA-Z0-9_]+$"));
-
-SpecificationResult result = combined.isSatisfiedBy("user123", context);
+Set<RestrictionType> forText = RestrictionTypeRegistry.getApplicableRestrictionTypes(FieldType.TEXT);
+boolean applicable = RestrictionTypeRegistry.isApplicable(RestrictionType.MIN_LENGTH, FieldType.TEXT);
 ```
 
-### Construir specifications desde restricciones persistidas
+## Adding a restriction
 
-`FieldSpecificationFactory` es el puente entre los datos y el comportamiento: toma los
-`FieldRestrictionDTO` guardados con el campo y devuelve la specification que los hace cumplir.
+1. Write a class implementing `FieldSpecification`.
+2. Declare the field types it applies to as a constant.
+3. Implement `isSatisfiedBy`, returning satisfied when the field type does not apply.
+4. Add the constant to `RestrictionType`.
+5. Register its applicability in `RestrictionTypeRegistry`.
+6. **Add the case to the `switch` in `FieldSpecificationFactory.from`.** Without this the restriction
+   is stored but never enforced. The `switch` has no `default` branch on purpose, so adding the enum
+   constant makes the compiler point at this step.
 
-```java
-// Una sola restricción
-FieldSpecification spec = FieldSpecificationFactory.from(restriction);
-
-// Todas las de un campo, combinadas con AND en orden de orderIndex
-FieldSpecification all = FieldSpecificationFactory.composite(field.getRestrictions());
-```
-
-La factory es permisiva ante restricciones mal formadas: un tipo desconocido, o un parámetro faltante
-o ilegible, produce una specification que acepta todo. Una regla imposible de cumplir dejaría el
-formulario sin poder enviarse y sin forma de que el usuario lo resuelva.
-
-Como `and` corta en la primera falla, `composite` responde si el valor es aceptable, no todo lo que
-está mal. Para un error por regla rota —lo que hace `FormValidationService`— se evalúa cada
-restricción por separado con `from`.
-
-### Filtrar restricciones por tipo de campo
-
-```java
-// Obtener todas las restricciones aplicables a TEXT
-Set<RestrictionType> textRestrictions = 
-    RestrictionTypeRegistry.getApplicableRestrictionTypes(FieldType.TEXT);
-
-// Verificar si una restricción es aplicable
-boolean applicable = RestrictionTypeRegistry.isApplicable(
-    RestrictionType.MIN_LENGTH, 
-    FieldType.TEXT
-); // true
-```
-
-## 🔧 Extensibilidad
-
-Para crear una nueva restriction:
-
-1. Crear una clase que implemente `FieldSpecification`
-2. Definir los tipos de campo aplicables como constante
-3. Implementar el método `isSatisfiedBy`
-4. Agregar el tipo al enum `RestrictionType`
-5. Registrar en `RestrictionTypeRegistry`
-6. Agregar el caso al `switch` de `FieldSpecificationFactory.from`, que es donde el tipo persistido
-   se convierte en la specification. Sin este paso la restricción se guarda pero nunca se aplica; el
-   `switch` no tiene rama `default`, así que el compilador avisa al agregar el valor al enum.
-
-Ejemplo:
-
-```java
-@Data
-@NoArgsConstructor
-@AllArgsConstructor
-public class CustomSpecification implements FieldSpecification {
-    
-    private String customParam;
-    private String errorMessage;
-    
-    private static final Set<FieldType> APPLICABLE_TYPES = Set.of(FieldType.TEXT);
-    
-    @Override
-    public SpecificationResult isSatisfiedBy(Object value, FieldContext context) {
-        // Check applicability
-        if (context.getFieldType() != null && !APPLICABLE_TYPES.contains(context.getFieldType())) {
-            return SpecificationResult.satisfied();
-        }
-        
-        // Your validation logic here
-        boolean valid = /* your logic */;
-        
-        return valid 
-            ? SpecificationResult.satisfied()
-            : SpecificationResult.notSatisfied(errorMessage);
-    }
-    
-    public static Set<FieldType> getApplicableTypes() {
-        return APPLICABLE_TYPES;
-    }
-}
-```
-
-## 🏗️ Arquitectura
+## Where it lives
 
 ```
 form-engine-definition-model/
 ├── specification/
-│   ├── FieldSpecification.java      (Interface principal)
-│   ├── FieldContext.java            (Contexto de validación)
-│   ├── SpecificationResult.java     (Resultado)
-│   ├── RestrictionTypeRegistry.java (Registro de aplicabilidad)
-│   ├── FieldSpecificationFactory.java (DTO persistido -> specification)
-│   └── impl/
-│       ├── NotNullSpecification.java
-│       ├── NotEmptySpecification.java
-│       ├── MinLengthSpecification.java
-│       ├── MaxLengthSpecification.java
-│       ├── MinValueSpecification.java
-│       ├── MaxValueSpecification.java
-│       ├── PatternSpecification.java
-│       └── EmailSpecification.java
-├── dto/
-│   ├── FieldDefinitionDTO.java      (Usa List<FieldRestrictionDTO>)
-│   └── FieldRestrictionDTO.java     (Configuración de restricción)
+│   ├── FieldSpecification.java        the interface
+│   ├── FieldContext.java              what a rule may read
+│   ├── SpecificationResult.java       satisfied, plus reasons
+│   ├── RestrictionTypeRegistry.java   applicability
+│   ├── FieldSpecificationFactory.java stored restriction -> specification
+│   └── impl/                          one class per RestrictionType
 ├── validation/
-│   ├── ValidationMode.java          (DRAFT / SUBMIT)
-│   ├── ValidationReport.java        (Resultado de validar un formulario)
-│   └── FieldValidationError.java    (Una regla rota de un campo)
-└── enums/
-    ├── FieldType.java
-    └── RestrictionType.java
+│   ├── ValidationMode.java            DRAFT tolerates gaps, SUBMIT does not
+│   ├── ValidationReport.java          the outcome of validating a form
+│   └── FieldValidationError.java      one broken rule on one field
+└── dto/
+    ├── FieldDefinitionDTO.java
+    └── FieldRestrictionDTO.java
 ```
 
-Las restricciones se persisten en la entidad `FieldRestriction`
-(`form-engine-definition-dataimpl`), y `FormValidationService`
-(`form-engine-definition-business`) es quien las aplica a las respuestas de un formulario.
-
-## ✅ Ventajas de este Diseño
-
-1. **Desacoplamiento**: Las restricciones están separadas de FieldDefinitionDTO
-2. **Reusabilidad**: Las specifications se pueden reutilizar en diferentes contextos
-3. **Composición**: Se pueden combinar restrictions con AND/OR/NOT
-4. **Type-Safety**: Cada specification sabe a qué tipos de campo aplica
-5. **Extensibilidad**: Fácil agregar nuevas restrictions sin modificar código existente
-6. **Testabilidad**: Cada specification es independiente y fácil de testear
-7. **Validación centralizada**: Toda la lógica de validación en un solo lugar
-8. **Metadata-driven**: Las restrictions se configuran via DTOs, no código
+Restrictions are persisted as the `FieldRestriction` entity in `form-engine-definition-dataimpl`, and
+`FormValidationService` in `form-engine-definition-business` is what applies them to a form's answers.
