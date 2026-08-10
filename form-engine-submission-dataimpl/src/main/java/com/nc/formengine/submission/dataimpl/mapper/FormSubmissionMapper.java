@@ -2,20 +2,31 @@ package com.nc.formengine.submission.dataimpl.mapper;
 
 import com.nc.formengine.submission.dataimpl.entity.FieldSubmission;
 import com.nc.formengine.submission.dataimpl.entity.FormSubmission;
+import com.nc.formengine.submission.model.dto.FieldSubmissionDTO;
 import com.nc.formengine.submission.model.dto.FormSubmissionDTO;
 
 import org.springframework.stereotype.Component;
 
+import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
 import java.util.stream.Collectors;
 
 /**
  * Maps {@link FormSubmission} to its DTO, together with the answers it owns.
  *
- * <p><b>Absent is not empty.</b> A null {@code fieldSubmissions} on an incoming DTO means "this
- * request says nothing about the answers", so what is stored is kept; an empty list means "there are
- * none", so what is stored is deleted.
+ * <p><b>Saying nothing changes nothing.</b> An incoming DTO whose {@code fieldSubmissions} is null
+ * or empty is read as "this request is not about the answers", and the stored ones are kept. Only a
+ * non-empty list is authoritative: then it is the whole truth, and an answer missing from it is
+ * deleted.
+ *
+ * <p>Empty has to mean silence rather than "delete them all", because
+ * {@link FormSubmissionDTO#getFieldSubmissions()} is a {@code @Builder.Default} empty list — a
+ * caller who never mentions answers is indistinguishable from one asking for all of them to go. The
+ * representation cannot tell the two apart, so the destructive reading would be a guess, and the
+ * cost of guessing wrong is somebody's filled-in form. Clearing every answer is therefore not
+ * something {@code save} can express; it would need a call that says so.
  */
 @Component
 public class FormSubmissionMapper {
@@ -90,6 +101,51 @@ public class FormSubmissionMapper {
         }
         if (dto.getSubmittedAt() != null) {
             entity.setSubmittedAt(dto.getSubmittedAt());
+        }
+        if (dto.getFieldSubmissions() != null && !dto.getFieldSubmissions().isEmpty()) {
+            applyAnswers(dto.getFieldSubmissions(), entity);
+        }
+    }
+
+    /**
+     * Brings the stored answers in line with the ones the DTO carries.
+     *
+     * <p>The answers a request already knows are updated where they stand rather than deleted and
+     * rewritten, so a second "save draft" edits the rows it created instead of churning through new
+     * ids. Answers the DTO no longer mentions are dropped from the collection, which
+     * {@code orphanRemoval} turns into deletes.
+     *
+     * <p>The collection is edited in place. Assigning a new list would leave Hibernate holding a
+     * collection it no longer owns, which it refuses outright.
+     */
+    private void applyAnswers(List<FieldSubmissionDTO> answers, FormSubmission entity) {
+        Map<Long, FieldSubmission> storedById = entity.getFieldSubmissions().stream()
+                .filter(stored -> stored.getId() != null)
+                .collect(Collectors.toMap(FieldSubmission::getId, stored -> stored, (first, second) -> first));
+
+        List<FieldSubmission> wanted = new ArrayList<>();
+        for (FieldSubmissionDTO answer : answers) {
+            if (answer == null) {
+                continue;
+            }
+            FieldSubmission stored = answer.getId() == null ? null : storedById.get(answer.getId());
+            if (stored != null) {
+                fieldSubmissionMapper.updateEntity(answer, stored);
+                wanted.add(stored);
+            } else {
+                FieldSubmission created = fieldSubmissionMapper.toEntity(answer);
+                fieldSubmissionMapper.setFormSubmission(created, entity);
+                wanted.add(created);
+            }
+        }
+
+        // Identity, not equals: a not-yet-persisted answer has a null id, and the id-based equals
+        // every entity here uses reports those as unequal to everything, itself included.
+        entity.getFieldSubmissions().removeIf(stored -> wanted.stream().noneMatch(kept -> kept == stored));
+        for (FieldSubmission answer : wanted) {
+            if (entity.getFieldSubmissions().stream().noneMatch(present -> present == answer)) {
+                entity.getFieldSubmissions().add(answer);
+            }
         }
     }
 }

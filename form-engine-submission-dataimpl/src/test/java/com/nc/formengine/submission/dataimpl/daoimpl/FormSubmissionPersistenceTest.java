@@ -109,6 +109,47 @@ class FormSubmissionPersistenceTest {
         assertThat(dao.findById(submissionId).orElseThrow().getFieldSubmissions()).hasSize(3);
     }
 
+    /**
+     * The other half of the same rule, and the one that is easy to lose: a non-empty list <em>is</em>
+     * authoritative, so an answer left out of it goes. Without this, "saying nothing changes nothing"
+     * could be implemented as "never delete anything", and editing a draft would only ever add.
+     */
+    @Test
+    void anAnswerLeftOutOfANonEmptySaveIsDeleted() {
+        FormSubmissionDTO stored = dao.findById(submissionId).orElseThrow();
+        stored.getFieldSubmissions().removeIf(answer -> "edad".equals(answer.getFieldName()));
+
+        dao.save(stored);
+        flushAndClear();
+
+        assertThat(dao.findById(submissionId).orElseThrow().getFieldSubmissions())
+                .extracting(answer -> answer.getFieldName() + "=" + answer.getValue())
+                .containsExactlyInAnyOrder("nombre=Ana", "acepta=true");
+    }
+
+    /** Editing an answer must edit its row, not delete it and write a new one. */
+    @Test
+    void editingAnAnswerKeepsItsRow() {
+        FormSubmissionDTO stored = dao.findById(submissionId).orElseThrow();
+        Long ageAnswerId = stored.getFieldSubmissions().stream()
+                .filter(answer -> "edad".equals(answer.getFieldName()))
+                .findFirst().orElseThrow().getId();
+        stored.getFieldSubmissions().stream()
+                .filter(answer -> "edad".equals(answer.getFieldName()))
+                .forEach(answer -> answer.setValue("35"));
+
+        dao.save(stored);
+        flushAndClear();
+
+        assertThat(dao.findById(submissionId).orElseThrow().getFieldSubmissions())
+                .filteredOn(answer -> "edad".equals(answer.getFieldName()))
+                .singleElement()
+                .satisfies(answer -> {
+                    assertThat(answer.getValue()).isEqualTo("35");
+                    assertThat(answer.getId()).isEqualTo(ageAnswerId);
+                });
+    }
+
     @Test
     void aSubmissionWithoutAnIdIsStillCreated() {
         FormSubmissionDTO fresh = FormSubmissionDTO.builder()

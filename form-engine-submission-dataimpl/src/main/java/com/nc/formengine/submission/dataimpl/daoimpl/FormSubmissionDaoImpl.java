@@ -32,9 +32,9 @@ public class FormSubmissionDaoImpl implements FormSubmissionDao {
      *
      * <p>An update reads the stored entity and applies the DTO onto it rather than merging a
      * detached one built from scratch, for the same reason {@code FormDaoImpl} does: a submission
-     * owns its answers with {@code orphanRemoval}, and {@link FormSubmissionMapper#toEntity} does
-     * not carry them, so merging would delete every answer the submission has. That path is not
-     * hypothetical — {@code cancel} is exactly a status change on a submission full of answers.
+     * owns its answers with {@code orphanRemoval}, so merging an entity whose answers the request
+     * said nothing about would delete every one of them. That path is not hypothetical —
+     * {@code cancel} is exactly a status change on a submission full of answers.
      */
     @Override
     public FormSubmissionDTO save(FormSubmissionDTO formSubmissionDTO) {
