@@ -2,39 +2,99 @@
 
 [![CI](https://github.com/Nc707/form-engine/actions/workflows/ci.yml/badge.svg)](https://github.com/Nc707/form-engine/actions/workflows/ci.yml)
 
-A form engine whose structure is defined at **runtime**, not at compile time. A form definition owns
-its fields, their options and dependencies, and a set of per-device layouts; submissions are stored
-against those definitions. Java 21, Spring Boot 4.0.2, Maven multi-module, H2 in-memory.
+A form engine whose forms are **defined at runtime, not at compile time**. A form definition owns its
+fields, their options, their validation rules and the conditional dependencies between them; people
+fill those forms in and their answers are stored against the exact version of the definition they saw.
 
-## Modules
+Adding a rule to a form is an edit to data. No deployment, no code.
 
-The project is sliced by domain (`definition` | `submission`) and then by layer.
+Java 21, Spring Boot 4.0.2, Vaadin 25, Maven multi-module, H2 in-memory.
+
+## What it does
+
+**Validation is data.** A field carries a list of restrictions — `MIN_LENGTH`, `PATTERN`, `EMAIL` and
+so on — which are turned into composable `FieldSpecification` objects at evaluation time. See
+[the specification guide](form-engine-definition-model/src/main/java/com/nc/formengine/model/specification/README.md).
+
+**Fields react to each other.** A dependency says "while field A `EQUALS` *x*, `SHOW` / `REQUIRE`
+field B". The evaluator resolves the whole graph, detects cycles, and where two satisfied rules
+disagree the more restrictive one wins — so the outcome never depends on load order and a
+misconfigured form fails closed.
+
+**Definitions have a lifecycle.** A `DRAFT` is editable. Publishing freezes it and archives whichever
+version was live before, so exactly one version per code accepts submissions at a time. Changing a
+published form means creating a new version, which deep-copies everything and repoints the references
+onto the copies. Old submissions stay readable against the definition they were actually filled under.
+
+**Submissions have a state machine.** `DRAFT → SUBMITTED`, either → `CANCELED`, nothing else.
+Submitting validates strictly inside the transaction that writes, so a stored `SUBMITTED` row is
+always one its own definition would accept. An invalid submit is not an exception — being told which
+fields to fix is the normal outcome — so it comes back as a result carrying the errors, with nothing
+written.
+
+## Architecture
+
+The project is sliced by domain, then by layer. The REST API and the Vaadin UI are two consumers of
+the same business core; neither owns engine logic.
+
+```mermaid
+graph TD
+    REST["form-engine-rest<br/>7 controllers, RFC 7807, OpenAPI"]
+    UI["form-engine-demo<br/>Vaadin 25: builder, renderer, responses"]
+    DB[("H2<br/>in-memory")]
+
+    subgraph core [" "]
+        direction TB
+        BIZ["*-business<br/>service interfaces"]
+        IMPL["*-businessimpl<br/>validation · dependencies · lifecycle"]
+        DATA["*-data / *-dataimpl<br/>DAOs, JPA entities, mappers"]
+        MODEL["*-model<br/>DTOs, enums, specifications"]
+        BIZ --> IMPL --> DATA --> MODEL
+    end
+
+    REST --> BIZ
+    UI --> BIZ
+    DATA --> DB
+```
+
+Each of `definition` and `submission` has its own `model / data / dataimpl / business / businessimpl`
+column. The submission slice reaches into the definition slice in exactly one place — the submission
+workflow needs to validate against a definition — and only at the business layer, one way. The
+entities on both sides stay decoupled: a submission stores a plain `formDefinitionId` with no foreign
+key.
 
 | Module | What lives there |
 |---|---|
-| `form-engine-definition-model` / `form-engine-submission-model` | DTOs, enums, domain exceptions, the specification framework |
-| `form-engine-definition-data` / `form-engine-submission-data` | DAO interfaces |
-| `form-engine-definition-dataimpl` / `form-engine-submission-dataimpl` | JPA entities, repositories, mappers, DAO implementations |
-| `form-engine-definition-business` / `form-engine-submission-business` | Service interfaces |
-| `form-engine-definition-businessimpl` / `form-engine-submission-businessimpl` | Service implementations |
-| `form-engine-rest` | 7 REST controllers, the error handler, OpenAPI config — port 8080, context path `/form-engine` |
-| `form-engine-demo` | Vaadin 25 UI — port 8081, injects the services directly (no HTTP) |
+| `*-model` | DTOs, enums, domain exceptions, the specification framework |
+| `*-data` | DAO interfaces |
+| `*-dataimpl` | JPA entities, repositories, mappers, DAO implementations |
+| `*-business` | Service interfaces |
+| `*-businessimpl` | Service implementations |
+| `form-engine-rest` | REST API — port 8080, context path `/form-engine` |
+| `form-engine-demo` | Vaadin UI — port 8081, injects the services directly (no HTTP) |
 
-The REST module and the Vaadin demo are two consumers of the same business core.
-
-## Building and running
+## Running it
 
 ```bash
-mvn clean install                          # full build, runs the integration tests
-mvn spring-boot:run -pl form-engine-rest   # REST API on http://localhost:8080/form-engine
-mvn spring-boot:run -pl form-engine-demo   # Vaadin UI on http://localhost:8081
+mvn clean install                          # full build with every test
+mvn spring-boot:run -pl form-engine-demo   # Vaadin UI  → http://localhost:8081
+mvn spring-boot:run -pl form-engine-rest   # REST API   → http://localhost:8080/form-engine
 ```
+
+The UI seeds two demo forms on startup, so there is something to look at immediately:
+
+| View | What it is |
+|---|---|
+| **Form builder** | Design a form: fields, restrictions, options, conditional dependencies, live preview, publish, version |
+| **Fill a form** | Render a published form on its layout grid, react to dependencies as you type, save a draft, submit |
+| **Responses** | Browse and filter submissions, read one in full, export CSV, cancel |
+| **Responses by form** | One form's submissions, with a per-status summary |
 
 Two notes on partial builds:
 
-- Always pass `-am` when building a single module (`mvn verify -pl form-engine-rest -am`). Without
-  it Maven resolves the sibling modules from `~/.m2` instead of the reactor, and a stale or
-  foreign `0.0.1-SNAPSHOT` installed there will be used instead of your working tree.
+- Always pass `-am` when building a single module (`mvn verify -pl form-engine-rest -am`). Without it
+  Maven resolves the siblings from `~/.m2` instead of the reactor, and a stale `0.0.1-SNAPSHOT`
+  installed there gets used instead of your working tree.
 - `mvn -Pproduction ...` compiles the Vaadin frontend bundle. It is a separate profile on purpose:
   the default build must not need a Node toolchain.
 
@@ -49,13 +109,16 @@ Endpoints are grouped under seven tags, all below `/api/v1`:
 
 | Base path | Resource |
 |---|---|
-| `/api/v1/form-definitions` | Forms: code, title, version |
+| `/api/v1/form-definitions` | Forms: code, title, version, status |
 | `/api/v1/field-definitions` | The fields of a form |
 | `/api/v1/field-options` | Options of `SELECT` / `MULTI_SELECT` fields |
 | `/api/v1/field-dependencies` | Show/hide/require rules between fields |
 | `/api/v1/form-layouts` | Per-device grid layouts, with fallback resolution |
 | `/api/v1/form-submissions` | Filled-in instances of a form |
 | `/api/v1/field-submissions` | The individual answers inside a submission |
+
+The lifecycle and validation operations are deliberately **not** exposed over REST — they are driven
+through the Vaadin UI against the same service interfaces.
 
 ## Error model
 
@@ -64,10 +127,10 @@ Errors are RFC 7807 problem details, served as `application/problem+json` by a s
 
 | Status | When |
 |---|---|
-| `400` | Bean Validation failed, a path variable had the wrong type, the body was unreadable, or a domain argument was invalid (an unknown submission status, an id on a create body) |
-| `404` | The addressed resource, or a resource it references, does not exist |
-| `409` | The form code is already taken |
-| `422` | The request is well formed but breaks a domain rule — e.g. a layout referencing fields of another form |
+| `400` | Bean Validation failed, a path variable had the wrong type, the body was unreadable, or a domain argument was invalid |
+| `404` | The addressed resource, or one it references, does not exist |
+| `409` | A code is already taken, or the request is against the state: editing a published form, publishing twice, submitting to a form that is not live, cancelling a canceled submission |
+| `422` | Well formed but breaks a domain rule — e.g. a layout referencing fields of another form |
 | `500` | Anything unexpected. The detail is generic; the stacktrace goes to the log, never to the client |
 
 ```json
@@ -81,12 +144,25 @@ Errors are RFC 7807 problem details, served as `application/problem+json` by a s
 }
 ```
 
-`400` validation failures and `422` domain failures add an `errors` array — one entry per violated
-constraint (`{field, message, rejectedValue}`) or per broken rule (a string).
+`400` and `422` add an `errors` array — one entry per violated constraint
+(`{field, message, rejectedValue}`) or per broken rule.
 
 ## Tests
 
-Integration tests live in `form-engine-rest/src/test`, drive the API through `MockMvc` and set up
-their data through the API itself. `ErrorHandlingIntegrationTest` and `ValidationIntegrationTest`
-pin the status codes and problem bodies; `OpenApiIntegrationTest` guards the springdoc integration,
-which is worth having because springdoc is not managed by the Spring Boot BOM.
+393 tests, all run by `mvn install` and by CI.
+
+| Where | What it covers |
+|---|---|
+| `form-engine-definition-model` | Every specification on its own, the factory, the registry |
+| `form-engine-definition-dataimpl` | What survives the database: restrictions, options, and that a new version shares no row with the one it was copied from |
+| `form-engine-definition-businessimpl` | The dependency graph and its cycles, validation decisions, the definition lifecycle |
+| `form-engine-submission-*` | The submission state machine, and that writing a submission back does not delete the answers the request said nothing about |
+| `form-engine-rest` | The API through `MockMvc`, status codes, problem bodies, the springdoc integration |
+| `form-engine-demo` | The builder's policy and parameter names, the layout grid, answer resolution against archived versions, the renderer's save/submit workflow |
+
+## Scope
+
+Deliberately out: authentication, multi-tenancy, file uploads, i18n, an external database,
+collaborative editing, form templates, e-mail, PDF export, webhooks. The point of the project is the
+engine — runtime-defined structure, data-driven validation, conditional logic and versioning — not
+the surface area around it.
