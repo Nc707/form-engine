@@ -15,6 +15,7 @@ import com.vaadin.flow.component.button.ButtonVariant;
 import com.vaadin.flow.component.dialog.Dialog;
 import com.vaadin.flow.component.formlayout.FormLayout;
 import com.vaadin.flow.component.html.Span;
+import com.vaadin.flow.component.orderedlayout.FlexComponent;
 import com.vaadin.flow.component.orderedlayout.HorizontalLayout;
 import com.vaadin.flow.component.orderedlayout.VerticalLayout;
 import com.vaadin.flow.router.BeforeEnterEvent;
@@ -132,33 +133,38 @@ class SubmissionDetailView extends VerticalLayout implements BeforeEnterObserver
         var answers = new FormLayout();
         answers.setWidthFull();
         for (ResolvedAnswer answer : resolved) {
-            answers.addFormItem(value(answer), label(answer));
+            answers.addFormItem(value(answer), answer.label());
         }
         layout.add(answers);
         return layout;
     }
 
-    private com.vaadin.flow.component.Component label(ResolvedAnswer answer) {
+    /**
+     * The "retired" mark rides with the value, not the label: the label column of a
+     * {@link FormLayout} is narrow, and a badge next to the text there squeezes it until it wraps
+     * one character per line.
+     */
+    private com.vaadin.flow.component.Component value(ResolvedAnswer answer) {
+        Span text;
+        if (!answer.answered()) {
+            text = new Span("(sin respuesta)");
+            text.addClassNames(LumoUtility.TextColor.SECONDARY);
+        } else {
+            text = new Span(answer.displayValue());
+        }
+
         if (!answer.retired()) {
-            return new Span(answer.label());
+            return text;
         }
 
         var retired = new Span("campo retirado");
         retired.getElement().setAttribute("theme", "badge contrast small");
 
-        var label = new HorizontalLayout(new Span(answer.label()), retired);
-        label.setSpacing(true);
-        label.setPadding(false);
-        return label;
-    }
-
-    private Span value(ResolvedAnswer answer) {
-        if (!answer.answered()) {
-            var blank = new Span("(sin respuesta)");
-            blank.addClassNames(LumoUtility.TextColor.SECONDARY);
-            return blank;
-        }
-        return new Span(answer.displayValue());
+        var withMark = new HorizontalLayout(text, retired);
+        withMark.setSpacing(true);
+        withMark.setPadding(false);
+        withMark.setDefaultVerticalComponentAlignment(FlexComponent.Alignment.CENTER);
+        return withMark;
     }
 
     /** Asks before doing it, in a dialog the application owns rather than a browser prompt. */
