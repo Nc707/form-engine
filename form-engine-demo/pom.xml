@@ -44,9 +44,9 @@
         </dependency>
 
         <!-- Vaadin. vaadin-core, not vaadin: the full artifact drags the commercial
-             components (Charts, GridPro, CRUD, Map, Board, Dashboard, Collaboration
-             Engine) onto the classpath under the Vaadin Commercial License. Nothing
-             here uses them, and this project ships under Apache 2.0. -->
+             components (Charts, GridPro, CRUD, Map, Board, Dashboard) onto the
+             classpath under the Vaadin Commercial License. Nothing here uses them,
+             and their terms do not sit with the AGPL this project ships under. -->
         <dependency>
             <groupId>com.vaadin</groupId>
             <artifactId>vaadin-core</artifactId>

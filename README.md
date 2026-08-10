@@ -166,3 +166,20 @@ Deliberately out: authentication, multi-tenancy, file uploads, i18n, an external
 collaborative editing, form templates, e-mail, PDF export, webhooks. The point of the project is the
 engine — runtime-defined structure, data-driven validation, conditional logic and versioning — not
 the surface area around it.
+
+## License
+
+Copyright © 2026 Nicolás Courtalón.
+
+This program is free software: you can redistribute it and modify it under the terms of the **GNU
+Affero General Public License**, either version 3 of the licence or, at your option, any later
+version. The full text is in [LICENSE](LICENSE). It is distributed in the hope that it will be
+useful, but WITHOUT ANY WARRANTY — without even the implied warranty of MERCHANTABILITY or FITNESS
+FOR A PARTICULAR PURPOSE.
+
+What the AGPL adds over the GPL is section 13: run a modified version and let people use it over a
+network, and those users are entitled to its source. Deploying it is a form of distribution here.
+
+One dependency note: Vaadin is pulled in as `vaadin-core`, not `vaadin`. The full artifact would put
+commercially licensed components (Charts, GridPro, CRUD, Map, Board, Dashboard) on the classpath;
+nothing here uses them.
