@@ -90,7 +90,7 @@ class FormDefinitionVersionCopier {
         for (FieldRestriction sourceRestriction : source.getRestrictions()) {
             FieldRestriction restrictionCopy = new FieldRestriction();
             restrictionCopy.setFieldDefinition(copy);
-            restrictionCopy.setType(sourceRestriction.getType());
+            restrictionCopy.setRestrictionType(sourceRestriction.getRestrictionType());
             restrictionCopy.setErrorMessage(sourceRestriction.getErrorMessage());
             restrictionCopy.setOrderIndex(sourceRestriction.getOrderIndex());
             // A fresh map: sharing it would make the two versions' parameters the same object.

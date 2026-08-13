@@ -26,7 +26,7 @@ public class MinValueSpecification implements FieldSpecification {
     
     public MinValueSpecification(Double minValue) {
         this.minValue = minValue;
-        this.errorMessage = "El valor debe ser al menos " + minValue;
+        this.errorMessage = "This answer cannot be less than " + minValue;
     }
     
     @Override
@@ -47,10 +47,10 @@ public class MinValueSpecification implements FieldSpecification {
             } else if (value instanceof String str) {
                 numValue = Double.parseDouble(str);
             } else {
-                return SpecificationResult.notSatisfied("El valor no es un número válido");
+                return SpecificationResult.notSatisfied("This answer is not a number");
             }
         } catch (NumberFormatException e) {
-            return SpecificationResult.notSatisfied("El valor no es un número válido");
+            return SpecificationResult.notSatisfied("This answer is not a number");
         }
         
         if (numValue < minValue) {

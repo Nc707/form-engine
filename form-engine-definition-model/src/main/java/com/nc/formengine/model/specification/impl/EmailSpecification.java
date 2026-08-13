@@ -20,7 +20,7 @@ import java.util.regex.Pattern;
 @AllArgsConstructor
 public class EmailSpecification implements FieldSpecification {
     
-    private String errorMessage = "El formato del email es inválido";
+    private String errorMessage = "This is not a valid email address";
     
     private static final String EMAIL_PATTERN = "^[A-Za-z0-9+_.-]+@[A-Za-z0-9.-]+\\.[A-Za-z]{2,}$";
     private static final Pattern PATTERN = Pattern.compile(EMAIL_PATTERN);
@@ -39,7 +39,7 @@ public class EmailSpecification implements FieldSpecification {
         }
         
         if (!(value instanceof String str)) {
-            return SpecificationResult.notSatisfied("El valor no es una cadena de texto");
+            return SpecificationResult.notSatisfied("This answer is not text");
         }
         
         if (!PATTERN.matcher(str).matches()) {

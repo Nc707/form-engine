@@ -62,8 +62,8 @@ class FieldDefinitionPersistenceTest {
     @Test
     void keepsEverythingARestrictionCarries() {
         FieldDefinitionDTO saved = dao.save(field(List.of(
-            restriction(RestrictionType.MIN_LENGTH, Map.of("minLength", 3), "Muy corto", 0),
-            restriction(RestrictionType.EMAIL, Map.of(), "Escribí algo", 1)), null));
+            restriction(RestrictionType.MIN_LENGTH, Map.of("minLength", 3), "Too short", 0),
+            restriction(RestrictionType.EMAIL, Map.of(), "Write something", 1)), null));
 
         FieldDefinitionDTO reloaded = reload(saved.getId());
 
@@ -71,7 +71,7 @@ class FieldDefinitionPersistenceTest {
         FieldRestrictionDTO minLength = reloaded.getRestrictions().get(0);
         assertThat(minLength.getId()).isNotNull();
         assertThat(minLength.getRestrictionType()).isEqualTo(RestrictionType.MIN_LENGTH);
-        assertThat(minLength.getErrorMessage()).isEqualTo("Muy corto");
+        assertThat(minLength.getErrorMessage()).isEqualTo("Too short");
         assertThat(minLength.getOrderIndex()).isZero();
         assertThat(minLength.getFieldDefinitionId()).isEqualTo(saved.getId());
     }
@@ -120,12 +120,12 @@ class FieldDefinitionPersistenceTest {
     @Test
     void readsTheOptionsOfAFieldWithTheFieldItself() {
         FieldDefinitionDTO saved = dao.save(field(null, List.of(
-            option("Uno", "1", 0), option("Dos", "2", 1))));
+            option("One", "1", 0), option("Two", "2", 1))));
 
         assertThat(reload(saved.getId()).getOptions())
             .extracting(FieldOptionDTO::getLabel, FieldOptionDTO::getValue)
-            .containsExactly(org.assertj.core.groups.Tuple.tuple("Uno", "1"),
-                org.assertj.core.groups.Tuple.tuple("Dos", "2"));
+            .containsExactly(org.assertj.core.groups.Tuple.tuple("One", "1"),
+                org.assertj.core.groups.Tuple.tuple("Two", "2"));
     }
 
     @Test
@@ -133,7 +133,7 @@ class FieldDefinitionPersistenceTest {
         FieldDefinitionDTO saved = dao.save(field(
             List.of(restriction(RestrictionType.EMAIL, Map.of(), null, 5),
                 restriction(RestrictionType.MIN_LENGTH, Map.of("minLength", 3), null, 1)),
-            List.of(option("Segunda", "b", 9), option("Primera", "a", 2))));
+            List.of(option("Second", "b", 9), option("First", "a", 2))));
 
         FieldDefinitionDTO reloaded = reload(saved.getId());
 
@@ -142,14 +142,14 @@ class FieldDefinitionPersistenceTest {
             .containsExactly(RestrictionType.MIN_LENGTH, RestrictionType.EMAIL);
         assertThat(reloaded.getOptions())
             .extracting(FieldOptionDTO::getLabel)
-            .containsExactly("Primera", "Segunda");
+            .containsExactly("First", "Second");
     }
 
     @Test
     void anUpdateThatSaysNothingAboutThemKeepsTheRestrictionsAndOptions() {
         FieldDefinitionDTO saved = dao.save(field(
-            List.of(restriction(RestrictionType.MIN_LENGTH, Map.of("minLength", 3), "Muy corto", 0)),
-            List.of(option("Uno", "1", 0))));
+            List.of(restriction(RestrictionType.MIN_LENGTH, Map.of("minLength", 3), "Too short", 0)),
+            List.of(option("One", "1", 0))));
 
         FieldDefinitionDTO update = new FieldDefinitionDTO();
         update.setId(saved.getId());
@@ -164,7 +164,7 @@ class FieldDefinitionPersistenceTest {
 
         assertThat(reloaded.getLabel()).isEqualTo("Renamed");
         assertThat(reloaded.getRestrictions()).hasSize(1);
-        assertThat(reloaded.getRestrictions().get(0).getErrorMessage()).isEqualTo("Muy corto");
+        assertThat(reloaded.getRestrictions().get(0).getErrorMessage()).isEqualTo("Too short");
         assertThat(reloaded.getOptions()).hasSize(1);
     }
 
@@ -172,7 +172,7 @@ class FieldDefinitionPersistenceTest {
     void anUpdateCarryingEmptyListsDeletesThem() {
         FieldDefinitionDTO saved = dao.save(field(
             List.of(restriction(RestrictionType.MIN_LENGTH, Map.of("minLength", 3), null, 0)),
-            List.of(option("Uno", "1", 0))));
+            List.of(option("One", "1", 0))));
 
         FieldDefinitionDTO update = reload(saved.getId());
         update.setRestrictions(List.of());
@@ -188,7 +188,7 @@ class FieldDefinitionPersistenceTest {
     @Test
     void anUpdatedRestrictionKeepsItsIdentity() {
         FieldDefinitionDTO saved = dao.save(field(
-            List.of(restriction(RestrictionType.MIN_LENGTH, Map.of("minLength", 3), "Muy corto", 0)), null));
+            List.of(restriction(RestrictionType.MIN_LENGTH, Map.of("minLength", 3), "Too short", 0)), null));
         Long restrictionId = reload(saved.getId()).getRestrictions().get(0).getId();
 
         FieldDefinitionDTO update = reload(saved.getId());

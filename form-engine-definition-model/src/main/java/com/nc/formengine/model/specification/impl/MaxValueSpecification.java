@@ -26,7 +26,7 @@ public class MaxValueSpecification implements FieldSpecification {
     
     public MaxValueSpecification(Double maxValue) {
         this.maxValue = maxValue;
-        this.errorMessage = "El valor no puede ser mayor que " + maxValue;
+        this.errorMessage = "This answer cannot be greater than " + maxValue;
     }
     
     @Override
@@ -47,10 +47,10 @@ public class MaxValueSpecification implements FieldSpecification {
             } else if (value instanceof String str) {
                 numValue = Double.parseDouble(str);
             } else {
-                return SpecificationResult.notSatisfied("El valor no es un número válido");
+                return SpecificationResult.notSatisfied("This answer is not a number");
             }
         } catch (NumberFormatException e) {
-            return SpecificationResult.notSatisfied("El valor no es un número válido");
+            return SpecificationResult.notSatisfied("This answer is not a number");
         }
         
         if (numValue > maxValue) {

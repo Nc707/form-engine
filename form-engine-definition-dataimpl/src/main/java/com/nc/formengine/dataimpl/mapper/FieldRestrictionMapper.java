@@ -47,7 +47,7 @@ public class FieldRestrictionMapper {
                 .id(entity.getId())
                 .fieldDefinitionId(entity.getFieldDefinition() != null
                     ? entity.getFieldDefinition().getId() : null)
-                .restrictionType(entity.getType())
+                .restrictionType(entity.getRestrictionType())
                 .parameters(parameters)
                 .errorMessage(entity.getErrorMessage())
                 .orderIndex(entity.getOrderIndex())
@@ -71,7 +71,7 @@ public class FieldRestrictionMapper {
             return;
         }
 
-        entity.setType(dto.getRestrictionType());
+        entity.setRestrictionType(dto.getRestrictionType());
         entity.setErrorMessage(dto.getErrorMessage());
         entity.setOrderIndex(dto.getOrderIndex());
         entity.setParameters(toStoredParameters(dto.getParameters()));

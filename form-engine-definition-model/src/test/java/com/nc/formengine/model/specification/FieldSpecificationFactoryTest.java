@@ -63,11 +63,11 @@ class FieldSpecificationFactoryTest {
         FieldRestrictionDTO restriction = FieldRestrictionDTO.builder()
             .restrictionType(RestrictionType.MIN_LENGTH)
             .parameters(Map.of("minLength", 5))
-            .errorMessage("Al menos cinco letras")
+            .errorMessage("At least five letters")
             .build();
 
         assertThat(FieldSpecificationFactory.from(restriction).isSatisfiedBy("ab", TEXT).getReasons())
-            .containsExactly("Al menos cinco letras");
+            .containsExactly("At least five letters");
     }
 
     @Test
@@ -79,7 +79,7 @@ class FieldSpecificationFactoryTest {
             .build();
 
         assertThat(FieldSpecificationFactory.from(restriction).isSatisfiedBy("ab", TEXT).getReasons())
-            .containsExactly("El campo debe tener al menos 5 caracteres");
+            .containsExactly("This answer must be at least 5 characters long");
     }
 
     /**

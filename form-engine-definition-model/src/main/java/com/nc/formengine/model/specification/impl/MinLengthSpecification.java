@@ -26,7 +26,7 @@ public class MinLengthSpecification implements FieldSpecification {
     
     public MinLengthSpecification(Integer minLength) {
         this.minLength = minLength;
-        this.errorMessage = "El campo debe tener al menos " + minLength + " caracteres";
+        this.errorMessage = "This answer must be at least " + minLength + " characters long";
     }
     
     @Override
@@ -41,7 +41,7 @@ public class MinLengthSpecification implements FieldSpecification {
         }
         
         if (!(value instanceof String str)) {
-            return SpecificationResult.notSatisfied("El valor no es una cadena de texto");
+            return SpecificationResult.notSatisfied("This answer is not text");
         }
         
         if (str.length() < minLength) {

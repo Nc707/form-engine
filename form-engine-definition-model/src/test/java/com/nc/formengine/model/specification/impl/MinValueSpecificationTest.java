@@ -27,7 +27,7 @@ class MinValueSpecificationTest {
         SpecificationResult result = new MinValueSpecification(18.0).isSatisfiedBy(17.99, NUMBER);
 
         assertThat(result.isSatisfied()).isFalse();
-        assertThat(result.getReasons()).containsExactly("El valor debe ser al menos 18.0");
+        assertThat(result.getReasons()).containsExactly("This answer cannot be less than 18.0");
     }
 
     @Test
@@ -40,7 +40,7 @@ class MinValueSpecificationTest {
     void rejectsAValueThatIsNotANumber() {
         SpecificationResult result = new MinValueSpecification(18.0).isSatisfiedBy("veintiuno", NUMBER);
 
-        assertThat(result.getReasons()).containsExactly("El valor no es un número válido");
+        assertThat(result.getReasons()).containsExactly("This answer is not a number");
     }
 
     @Test

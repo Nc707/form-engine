@@ -134,7 +134,7 @@ class FormDefinitionVersioningTest {
 
         assertThat(copiedField.getRestrictions()).hasSize(1);
         FieldRestriction restriction = copiedField.getRestrictions().get(0);
-        assertThat(restriction.getType()).isEqualTo(RestrictionType.MIN_LENGTH);
+        assertThat(restriction.getRestrictionType()).isEqualTo(RestrictionType.MIN_LENGTH);
         assertThat(restriction.getErrorMessage()).isEqualTo("Too short");
         assertThat(restriction.getParameters()).containsEntry("minLength", "3");
     }
@@ -263,7 +263,7 @@ class FormDefinitionVersioningTest {
 
         FieldRestriction restriction = new FieldRestriction();
         restriction.setFieldDefinition(field);
-        restriction.setType(RestrictionType.MIN_LENGTH);
+        restriction.setRestrictionType(RestrictionType.MIN_LENGTH);
         restriction.setErrorMessage("Too short");
         restriction.setOrderIndex(0);
         // The key FieldSpecificationFactory actually reads for MIN_LENGTH. A wrong one round-trips

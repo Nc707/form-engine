@@ -51,12 +51,12 @@ class SubmissionCsvWriterTest {
         assertThat(csv).endsWith("Ana,\r\n");
     }
 
-    /** The mark is what makes a spreadsheet read the accents in Spanish labels. */
+    /** The mark is what makes a spreadsheet read a label that is not plain ASCII. */
     @Test
     void theFileOpensWithAByteOrderMark() {
-        String csv = SubmissionCsvWriter.write(List.of("¿Acepta términos?"), List.of());
+        String csv = SubmissionCsvWriter.write(List.of("Café ordered"), List.of());
 
         assertThat(csv).startsWith(SubmissionCsvWriter.BYTE_ORDER_MARK);
-        assertThat(csv).contains("¿Acepta términos?");
+        assertThat(csv).contains("Café ordered");
     }
 }
