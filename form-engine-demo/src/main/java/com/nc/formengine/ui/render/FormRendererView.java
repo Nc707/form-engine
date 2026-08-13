@@ -24,6 +24,7 @@ import com.nc.formengine.ui.shared.Notifications;
 import com.nc.formengine.ui.shared.ViewToolbar;
 import com.vaadin.flow.component.button.Button;
 import com.vaadin.flow.component.button.ButtonVariant;
+import com.vaadin.flow.component.confirmdialog.ConfirmDialog;
 import com.vaadin.flow.component.html.Anchor;
 import com.vaadin.flow.component.html.Div;
 import com.vaadin.flow.component.html.H3;
@@ -74,6 +75,7 @@ class FormRendererView extends VerticalLayout implements BeforeEnterObserver {
     /** Keyed by field name, which is the key both the validator and the dependency engine speak. */
     private final Map<String, FieldEditor> editors = new LinkedHashMap<>();
     private final Div errorSummary = new Div();
+    private final Button discardButton = new Button("Discard draft", event -> confirmDiscard());
 
     private FormDefinitionDTO form;
     private Long submissionId;
@@ -97,6 +99,9 @@ class FormRendererView extends VerticalLayout implements BeforeEnterObserver {
         this.validationService = validationService;
         this.workflowService = workflowService;
         this.submissionService = submissionService;
+
+        discardButton.addThemeVariants(ButtonVariant.LUMO_TERTIARY, ButtonVariant.LUMO_ERROR);
+        discardButton.setVisible(false);
 
         setSizeFull();
         setPadding(false);
@@ -134,6 +139,7 @@ class FormRendererView extends VerticalLayout implements BeforeEnterObserver {
         event.getRouteParameters().get("submissionId")
                 .flatMap(FormRendererView::parseId)
                 .ifPresent(this::resumeDraft);
+        showDiscardWhenThereIsADraft();
 
         // The draft may already carry answers that hide fields, so the first evaluation happens
         // before the user has touched anything.
@@ -162,6 +168,7 @@ class FormRendererView extends VerticalLayout implements BeforeEnterObserver {
         body.setPadding(true);
 
         add(new ViewToolbar(form.getTitle(), ViewToolbar.group(
+                        discardButton,
                         new Button("Save draft", event -> saveDraft()),
                         submitButton())),
                 body);
@@ -171,6 +178,17 @@ class FormRendererView extends VerticalLayout implements BeforeEnterObserver {
         var submit = new Button("Submit", event -> submit());
         submit.addThemeVariants(ButtonVariant.LUMO_PRIMARY);
         return submit;
+    }
+
+    /**
+     * Offered only once there is a stored draft to give up on.
+     *
+     * <p>Discarding belongs here, next to the form being filled in, because it is the respondent's own
+     * decision about their own unsent draft. The responses view offers it too, but that is someone
+     * looking at a list — the person who started the draft should not have to go find it there.
+     */
+    private void showDiscardWhenThereIsADraft() {
+        discardButton.setVisible(submissionId != null);
     }
 
     private List<FieldDefinitionDTO> fieldsInOrder() {
@@ -255,6 +273,8 @@ class FormRendererView extends VerticalLayout implements BeforeEnterObserver {
                     .replaceState(null, "fill/" + form.getId() + "/" + submissionId));
 
             showErrors(result.report());
+            // There is something to give up on now, which there was not before the first save.
+            showDiscardWhenThereIsADraft();
             // A draft is saved whatever the report says: the errors are what is still missing, not a
             // refusal. Saying so is the difference between "saved" and "silently ignored".
             Notifications.success(result.report().valid()
@@ -262,6 +282,30 @@ class FormRendererView extends VerticalLayout implements BeforeEnterObserver {
                     : "Draft saved, with " + result.report().errors().size() + " still to fix.");
         } catch (RuntimeException ex) {
             Notifications.error("Could not save the draft: " + ex.getMessage());
+        }
+    }
+
+    /** Asks first: the draft is kept but can never be worked on again. */
+    private void confirmDiscard() {
+        var dialog = new ConfirmDialog();
+        dialog.setHeader("Discard this draft?");
+        dialog.setText("The answers so far are kept, but the draft is never sent and cannot be "
+                + "picked up again.");
+        dialog.setCancelable(true);
+        dialog.setConfirmText("Discard draft");
+        dialog.setConfirmButtonTheme("error primary");
+        dialog.addConfirmListener(event -> discard());
+        dialog.open();
+    }
+
+    private void discard() {
+        try {
+            workflowService.discard(submissionId);
+            Notifications.success("Draft discarded.");
+            getUI().ifPresent(ui -> ui.navigate("forms"));
+        } catch (RuntimeException ex) {
+            // The workflow refuses what it does not allow; what it says is what the user needs.
+            Notifications.error("Could not discard the draft: " + ex.getMessage());
         }
     }
 

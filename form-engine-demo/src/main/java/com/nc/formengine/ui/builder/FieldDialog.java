@@ -44,6 +44,7 @@ final class FieldDialog extends Dialog {
     private final RestrictionListEditor restrictions = new RestrictionListEditor();
     private final OptionListEditor options = new OptionListEditor();
     private final VerticalLayout optionsSection = new VerticalLayout();
+    private final VerticalLayout rulesSection = new VerticalLayout();
     private final Div problems = new Div();
 
     private final Long fieldId;
@@ -92,9 +93,9 @@ final class FieldDialog extends Dialog {
         optionsSection.setSpacing(false);
         optionsSection.add(new H5("Options"), options);
 
-        var rulesSection = new VerticalLayout(new H5("Validation rules"), restrictions);
         rulesSection.setPadding(false);
         rulesSection.setSpacing(false);
+        rulesSection.add(new H5("Validation rules"), restrictions);
 
         var body = new VerticalLayout(problems, name, label, type, required, requiredMessage,
                 rulesSection, optionsSection);
@@ -127,6 +128,7 @@ final class FieldDialog extends Dialog {
         restrictions.setRestrictions(field == null ? List.of() : field.getRestrictions());
         options.setOptions(field == null ? List.of() : field.getOptions());
         optionsSection.setVisible(takesOptions(initial));
+        rulesSection.setVisible(takesRules(initial));
     }
 
     /**
@@ -185,6 +187,7 @@ final class FieldDialog extends Dialog {
         lastType = chosen;
         restrictions.setFieldType(chosen);
         optionsSection.setVisible(takesOptions(chosen));
+        rulesSection.setVisible(takesRules(chosen));
     }
 
     private void revertTo(FieldType previous) {
@@ -229,6 +232,17 @@ final class FieldDialog extends Dialog {
 
     private static boolean takesOptions(FieldType type) {
         return type == FieldType.SELECT || type == FieldType.MULTI_SELECT;
+    }
+
+    /**
+     * Whether this type has any rule to configure at all.
+     *
+     * <p>Four of the six have none: everything true of a date, a boolean or a choice is already settled
+     * by the type, the Required checkbox and the option list. A section that can only ever say "nothing
+     * here" is worth less than the space it takes, so it is not shown.
+     */
+    private static boolean takesRules(FieldType type) {
+        return !RestrictionParameterSpec.applicableTo(type).isEmpty();
     }
 
     private static String readable(FieldType type) {

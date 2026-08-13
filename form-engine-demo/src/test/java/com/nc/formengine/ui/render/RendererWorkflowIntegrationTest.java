@@ -17,6 +17,7 @@ import com.nc.formengine.submission.business.service.SubmissionResult;
 import com.nc.formengine.submission.model.dto.FieldSubmissionDTO;
 import com.nc.formengine.submission.model.dto.FormSubmissionDTO;
 import com.nc.formengine.submission.model.enums.SubmissionStatus;
+import com.nc.formengine.submission.model.exception.IllegalSubmissionTransitionException;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -28,6 +29,7 @@ import java.util.List;
 import java.util.Map;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 /**
  * The engine calls {@code FormRendererView} makes, over the form {@link DemoFormSeeder} publishes.
@@ -120,6 +122,29 @@ class RendererWorkflowIntegrationTest {
         FormSubmissionDTO resumed = submissionService.findById(saved.submission().getId()).orElseThrow();
         assertThat(resumed.getStatus()).isEqualTo(SubmissionStatus.DRAFT);
         assertThat(answersOf(resumed)).containsEntry("full_name", "Ada Lovelace");
+    }
+
+    /**
+     * The path the renderer's own Discard button takes. It belongs beside the form being filled in
+     * because it is the respondent's decision about their own unsent draft — the answers are kept as a
+     * record that someone started and stopped, but the draft is terminal and cannot be resumed.
+     */
+    @Test
+    void aDraftCanBeDiscardedAndThenNoLongerResumed() {
+        SubmissionResult saved = workflowService.saveDraft(submission(null, Map.of(
+                "full_name", "Ada Lovelace",
+                "email", "ada@example.com")));
+        Long draftId = saved.submission().getId();
+
+        FormSubmissionDTO discarded = workflowService.discard(draftId);
+
+        assertThat(discarded.getStatus()).isEqualTo(SubmissionStatus.DISCARDED);
+        assertThat(answersOf(submissionService.findById(draftId).orElseThrow()))
+                .containsEntry("full_name", "Ada Lovelace");
+        // Terminal: saving over it is refused, which is what the view relies on after navigating away.
+        assertThatThrownBy(() -> workflowService.saveDraft(submission(draftId, Map.of(
+                "full_name", "Someone else"))))
+                .isInstanceOf(IllegalSubmissionTransitionException.class);
     }
 
     @Test
