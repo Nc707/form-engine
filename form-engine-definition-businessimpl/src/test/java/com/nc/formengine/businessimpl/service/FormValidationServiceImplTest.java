@@ -4,6 +4,7 @@ import com.nc.formengine.business.service.DependencyEvaluationService;
 import com.nc.formengine.data.dao.FieldDefinitionDao;
 import com.nc.formengine.model.dependency.FieldState;
 import com.nc.formengine.model.dto.FieldDefinitionDTO;
+import com.nc.formengine.model.dto.FieldOptionDTO;
 import com.nc.formengine.model.dto.FieldRestrictionDTO;
 import com.nc.formengine.model.enums.FieldType;
 import com.nc.formengine.model.enums.RestrictionType;
@@ -14,6 +15,7 @@ import com.nc.formengine.model.validation.ValidationReport;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -267,8 +269,97 @@ class FormValidationServiceImplTest {
         assertThat(service.validateField(null, "whatever", Map.of()).valid()).isTrue();
     }
 
+    // --- choices the field does not offer ---------------------------------------------------------
+
+    /**
+     * Nothing but the widget used to be stopping this. Through the API any string at all could be
+     * stored as the answer to a SELECT and validated clean.
+     */
+    @Test
+    void refusesAChoiceTheFieldDoesNotOffer() {
+        givenFields(select("country", FieldType.SELECT, "ar", "uy"));
+        givenNoDependencies();
+
+        ValidationReport report = service.validate(FORM_ID, Map.of("country", "br"), ValidationMode.SUBMIT);
+
+        assertThat(report.errors()).singleElement().satisfies(error -> {
+            assertThat(error.cause()).isEqualTo(ValidationErrorCause.NOT_AN_OPTION);
+            assertThat(error.restriction()).isNull();
+            assertThat(error.message()).contains("br");
+        });
+    }
+
+    @Test
+    void acceptsAChoiceTheFieldDoesOffer() {
+        givenFields(select("country", FieldType.SELECT, "ar", "uy"));
+        givenNoDependencies();
+
+        assertThat(service.validate(FORM_ID, Map.of("country", "ar"), ValidationMode.SUBMIT).valid()).isTrue();
+    }
+
+    @Test
+    void judgesEverySelectionOfAMultiSelectSeparately() {
+        givenFields(select("stack", FieldType.MULTI_SELECT, "java", "spring"));
+        givenNoDependencies();
+
+        assertThat(service.validate(FORM_ID, Map.of("stack", "java,spring"), ValidationMode.SUBMIT)
+            .valid()).isTrue();
+        assertThat(service.validate(FORM_ID, Map.of("stack", "java,cobol,fortran"), ValidationMode.SUBMIT)
+            .errors()).hasSize(2);
+    }
+
+    /** The renderer validates live, before anything is stored, so the raw widget value arrives. */
+    @Test
+    void judgesAMultiSelectGivenAsACollectionToo() {
+        givenFields(select("stack", FieldType.MULTI_SELECT, "java", "spring"));
+        givenNoDependencies();
+
+        assertThat(service.validate(FORM_ID, Map.of("stack", List.of("java")), ValidationMode.SUBMIT)
+            .valid()).isTrue();
+        assertThat(service.validate(FORM_ID, Map.of("stack", List.of("cobol")), ValidationMode.SUBMIT)
+            .valid()).isFalse();
+    }
+
+    /**
+     * A draft is allowed to be incomplete, not to hold an answer the field never offered — that one is
+     * not going to become valid by finishing the form.
+     */
+    @Test
+    void refusesAChoiceTheFieldDoesNotOfferEvenInADraft() {
+        givenFields(select("country", FieldType.SELECT, "ar"));
+        givenNoDependencies();
+
+        assertThat(service.validate(FORM_ID, Map.of("country", "br"), ValidationMode.DRAFT).valid()).isFalse();
+    }
+
+    @Test
+    void aSelectWithNoOptionsOffersNothingToChoose() {
+        givenFields(select("country", FieldType.SELECT));
+        givenNoDependencies();
+
+        assertThat(service.validate(FORM_ID, Map.of("country", "ar"), ValidationMode.SUBMIT).valid()).isFalse();
+    }
+
     private void givenFields(FieldDefinitionDTO... fields) {
         when(fieldDefinitionDao.findByFormDefinitionId(FORM_ID)).thenReturn(List.of(fields));
+    }
+
+    private FieldDefinitionDTO select(String name, FieldType type, String... optionValues) {
+        List<FieldOptionDTO> options = new ArrayList<>();
+        for (int index = 0; index < optionValues.length; index++) {
+            options.add(FieldOptionDTO.builder()
+                .label(optionValues[index]).value(optionValues[index]).orderIndex(index).build());
+        }
+        return FieldDefinitionDTO.builder()
+            .id(12L)
+            .formDefinitionId(FORM_ID)
+            .name(name)
+            .label(name)
+            .type(type)
+            .required(false)
+            .restrictions(List.of())
+            .options(options)
+            .build();
     }
 
     private void givenNoDependencies() {

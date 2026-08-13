@@ -4,6 +4,7 @@ import com.nc.formengine.model.dependency.FieldState;
 import com.nc.formengine.model.dto.FieldDefinitionDTO;
 import com.nc.formengine.model.dto.FieldOptionDTO;
 import com.nc.formengine.model.enums.FieldType;
+import com.nc.formengine.model.validation.AnswerCodec;
 import com.nc.formengine.model.validation.FieldValidationError;
 import com.vaadin.flow.component.Component;
 import com.vaadin.flow.component.HasValidation;
@@ -31,13 +32,11 @@ import java.util.stream.Collectors;
  * looks the same whether it is being filled in or previewed in the builder.
  *
  * <p>Every editor reads and writes {@link String}, whatever widget is behind it, because that is
- * what a submission stores and what the validator reads. The conversions live here so that no view
- * has to know a checkbox is {@code "true"} or that a multi-select is comma-joined.
+ * what a submission stores and what the validator reads. Widget-specific parsing lives here; the part
+ * the engine also has to read — how a boolean and a multi-select are written down — comes from
+ * {@link AnswerCodec}, so this class cannot drift away from what validation expects.
  */
 public final class FieldComponentFactory {
-
-    /** Separator for {@link FieldType#MULTI_SELECT} answers, which are stored as one string. */
-    private static final String MULTI_VALUE_SEPARATOR = ",";
 
     private FieldComponentFactory() {
     }
@@ -93,7 +92,7 @@ public final class FieldComponentFactory {
 
     private static FieldEditor booleanEditor(FieldDefinitionDTO field) {
         var input = new Checkbox(field.getLabel());
-        return new BaseEditor<>(field, input, String::valueOf, Boolean::valueOf);
+        return new BaseEditor<>(field, input, AnswerCodec::encodeBoolean, Boolean::valueOf);
     }
 
     private static FieldEditor selectEditor(FieldDefinitionDTO field) {
@@ -112,11 +111,8 @@ public final class FieldComponentFactory {
         input.setItems(optionValues(field));
         input.setItemLabelGenerator(value -> labelFor(field, value));
         return new BaseEditor<Set<String>>(field, input,
-                values -> String.join(MULTI_VALUE_SEPARATOR, values),
-                text -> Arrays.stream(text.split(MULTI_VALUE_SEPARATOR))
-                        .map(String::trim)
-                        .filter(part -> !part.isEmpty())
-                        .collect(Collectors.toCollection(LinkedHashSet::new)));
+                AnswerCodec::encodeSelections,
+                text -> new LinkedHashSet<>(AnswerCodec.decodeSelections(text)));
     }
 
     private static List<String> optionValues(FieldDefinitionDTO field) {
