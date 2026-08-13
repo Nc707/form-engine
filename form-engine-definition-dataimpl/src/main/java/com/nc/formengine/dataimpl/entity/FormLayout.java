@@ -35,9 +35,6 @@ public class FormLayout {
     @Column(name = "device_type")
     private DeviceType deviceType;
 
-    @Column(name = "custom_device_name")
-    private String customDeviceName;
-
     @OneToMany(mappedBy = "formLayout", cascade = CascadeType.ALL, orphanRemoval = true)
     @Builder.Default
     @ToString.Exclude

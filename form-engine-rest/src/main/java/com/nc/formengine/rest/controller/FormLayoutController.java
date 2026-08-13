@@ -77,7 +77,7 @@ public class FormLayoutController {
 
     @GetMapping("/form/{formDefinitionId}/resolve")
     @Operation(summary = "Resolve the best layout for a device",
-            description = "Falls back to the closest device type, then to the generic layout.")
+            description = "Falls back to the generic layout, then to the other device's layout.")
     @ApiResponse(responseCode = "404", description = "The form has no layout to fall back to.")
     public ResponseEntity<FormLayoutDTO> resolveLayout(
             @PathVariable("formDefinitionId") Long formDefinitionId,
@@ -85,17 +85,6 @@ public class FormLayoutController {
         return layoutResolutionService.resolveLayout(formDefinitionId, deviceType)
                 .map(ResponseEntity::ok)
                 .orElseThrow(() -> new FormLayoutNotFoundException(formDefinitionId, deviceType));
-    }
-
-    @GetMapping("/form/{formDefinitionId}/resolve-or-default")
-    @Operation(summary = "Resolve a layout, generating one if none exists",
-            description = "Same fallback chain as /resolve, but synthesises a single-column layout "
-                    + "from the form's fields instead of returning 404.")
-    public ResponseEntity<FormLayoutDTO> resolveLayoutOrDefault(
-            @PathVariable("formDefinitionId") Long formDefinitionId,
-            @RequestParam(value = "deviceType", required = false) DeviceType deviceType) {
-        FormLayoutDTO layout = layoutResolutionService.resolveLayoutOrDefault(formDefinitionId, deviceType);
-        return ResponseEntity.ok(layout);
     }
 
     @DeleteMapping("/{id}")

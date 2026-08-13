@@ -1,219 +1,96 @@
-# Form Layout System - Responsive Design Implementation
+# Form layouts
 
-## Overview
+A layout says **where** a form's fields go. Nothing else.
 
-This implementation provides a flexible, responsive layout system for forms with inheritance and fallback strategies.
+What a field looks like is decided from its `FieldType`, so a form is the same widget-for-widget
+however it happens to be laid out. Whether a field is shown at all is decided by the dependency
+engine at fill time, and the validator reads that same answer — so a field can never be demanded and
+hidden at once.
 
-## Key Features
+A form does not need a layout. Without one its fields are stacked in `orderIndex` order, which is a
+perfectly good rendering, so resolution is allowed to answer "none".
 
-### 1. Device-Specific Layouts
-Forms can have multiple layouts optimized for different device types:
-- **MOBILE**: Optimized for smartphones
-- **TABLET**: Optimized for tablets
-- **DESKTOP**: Optimized for desktop browsers
+## The grid
 
-### 2. Inheritance Strategy
-The system supports a fallback hierarchy:
+Positions are expressed on a twelve-column grid, zero-based:
 
-1. **Exact Match**: If a layout exists for the requested device type, it will be used
-2. **Generic Fallback**: If no device-specific layout exists, the system uses a layout with `deviceType = null` (generic/default layout)
-3. **Closest Match**: If neither exists, the system finds the closest matching device type:
-   - TABLET → DESKTOP → MOBILE
-   - MOBILE → TABLET
-   - DESKTOP → TABLET
+| Field | Meaning |
+|---|---|
+| `row` | Row position |
+| `column` | Column position |
+| `colspan` | Columns to span, out of twelve |
+| `rowspan` | Rows to span |
 
-### 3. Internal Forms Support
-Forms designed for internal/programmatic use may not have layouts defined. The system handles this gracefully:
-- A warning is logged when layouts are missing fields
-- The system can generate default layouts automatically
-- Not all fields need to be included in a layout (useful for API-only forms)
+A placement with no size falls back to one full-width row. Positions past the twelfth column are
+clamped rather than rejected.
 
-### 4. Custom Component Types
-Each field in a layout can have a custom component type, allowing frontend flexibility:
-- Default component types: TEXT_INPUT, NUMBER_INPUT, DATE_PICKER, SELECT, CHECKBOX, RADIO, TEXTAREA, FILE_UPLOAD
-- CUSTOM type with configurable properties stored in `customProperties` map
+**A field the layout says nothing about is still rendered**, appended after the rows the layout does
+describe, on an explicit row so grid auto-placement cannot slot it into a hole left on purpose.
+Dropping it would leave a required field with no way to answer it and the form permanently
+unsubmittable. A layout that covers only some of a form's fields is therefore valid, not a mistake.
 
-### 5. Grid-Based Positioning
-Layouts use a grid system with:
-- `row`: Row position
-- `column`: Column position
-- `colspan`: Number of columns to span (default 12-column grid)
-- `rowspan`: Number of rows to span
-- `visible`: Toggle field visibility
+## Device types
 
-## API Endpoints
+`MOBILE` and `DESKTOP` — the two the renderer can actually detect. A layout with `deviceType = null`
+is the generic one every device falls back to.
 
-### Create Layout
-```
-POST /api/v1/form-layouts
-```
+Resolution, in order:
 
-### Update Layout
-```
-PUT /api/v1/form-layouts/{id}
-```
+1. **Exact match** — a layout stored for the requested device.
+2. **Generic** — the layout with `deviceType = null`.
+3. **The other device** — laying a form out for the wrong screen beats handing back no layout.
+4. **Nothing** — the consumer stacks the fields.
 
-### Get Layout by ID
-```
-GET /api/v1/form-layouts/{id}
-```
+## Authoring
 
-### Get All Layouts for a Form
-```
-GET /api/v1/form-layouts/form/{formDefinitionId}
-```
+There is no layout editor. Layouts are created over REST or by the demo seeder; the Vaadin builder
+designs a form's fields, not their placement.
 
-### Get Layout by Device Type
-```
-GET /api/v1/form-layouts/form/{formDefinitionId}/device?deviceType=MOBILE
-```
+## Endpoints
 
-### Resolve Layout (with fallback logic)
-```
-GET /api/v1/form-layouts/form/{formDefinitionId}/resolve?deviceType=MOBILE
-```
+All under `/api/v1/form-layouts`:
 
-### Resolve Layout or Generate Default
-```
-GET /api/v1/form-layouts/form/{formDefinitionId}/resolve-or-default?deviceType=MOBILE
-```
+| Method | Path | What it does |
+|---|---|---|
+| `POST` | `/` | Create a layout |
+| `PUT` | `/{id}` | Replace a layout's placements |
+| `GET` | `/{id}` | One layout by id |
+| `GET` | `/form/{formDefinitionId}` | Every layout of a form |
+| `GET` | `/form/{formDefinitionId}/device?deviceType=MOBILE` | Exact match only, no fallback |
+| `GET` | `/form/{formDefinitionId}/resolve?deviceType=MOBILE` | The fallback chain above; 404 when it ends in nothing |
+| `DELETE` | `/{id}` | Delete a layout |
 
-### Delete Layout
-```
-DELETE /api/v1/form-layouts/{id}
-```
+### A two-column desktop layout
 
-## Example Usage
-
-### Creating a Mobile Layout
-```json
-{
-  "formDefinitionId": 1,
-  "deviceType": "MOBILE",
-  "fieldLayouts": [
-    {
-      "fieldDefinitionId": 1,
-      "row": 0,
-      "column": 0,
-      "colspan": 12,
-      "rowspan": 1,
-      "componentType": "TEXT_INPUT",
-      "visible": true
-    },
-    {
-      "fieldDefinitionId": 2,
-      "row": 1,
-      "column": 0,
-      "colspan": 12,
-      "rowspan": 1,
-      "componentType": "NUMBER_INPUT",
-      "visible": true
-    }
-  ]
-}
-```
-
-### Creating a Desktop Layout (2-column)
 ```json
 {
   "formDefinitionId": 1,
   "deviceType": "DESKTOP",
   "fieldLayouts": [
-    {
-      "fieldDefinitionId": 1,
-      "row": 0,
-      "column": 0,
-      "colspan": 6,
-      "rowspan": 1,
-      "componentType": "TEXT_INPUT",
-      "visible": true
-    },
-    {
-      "fieldDefinitionId": 2,
-      "row": 0,
-      "column": 6,
-      "colspan": 6,
-      "rowspan": 1,
-      "componentType": "NUMBER_INPUT",
-      "visible": true
-    }
+    { "fieldDefinitionId": 1, "row": 0, "column": 0, "colspan": 6, "rowspan": 1 },
+    { "fieldDefinitionId": 2, "row": 0, "column": 6, "colspan": 6, "rowspan": 1 }
   ]
 }
 ```
 
-### Creating a Generic/Fallback Layout
+### A generic fallback layout
+
 ```json
 {
   "formDefinitionId": 1,
   "deviceType": null,
   "fieldLayouts": [
-    {
-      "fieldDefinitionId": 1,
-      "row": 0,
-      "column": 0,
-      "colspan": 12,
-      "rowspan": 1,
-      "visible": true
-    }
+    { "fieldDefinitionId": 1, "row": 0, "column": 0, "colspan": 12, "rowspan": 1 }
   ]
 }
 ```
 
-### Using Custom Component with Properties
-```json
-{
-  "fieldDefinitionId": 1,
-  "row": 0,
-  "column": 0,
-  "colspan": 12,
-  "rowspan": 1,
-  "componentType": "CUSTOM",
-  "customProperties": {
-    "componentName": "RichTextEditor",
-    "toolbar": ["bold", "italic", "underline"],
-    "maxHeight": "300px"
-  },
-  "visible": true
-}
-```
-
-## Database Schema
-
-### Tables Created
-- `form_layouts`: Stores layout definitions for forms
-- `field_layouts`: Stores individual field positioning and properties
-- `field_layout_properties`: Stores custom properties for field layouts
-
 ## Validation
 
-The system validates:
-1. Form definition exists before creating a layout
-2. All field IDs in the layout belong to the form definition
-3. Invalid field IDs are rejected
-4. Missing fields trigger a warning (but don't block creation)
+A layout is refused when the form does not exist, or when it places a field belonging to a different
+form — that is a `422` naming each offending field. Covering only part of the form is not a violation.
 
-## Frontend Integration
+## Schema
 
-The frontend (Vaadin) should:
-1. Detect device type or receive it from user
-2. Call `/resolve-or-default` endpoint with device type
-3. Render form based on returned layout (row, column, colspan, rowspan)
-4. Pick the component from the field's `FieldType`, and treat `componentType` as an override
-5. Apply `customProperties` to components as needed
-6. Respect `visible` flag to hide/show fields
-
-> **`componentType` is optional and often absent.** `LayoutResolutionServiceImpl.createDefaultLayout`
-> builds a layout for a form that has none — one field per full-width row — and never sets it, so a
-> client that keys its rendering off `componentType` alone draws nothing for every generated layout.
-> The field's `FieldType` is what always has a value and is therefore the source of truth;
-> `componentType` only says "render this field differently than its type would suggest".
-> `FieldComponentFactory` in the demo works exactly this way.
-
-## Benefits
-
-1. **Responsive**: Different layouts for different devices
-2. **Flexible**: Fallback strategies ensure forms always render
-3. **Extensible**: Custom component types and properties
-4. **API-Friendly**: Internal forms don't need full layouts
-5. **Developer-Friendly**: Auto-generation of default layouts
-6. **Maintainable**: Clear separation between form definition and presentation
+- `form_layouts` — one row per form and device
+- `field_layouts` — one row per placed field

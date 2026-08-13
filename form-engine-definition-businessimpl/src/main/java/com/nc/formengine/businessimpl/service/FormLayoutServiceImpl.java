@@ -90,7 +90,6 @@ public class FormLayoutServiceImpl implements FormLayoutService {
                 .orElseThrow(() -> new FormLayoutNotFoundException(layoutId));
 
         existingLayout.setDeviceType(layoutDTO.getDeviceType());
-        existingLayout.setCustomDeviceName(layoutDTO.getCustomDeviceName());
 
         existingLayout.getFieldLayouts().clear();
 
@@ -144,8 +143,14 @@ public class FormLayoutServiceImpl implements FormLayoutService {
                 .map(formLayoutMapper::toDTO);
     }
 
-    @Override
-    public void validateLayout(FormLayoutDTO layoutDTO) {
+    /**
+     * Refuses a layout that places fields of another form.
+     *
+     * <p>A layout that says nothing about some of the form's fields is <em>not</em> a violation: the
+     * renderer appends whatever the layout forgot, on purpose, so that a field can never become
+     * unanswerable by omission. Only fields that are not the form's at all are a broken layout.
+     */
+    private void validateLayout(FormLayoutDTO layoutDTO) {
         if (layoutDTO.getFormDefinitionId() == null) {
             throw new IllegalArgumentException("Form definition ID is required");
         }
@@ -161,14 +166,6 @@ public class FormLayoutServiceImpl implements FormLayoutService {
             Set<Long> layoutFieldIds = layoutDTO.getFieldLayouts().stream()
                     .map(FieldLayoutDTO::getFieldDefinitionId)
                     .collect(Collectors.toSet());
-
-            Set<Long> missingFields = new HashSet<>(formFieldIds);
-            missingFields.removeAll(layoutFieldIds);
-
-            if (!missingFields.isEmpty()) {
-                log.warn("Layout for form {} is missing fields: {}", 
-                        layoutDTO.getFormDefinitionId(), missingFields);
-            }
 
             Set<Long> invalidFields = new HashSet<>(layoutFieldIds);
             invalidFields.removeAll(formFieldIds);

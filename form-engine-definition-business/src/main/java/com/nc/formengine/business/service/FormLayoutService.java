@@ -19,6 +19,4 @@ public interface FormLayoutService {
     List<FormLayoutDTO> getLayoutsByFormDefinition(Long formDefinitionId);
     
     Optional<FormLayoutDTO> getLayoutByFormAndDevice(Long formDefinitionId, DeviceType deviceType);
-    
-    void validateLayout(FormLayoutDTO layoutDTO);
 }

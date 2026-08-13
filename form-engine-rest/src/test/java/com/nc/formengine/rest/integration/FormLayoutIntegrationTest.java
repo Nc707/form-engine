@@ -48,12 +48,10 @@ class FormLayoutIntegrationTest {
                         FieldLayoutDTO.builder()
                                 .fieldDefinitionId(field1Id)
                                 .row(0).column(0).colspan(12).rowspan(1)
-                                .visible(true)
                                 .build(),
                         FieldLayoutDTO.builder()
                                 .fieldDefinitionId(field2Id)
                                 .row(1).column(0).colspan(12).rowspan(1)
-                                .visible(true)
                                 .build()
                 ))
                 .build();
@@ -92,7 +90,6 @@ class FormLayoutIntegrationTest {
                         FieldLayoutDTO.builder()
                                 .fieldDefinitionId(field1Id)
                                 .row(0).column(0).colspan(12).rowspan(1)
-                                .visible(true)
                                 .build()
                 ))
                 .build();
@@ -110,22 +107,26 @@ class FormLayoutIntegrationTest {
                 .andExpect(jsonPath("$.deviceType").isEmpty());
     }
 
+    /**
+     * A form with no layout resolves to nothing rather than to a synthesised one. Stacking the fields
+     * in order is what a consumer does with no layout anyway, so there is nothing to hand back.
+     */
     @Test
-    void shouldGenerateDefaultLayoutWhenNoneExists() throws Exception {
+    void shouldReportNoLayoutWhenNoneExists() throws Exception {
         FormDefinitionDTO form = createTestForm();
         Long formId = form.getId();
 
-        mockMvc.perform(get("/api/v1/form-layouts/form/" + formId + "/resolve-or-default")
+        mockMvc.perform(get("/api/v1/form-layouts/form/" + formId + "/resolve")
                 .param("deviceType", "MOBILE"))
-                .andExpect(status().isOk())
-                .andExpect(jsonPath("$.fieldLayouts.length()").value(2))
-                .andExpect(jsonPath("$.fieldLayouts[0].row").value(0))
-                .andExpect(jsonPath("$.fieldLayouts[0].colspan").value(12))
-                .andExpect(jsonPath("$.fieldLayouts[1].row").value(1));
+                .andExpect(status().isNotFound());
     }
 
+    /**
+     * With two device types, "closest" is simply the other one: laying a form out for the wrong screen
+     * still beats handing back no layout at all.
+     */
     @Test
-    void shouldFallbackToClosestDeviceType() throws Exception {
+    void shouldFallbackToTheOtherDeviceType() throws Exception {
         FormDefinitionDTO form = createTestForm();
         Long formId = form.getId();
         Long field1Id = form.getFields().get(0).getId();
@@ -137,7 +138,6 @@ class FormLayoutIntegrationTest {
                         FieldLayoutDTO.builder()
                                 .fieldDefinitionId(field1Id)
                                 .row(0).column(0).colspan(6).rowspan(1)
-                                .visible(true)
                                 .build()
                 ))
                 .build();
@@ -150,7 +150,7 @@ class FormLayoutIntegrationTest {
                 .andExpect(status().isCreated());
 
         mockMvc.perform(get("/api/v1/form-layouts/form/" + formId + "/resolve")
-                .param("deviceType", "TABLET"))
+                .param("deviceType", "MOBILE"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.deviceType").value("DESKTOP"));
     }

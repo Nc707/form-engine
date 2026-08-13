@@ -55,9 +55,8 @@ public class FieldRestriction {
     /**
      * Configuration of the rule, such as {@code minLength -> 5}, empty for the rules that take none.
      *
-     * <p>Values are stored as JSON text, the same treatment {@code FieldLayout.customProperties}
-     * gets, so a number survives the round trip as a number instead of coming back as its {@code
-     * toString}.
+     * <p>Values are stored as JSON text rather than as their {@code toString}, so a number survives
+     * the round trip as a number. {@code FieldRestrictionMapper} is where that happens.
      */
     @ElementCollection(fetch = FetchType.EAGER)
     @CollectionTable(name = "field_restriction_parameters",

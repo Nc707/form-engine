@@ -1,6 +1,5 @@
 package com.nc.formengine.model.dto;
 
-import com.nc.formengine.model.enums.ComponentType;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Positive;
 import jakarta.validation.constraints.PositiveOrZero;
@@ -8,8 +7,6 @@ import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
-
-import java.util.Map;
 
 @Data
 @Builder
@@ -35,8 +32,4 @@ public class FieldLayoutDTO {
 
     @Positive(message = "rowspan must be greater than 0")
     private Integer rowspan;
-
-    private ComponentType componentType;
-    private Map<String, Object> customProperties;
-    private Boolean visible;
 }

@@ -203,7 +203,6 @@ class FormDefinitionVersioningTest {
         FieldLayout fieldLayout = layout.getFieldLayouts().get(0);
         assertThat(fieldLayout.getFieldDefinition().getId()).isEqualTo(copiedFieldId);
         assertThat(fieldLayout.getColspan()).isEqualTo(6);
-        assertThat(fieldLayout.getCustomProperties()).containsEntry("theme", "compact");
     }
 
     @Test
@@ -321,8 +320,6 @@ class FormDefinitionVersioningTest {
         fieldLayout.setRow(0);
         fieldLayout.setColumn(0);
         fieldLayout.setColspan(6);
-        fieldLayout.setVisible(true);
-        fieldLayout.setCustomProperties(Map.of("theme", "compact"));
         layout.setFieldLayouts(new ArrayList<>(List.of(fieldLayout)));
 
         form.setLayouts(new ArrayList<>(List.of(layout)));

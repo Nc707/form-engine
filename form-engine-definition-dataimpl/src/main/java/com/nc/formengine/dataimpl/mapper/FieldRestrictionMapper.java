@@ -3,7 +3,6 @@ package com.nc.formengine.dataimpl.mapper;
 import com.nc.formengine.dataimpl.entity.FieldDefinition;
 import com.nc.formengine.dataimpl.entity.FieldRestriction;
 import com.nc.formengine.model.dto.FieldRestrictionDTO;
-import com.nc.formengine.model.specification.RestrictionTypeRegistry;
 import org.springframework.stereotype.Component;
 import tools.jackson.core.JacksonException;
 import tools.jackson.databind.ObjectMapper;
@@ -15,12 +14,9 @@ import java.util.Map;
  * Maps {@link FieldRestriction} to its DTO.
  *
  * <p>{@code parameters} is persisted as a {@code Map<String, String>} but exposed as a
- * {@code Map<String, Object>}, so each value is serialized to JSON individually, the same way
- * {@link FieldLayoutMapper} handles custom properties. That is what keeps {@code {"minLength": 5}}
- * an integer across a round trip instead of turning it into the string {@code "5"}.
- *
- * <p>{@code applicableFieldTypes} is not stored: it is derived from the restriction type through
- * {@link RestrictionTypeRegistry}, which is the single source of truth for what applies to what.
+ * {@code Map<String, Object>}, so each value is serialized to JSON individually. That is what keeps
+ * {@code {"minLength": 5}} an integer across a round trip instead of turning it into the string
+ * {@code "5"}.
  */
 @Component
 public class FieldRestrictionMapper {
@@ -54,8 +50,6 @@ public class FieldRestrictionMapper {
                 .restrictionType(entity.getType())
                 .parameters(parameters)
                 .errorMessage(entity.getErrorMessage())
-                .applicableFieldTypes(entity.getType() != null
-                    ? RestrictionTypeRegistry.getApplicableFieldTypes(entity.getType()) : null)
                 .orderIndex(entity.getOrderIndex())
                 .build();
     }

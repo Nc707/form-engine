@@ -20,11 +20,6 @@ import java.util.Map;
  * {@link com.nc.formengine.ui.shared.FieldComponentFactory} from the field's
  * {@link com.nc.formengine.model.enums.FieldType}, so a form is the same widget-for-widget however it
  * happens to be laid out.
- *
- * <p>{@link FieldLayoutDTO#getComponentType()} is deliberately ignored, which contradicts
- * {@code LAYOUT_SYSTEM.md}. That document is out of date on this point: the layouts the engine
- * generates itself, in {@code LayoutResolutionServiceImpl.createDefaultLayout}, never set a component
- * type, so a renderer driven by it would draw nothing at all for the most common case.
  */
 final class LayoutGridRenderer {
 
@@ -58,10 +53,7 @@ final class LayoutGridRenderer {
             FieldLayoutDTO placement = placements.get(editor.field().getId());
             if (placement == null) {
                 unplaced.add(editor);
-            } else if (!Boolean.FALSE.equals(placement.getVisible())) {
-                // A field hidden by the layout is not rendered at all. That is a design-time
-                // decision, and a different thing from the runtime visibility the dependency engine
-                // applies through FieldEditor#applyState.
+            } else {
                 placed.add(editor);
             }
         }
