@@ -6,11 +6,10 @@ import com.nc.formengine.data.dao.FieldDefinitionDao;
 import com.nc.formengine.model.dependency.FieldState;
 import com.nc.formengine.model.dto.FieldDefinitionDTO;
 import com.nc.formengine.model.dto.FieldRestrictionDTO;
-import com.nc.formengine.model.enums.RestrictionType;
 import com.nc.formengine.model.specification.FieldContext;
 import com.nc.formengine.model.specification.FieldSpecificationFactory;
 import com.nc.formengine.model.specification.SpecificationResult;
-import com.nc.formengine.model.specification.impl.NotNullSpecification;
+import com.nc.formengine.model.validation.Answers;
 import com.nc.formengine.model.validation.FieldValidationError;
 import com.nc.formengine.model.validation.ValidationMode;
 import com.nc.formengine.model.validation.ValidationReport;
@@ -19,7 +18,6 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.ArrayList;
-import java.util.Collection;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
@@ -38,6 +36,9 @@ import java.util.Optional;
 @Service
 @RequiredArgsConstructor
 public class FormValidationServiceImpl implements FormValidationService {
+
+    /** Used when the form author did not word the field's own required message. */
+    private static final String DEFAULT_REQUIRED_MESSAGE = "This field is required";
 
     /** Ties in {@code orderIndex} keep the order the restrictions were loaded in. */
     private static final Comparator<FieldRestrictionDTO> BY_ORDER =
@@ -68,7 +69,7 @@ public class FormValidationServiceImpl implements FormValidationService {
             if (!state.visible()) {
                 continue;
             }
-            errors.addAll(validateOne(field, answers.get(field.getName()), answers, state, mode));
+            errors.addAll(validateOne(field, answers.get(field.getName()), state, mode));
         }
 
         return ValidationReport.of(errors);
@@ -92,8 +93,7 @@ public class FormValidationServiceImpl implements FormValidationService {
             return ValidationReport.noErrors();
         }
 
-        Map<String, Object> answers = formValues != null ? formValues : Map.of();
-        return ValidationReport.of(validateOne(field, value, answers, state, ValidationMode.SUBMIT));
+        return ValidationReport.of(validateOne(field, value, state, ValidationMode.SUBMIT));
     }
 
     /**
@@ -101,15 +101,22 @@ public class FormValidationServiceImpl implements FormValidationService {
      *
      * <p>A missing answer to a required field short-circuits the rest: the other restrictions of the
      * field would all be reporting, in their own words, that there is nothing there.
+     *
+     * <p>Presence is asked about exactly once, here, and only the mode decides whether to demand it.
+     * No restriction can demand it, so a draft needs no rule to be skipped for it.
      */
     private List<FieldValidationError> validateOne(FieldDefinitionDTO field, Object value,
-                                                   Map<String, Object> formValues,
                                                    FieldState state, ValidationMode mode) {
-        boolean demandPresence = mode != ValidationMode.DRAFT;
+        boolean missing = Answers.isMissing(value);
 
-        if (demandPresence && state.required() && isMissing(value)) {
-            return List.of(new FieldValidationError(field.getName(), field.getId(),
-                RestrictionType.NOT_NULL, requiredMessage(field)));
+        if (mode != ValidationMode.DRAFT && state.required() && missing) {
+            return List.of(FieldValidationError.missingRequired(
+                field.getName(), field.getId(), requiredMessage(field)));
+        }
+
+        if (missing) {
+            // Nothing to judge. An optional field left blank is not a rule violation.
+            return List.of();
         }
 
         FieldContext context = FieldContext.builder()
@@ -119,11 +126,6 @@ public class FormValidationServiceImpl implements FormValidationService {
 
         List<FieldValidationError> errors = new ArrayList<>();
         for (FieldRestrictionDTO restriction : restrictionsOf(field)) {
-            // While the form is a draft, demanding a value is exactly what is being suspended.
-            if (!demandPresence && restriction.getRestrictionType() == RestrictionType.NOT_NULL) {
-                continue;
-            }
-
             SpecificationResult result = FieldSpecificationFactory.from(restriction)
                 .isSatisfiedBy(value, context);
             if (result.isSatisfied()) {
@@ -131,8 +133,8 @@ public class FormValidationServiceImpl implements FormValidationService {
             }
 
             for (String reason : result.getReasons()) {
-                errors.add(new FieldValidationError(field.getName(), field.getId(),
-                    restriction.getRestrictionType(), reason));
+                errors.add(FieldValidationError.brokenRestriction(
+                    field.getName(), field.getId(), restriction.getRestrictionType(), reason));
             }
         }
 
@@ -158,35 +160,10 @@ public class FormValidationServiceImpl implements FormValidationService {
         return new FieldState(true, Boolean.TRUE.equals(field.getRequired()));
     }
 
-    /**
-     * An answer counts as missing when there is nothing in it a restriction could judge: no value,
-     * only whitespace, or an empty selection.
-     */
-    private boolean isMissing(Object value) {
-        if (value == null) {
-            return true;
-        }
-        if (value instanceof String text) {
-            return text.isBlank();
-        }
-        if (value instanceof Collection<?> collection) {
-            return collection.isEmpty();
-        }
-        return false;
-    }
-
-    /**
-     * The message for a missing required answer: the one the author wrote on the field's own
-     * {@code NOT_NULL} restriction if there is one, otherwise the default of the specification that
-     * would have rejected it.
-     */
+    /** The message for a missing required answer: the field author's own, or the engine's default. */
     private String requiredMessage(FieldDefinitionDTO field) {
-        return restrictionsOf(field).stream()
-            .filter(restriction -> restriction.getRestrictionType() == RestrictionType.NOT_NULL)
-            .map(FieldRestrictionDTO::getErrorMessage)
-            .filter(message -> message != null && !message.isBlank())
-            .findFirst()
-            .orElseGet(() -> new NotNullSpecification().getErrorMessage());
+        String authored = field.getRequiredMessage();
+        return authored != null && !authored.isBlank() ? authored : DEFAULT_REQUIRED_MESSAGE;
     }
 
     private List<FieldRestrictionDTO> restrictionsOf(FieldDefinitionDTO field) {

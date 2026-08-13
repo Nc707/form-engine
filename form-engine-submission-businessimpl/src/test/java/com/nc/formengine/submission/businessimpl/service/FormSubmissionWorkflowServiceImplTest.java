@@ -276,7 +276,7 @@ class FormSubmissionWorkflowServiceImplTest {
 
     private ValidationReport someErrors() {
         return ValidationReport.of(List.of(
-                new FieldValidationError("full_name", 100L, RestrictionType.NOT_NULL, "is required")));
+                FieldValidationError.missingRequired("full_name", 100L, "is required")));
     }
 
     @SuppressWarnings("unchecked")

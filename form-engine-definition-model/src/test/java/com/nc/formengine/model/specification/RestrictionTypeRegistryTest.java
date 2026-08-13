@@ -19,32 +19,29 @@ class RestrictionTypeRegistryTest {
     }
 
     @Test
-    void presenceIsCheckedOnEveryKindOfField() {
-        assertThat(RestrictionTypeRegistry.getApplicableFieldTypes(RestrictionType.NOT_NULL))
-            .containsExactlyInAnyOrder(FieldType.values());
-    }
-
-    @Test
     void textFieldsCarryTheTextRestrictions() {
         assertThat(RestrictionTypeRegistry.getApplicableRestrictionTypes(FieldType.TEXT))
-            .containsExactlyInAnyOrder(RestrictionType.NOT_NULL, RestrictionType.NOT_EMPTY,
-                RestrictionType.MIN_LENGTH, RestrictionType.MAX_LENGTH,
+            .containsExactlyInAnyOrder(RestrictionType.MIN_LENGTH, RestrictionType.MAX_LENGTH,
                 RestrictionType.PATTERN, RestrictionType.EMAIL);
     }
 
     @Test
     void numberFieldsCarryTheNumericRestrictions() {
         assertThat(RestrictionTypeRegistry.getApplicableRestrictionTypes(FieldType.NUMBER))
-            .containsExactlyInAnyOrder(RestrictionType.NOT_NULL,
-                RestrictionType.MIN_VALUE, RestrictionType.MAX_VALUE);
+            .containsExactlyInAnyOrder(RestrictionType.MIN_VALUE, RestrictionType.MAX_VALUE);
     }
 
+    /**
+     * There is nothing to configure on these. A date is a date, a boolean is one of two things, and a
+     * choice is one of the field's own options — the type, the Required flag and the option list
+     * already say everything a rule could.
+     */
     @Test
-    void fieldsWithNothingToMeasureOnlyCarryPresence() {
-        assertThat(RestrictionTypeRegistry.getApplicableRestrictionTypes(FieldType.BOOLEAN))
-            .containsExactly(RestrictionType.NOT_NULL);
-        assertThat(RestrictionTypeRegistry.getApplicableRestrictionTypes(FieldType.DATE))
-            .containsExactly(RestrictionType.NOT_NULL);
+    void fieldsWithNothingToMeasureCarryNoRestrictionsAtAll() {
+        assertThat(RestrictionTypeRegistry.getApplicableRestrictionTypes(FieldType.BOOLEAN)).isEmpty();
+        assertThat(RestrictionTypeRegistry.getApplicableRestrictionTypes(FieldType.DATE)).isEmpty();
+        assertThat(RestrictionTypeRegistry.getApplicableRestrictionTypes(FieldType.SELECT)).isEmpty();
+        assertThat(RestrictionTypeRegistry.getApplicableRestrictionTypes(FieldType.MULTI_SELECT)).isEmpty();
     }
 
     @Test
@@ -74,8 +71,6 @@ class RestrictionTypeRegistryTest {
     @SuppressWarnings("unchecked")
     private static java.util.Set<FieldType> applicableTypesOf(RestrictionType type) {
         String className = switch (type) {
-            case NOT_NULL -> "NotNull";
-            case NOT_EMPTY -> "NotEmpty";
             case MIN_LENGTH -> "MinLength";
             case MAX_LENGTH -> "MaxLength";
             case MIN_VALUE -> "MinValue";

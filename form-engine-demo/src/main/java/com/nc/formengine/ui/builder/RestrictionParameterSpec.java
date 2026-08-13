@@ -43,10 +43,6 @@ record RestrictionParameterSpec(RestrictionType type,
             new EnumMap<>(RestrictionType.class);
 
     static {
-        define(RestrictionType.NOT_NULL, null, Kind.NONE,
-                null, "The field must be answered.");
-        define(RestrictionType.NOT_EMPTY, null, Kind.NONE,
-                null, "The answer must not be blank.");
         define(RestrictionType.EMAIL, null, Kind.NONE,
                 null, "The answer must look like an email address.");
         define(RestrictionType.MIN_LENGTH, "minLength", Kind.INTEGER,
@@ -87,9 +83,10 @@ record RestrictionParameterSpec(RestrictionType type,
      * Set}, which would let a dropdown reshuffle itself between renders. Filtering the enum's own
      * values instead gives declaration order, every time.
      *
-     * <p>Note how little this leaves for most types: only {@code NOT_NULL} applies to dates,
-     * booleans and the two select kinds. The editor says so out loud rather than showing what looks
-     * like a broken one-item dropdown.
+     * <p>Note how little this leaves for most types: <em>nothing</em> applies to dates, booleans and
+     * the two select kinds. Everything true of their answers is decided by the type itself, by the
+     * Required checkbox, or by the options the field offers — so the editor says so out loud rather
+     * than showing an empty dropdown.
      *
      * @param fieldType the field's type; may be null
      * @return the applicable restrictions, never null

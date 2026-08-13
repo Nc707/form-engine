@@ -37,7 +37,7 @@ public class MinValueSpecification implements FieldSpecification {
         }
         
         if (value == null) {
-            return SpecificationResult.satisfied(); // Use NotNullSpecification for null checks
+            return SpecificationResult.satisfied(); // Presence is the field's required flag, not a rule
         }
         
         Double numValue;

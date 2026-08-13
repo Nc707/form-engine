@@ -277,24 +277,37 @@ class BuilderPersistenceIntegrationTest {
         Long formId = formService.create(draft(text("nickname"))).getId();
         var session = session(formId);
 
+        // A select's answer is judged by its options and the Required flag, so it carries no rules.
         var select = FieldDefinitionDTO.builder()
-                .name("country").label("Country").type(FieldType.SELECT).required(true)
+                .name("country").label("Country").type(FieldType.SELECT)
+                .required(true).requiredMessage("Pick a country")
                 .options(new ArrayList<>(List.of(option("Argentina", "ar", 0))))
-                .restrictions(new ArrayList<>(List.of(FieldRestrictionDTO.builder()
-                        .restrictionType(RestrictionType.NOT_NULL)
-                        .parameters(RestrictionParameterSpec.parameters(RestrictionType.NOT_NULL, null))
-                        .errorMessage("Pick a country")
-                        .orderIndex(0)
-                        .build())))
                 .build();
         session.addField(select);
 
-        var stored = session.fields().get(1);
-        assertThat(stored.getName()).isEqualTo("country");
-        assertThat(stored.getOrderIndex()).isEqualTo(1);
-        assertThat(stored.getOptions()).extracting(FieldOptionDTO::getValue).containsExactly("ar");
-        assertThat(stored.getRestrictions()).singleElement()
-                .satisfies(rule -> assertThat(rule.getErrorMessage()).isEqualTo("Pick a country"));
+        var text = FieldDefinitionDTO.builder()
+                .name("bio").label("Bio").type(FieldType.TEXT).required(false)
+                .restrictions(new ArrayList<>(List.of(FieldRestrictionDTO.builder()
+                        .restrictionType(RestrictionType.MIN_LENGTH)
+                        .parameters(RestrictionParameterSpec.parameters(RestrictionType.MIN_LENGTH, 10))
+                        .errorMessage("Tell us more")
+                        .orderIndex(0)
+                        .build())))
+                .build();
+        session.addField(text);
+
+        var storedSelect = session.fields().get(1);
+        assertThat(storedSelect.getName()).isEqualTo("country");
+        assertThat(storedSelect.getOrderIndex()).isEqualTo(1);
+        assertThat(storedSelect.getOptions()).extracting(FieldOptionDTO::getValue).containsExactly("ar");
+        assertThat(storedSelect.getRequiredMessage()).isEqualTo("Pick a country");
+
+        var storedText = session.fields().get(2);
+        assertThat(storedText.getRestrictions()).singleElement().satisfies(rule -> {
+            assertThat(rule.getRestrictionType()).isEqualTo(RestrictionType.MIN_LENGTH);
+            assertThat(rule.getParameters()).containsEntry("minLength", 10);
+            assertThat(rule.getErrorMessage()).isEqualTo("Tell us more");
+        });
     }
 
     // --- fixtures ----------------------------------------------------------------------------

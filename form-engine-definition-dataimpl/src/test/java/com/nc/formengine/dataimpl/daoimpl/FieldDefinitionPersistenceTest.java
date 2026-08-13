@@ -63,7 +63,7 @@ class FieldDefinitionPersistenceTest {
     void keepsEverythingARestrictionCarries() {
         FieldDefinitionDTO saved = dao.save(field(List.of(
             restriction(RestrictionType.MIN_LENGTH, Map.of("minLength", 3), "Muy corto", 0),
-            restriction(RestrictionType.NOT_EMPTY, Map.of(), "Escribí algo", 1)), null));
+            restriction(RestrictionType.EMAIL, Map.of(), "Escribí algo", 1)), null));
 
         FieldDefinitionDTO reloaded = reload(saved.getId());
 
@@ -77,18 +77,25 @@ class FieldDefinitionPersistenceTest {
     }
 
     /**
-     * NOT_EMPTY had no column to live in, so it could not be stored at all before.
+     * A rule taking no parameter had no column to live in, so it could not be stored at all before.
      */
     @Test
     void storesRestrictionsThatTakeNoParameter() {
         FieldDefinitionDTO saved = dao.save(field(List.of(
-            restriction(RestrictionType.NOT_EMPTY, Map.of(), null, 0),
-            restriction(RestrictionType.EMAIL, Map.of(), null, 1),
-            restriction(RestrictionType.NOT_NULL, Map.of(), null, 2)), null));
+            restriction(RestrictionType.EMAIL, Map.of(), null, 0)), null));
 
         assertThat(reload(saved.getId()).getRestrictions())
             .extracting(FieldRestrictionDTO::getRestrictionType)
-            .containsExactly(RestrictionType.NOT_EMPTY, RestrictionType.EMAIL, RestrictionType.NOT_NULL);
+            .containsExactly(RestrictionType.EMAIL);
+    }
+
+    @Test
+    void keepsTheMessageForAMissingRequiredAnswer() {
+        FieldDefinitionDTO field = field(null, null);
+        field.setRequired(true);
+        field.setRequiredMessage("We need your name");
+
+        assertThat(reload(dao.save(field).getId()).getRequiredMessage()).isEqualTo("We need your name");
     }
 
     @Test
@@ -125,14 +132,14 @@ class FieldDefinitionPersistenceTest {
     void ordersRestrictionsAndOptionsByTheirOrderIndex() {
         FieldDefinitionDTO saved = dao.save(field(
             List.of(restriction(RestrictionType.EMAIL, Map.of(), null, 5),
-                restriction(RestrictionType.NOT_EMPTY, Map.of(), null, 1)),
+                restriction(RestrictionType.MIN_LENGTH, Map.of("minLength", 3), null, 1)),
             List.of(option("Segunda", "b", 9), option("Primera", "a", 2))));
 
         FieldDefinitionDTO reloaded = reload(saved.getId());
 
         assertThat(reloaded.getRestrictions())
             .extracting(FieldRestrictionDTO::getRestrictionType)
-            .containsExactly(RestrictionType.NOT_EMPTY, RestrictionType.EMAIL);
+            .containsExactly(RestrictionType.MIN_LENGTH, RestrictionType.EMAIL);
         assertThat(reloaded.getOptions())
             .extracting(FieldOptionDTO::getLabel)
             .containsExactly("Primera", "Segunda");

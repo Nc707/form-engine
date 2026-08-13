@@ -37,7 +37,7 @@ public class MinLengthSpecification implements FieldSpecification {
         }
         
         if (value == null) {
-            return SpecificationResult.satisfied(); // Use NotNullSpecification for null checks
+            return SpecificationResult.satisfied(); // Presence is the field's required flag, not a rule
         }
         
         if (!(value instanceof String str)) {

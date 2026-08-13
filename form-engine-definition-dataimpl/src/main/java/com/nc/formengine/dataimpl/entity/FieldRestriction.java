@@ -17,10 +17,10 @@ import java.util.Objects;
  * One validation rule applied to a field.
  *
  * <p>Restrictions used to be five nullable columns on {@link FieldDefinition}, one per rule the
- * engine happened to support. That shape could not store the rules taking no parameter
- * ({@code NOT_NULL}, {@code NOT_EMPTY}, {@code EMAIL}), lost the author's custom message and the
- * evaluation order, and needed a schema change for every new kind of rule. Here the kind of rule is
- * data, so the eight {@link RestrictionType} values are already storable and the ninth will be too.
+ * engine happened to support. That shape could not store a rule taking no parameter, such as
+ * {@code EMAIL}, lost the author's custom message and the evaluation order, and needed a schema change
+ * for every new kind of rule. Here the kind of rule is data, so every {@link RestrictionType} value is
+ * already storable and the next one will be too.
  */
 @Entity
 @Table(name = "field_restrictions")

@@ -39,6 +39,7 @@ final class FieldDialog extends Dialog {
     private final TextField label = new TextField("Label");
     private final ComboBox<FieldType> type = new ComboBox<>("Type");
     private final Checkbox required = new Checkbox("Required");
+    private final TextField requiredMessage = new TextField("Message when left blank");
 
     private final RestrictionListEditor restrictions = new RestrictionListEditor();
     private final OptionListEditor options = new OptionListEditor();
@@ -78,6 +79,12 @@ final class FieldDialog extends Dialog {
         type.setWidthFull();
         type.addValueChangeListener(event -> onTypeChanged(event.getOldValue(), event.getValue()));
 
+        requiredMessage.setHelperText("Optional. Leave empty for the engine's default.");
+        requiredMessage.setWidthFull();
+        // Only a required field can be left blank in a way worth wording.
+        requiredMessage.setEnabled(required.getValue());
+        required.addValueChangeListener(event -> requiredMessage.setEnabled(event.getValue()));
+
         problems.addClassNames(LumoUtility.TextColor.ERROR, LumoUtility.FontSize.SMALL);
         problems.setVisible(false);
 
@@ -89,7 +96,7 @@ final class FieldDialog extends Dialog {
         rulesSection.setPadding(false);
         rulesSection.setSpacing(false);
 
-        var body = new VerticalLayout(problems, name, label, type, required,
+        var body = new VerticalLayout(problems, name, label, type, required, requiredMessage,
                 rulesSection, optionsSection);
         body.setPadding(false);
         body.setSpacing(false);
@@ -108,7 +115,9 @@ final class FieldDialog extends Dialog {
             name.setValue(field.getName() == null ? "" : field.getName());
             label.setValue(field.getLabel() == null ? "" : field.getLabel());
             required.setValue(Boolean.TRUE.equals(field.getRequired()));
+            requiredMessage.setValue(field.getRequiredMessage() == null ? "" : field.getRequiredMessage());
         }
+        requiredMessage.setEnabled(required.getValue());
         reverting = true;
         type.setValue(initial);
         reverting = false;
@@ -191,6 +200,7 @@ final class FieldDialog extends Dialog {
                 .label(label.getValue() == null ? null : label.getValue().trim())
                 .type(type.getValue())
                 .required(required.getValue())
+                .requiredMessage(requiredMessageValue())
                 .restrictions(new ArrayList<>(restrictions.toDtos()))
                 .options(takesOptions(type.getValue())
                         ? new ArrayList<>(options.toDtos()) : new ArrayList<>())
@@ -206,6 +216,15 @@ final class FieldDialog extends Dialog {
 
         close();
         onSave.accept(candidate);
+    }
+
+    /** Null rather than empty, so a field with no message of its own stores nothing. */
+    private String requiredMessageValue() {
+        if (!required.getValue()) {
+            return null;
+        }
+        String written = requiredMessage.getValue();
+        return written == null || written.isBlank() ? null : written.trim();
     }
 
     private static boolean takesOptions(FieldType type) {

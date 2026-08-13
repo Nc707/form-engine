@@ -50,6 +50,7 @@ public class FieldDefinitionMapper {
                 .type(entity.getType())
                 .orderIndex(entity.getOrderIndex())
                 .required(entity.getRequired())
+                .requiredMessage(entity.getRequiredMessage())
                 .restrictions(entity.getRestrictions() != null
                     ? entity.getRestrictions().stream()
                         .map(fieldRestrictionMapper::toDTO)
@@ -85,6 +86,7 @@ public class FieldDefinitionMapper {
         entity.setType(dto.getType());
         entity.setOrderIndex(dto.getOrderIndex());
         entity.setRequired(dto.getRequired());
+        entity.setRequiredMessage(dto.getRequiredMessage());
         applyRestrictions(dto.getRestrictions(), entity);
         applyOptions(dto.getOptions(), entity);
     }
