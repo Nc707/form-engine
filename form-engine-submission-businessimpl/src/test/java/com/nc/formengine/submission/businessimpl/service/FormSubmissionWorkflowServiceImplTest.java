@@ -170,38 +170,110 @@ class FormSubmissionWorkflowServiceImplTest {
         assertThat(result.submission().getStatus()).isEqualTo(SubmissionStatus.SUBMITTED);
     }
 
-    // ---------- cancelling ----------
+    // ---------- discarding a draft ----------
 
     @Test
-    void aDraftCanBeCanceled() {
+    void aDraftCanBeDiscarded() {
         storedWithStatus(SubmissionStatus.DRAFT);
 
-        assertThat(service.cancel(SUBMISSION_ID).getStatus()).isEqualTo(SubmissionStatus.CANCELED);
+        assertThat(service.discard(SUBMISSION_ID).getStatus()).isEqualTo(SubmissionStatus.DISCARDED);
     }
 
+    /**
+     * Discarding is what the person filling a form in does to their own unsent draft. A response that
+     * already arrived is not theirs to take back, so it is not this operation.
+     */
     @Test
-    void aSubmittedFormCanBeCanceled() {
+    void aSubmittedResponseCannotBeDiscarded() {
         storedWithStatus(SubmissionStatus.SUBMITTED);
 
-        assertThat(service.cancel(SUBMISSION_ID).getStatus()).isEqualTo(SubmissionStatus.CANCELED);
-    }
-
-    @Test
-    void cancellingTwiceIsRefused() {
-        storedWithStatus(SubmissionStatus.CANCELED);
-
-        assertThatThrownBy(() -> service.cancel(SUBMISSION_ID))
+        assertThatThrownBy(() -> service.discard(SUBMISSION_ID))
                 .isInstanceOf(IllegalSubmissionTransitionException.class);
 
         verify(formSubmissionDao, never()).save(any());
     }
 
     @Test
-    void cancellingSomethingThatIsNotThereIsRefused() {
+    void discardingTwiceIsRefused() {
+        storedWithStatus(SubmissionStatus.DISCARDED);
+
+        assertThatThrownBy(() -> service.discard(SUBMISSION_ID))
+                .isInstanceOf(IllegalSubmissionTransitionException.class);
+
+        verify(formSubmissionDao, never()).save(any());
+    }
+
+    @Test
+    void discardingSomethingThatIsNotThereIsRefused() {
         when(formSubmissionDao.findById(anyLong())).thenReturn(Optional.empty());
 
-        assertThatThrownBy(() -> service.cancel(SUBMISSION_ID))
+        assertThatThrownBy(() -> service.discard(SUBMISSION_ID))
                 .isInstanceOf(FormSubmissionNotFoundException.class);
+    }
+
+    // ---------- voiding a response ----------
+
+    @Test
+    void aSubmittedResponseCanBeVoided() {
+        storedWithStatus(SubmissionStatus.SUBMITTED);
+
+        assertThat(service.voidSubmission(SUBMISSION_ID).getStatus())
+                .isEqualTo(SubmissionStatus.VOIDED);
+    }
+
+    /** Nothing was ever sent, so there is nothing to annul. Discarding is the move from here. */
+    @Test
+    void aDraftCannotBeVoided() {
+        storedWithStatus(SubmissionStatus.DRAFT);
+
+        assertThatThrownBy(() -> service.voidSubmission(SUBMISSION_ID))
+                .isInstanceOf(IllegalSubmissionTransitionException.class);
+
+        verify(formSubmissionDao, never()).save(any());
+    }
+
+    @Test
+    void voidingTwiceIsRefused() {
+        storedWithStatus(SubmissionStatus.VOIDED);
+
+        assertThatThrownBy(() -> service.voidSubmission(SUBMISSION_ID))
+                .isInstanceOf(IllegalSubmissionTransitionException.class);
+
+        verify(formSubmissionDao, never()).save(any());
+    }
+
+    @Test
+    void voidingSomethingThatIsNotThereIsRefused() {
+        when(formSubmissionDao.findById(anyLong())).thenReturn(Optional.empty());
+
+        assertThatThrownBy(() -> service.voidSubmission(SUBMISSION_ID))
+                .isInstanceOf(FormSubmissionNotFoundException.class);
+    }
+
+    // ---------- what a refused transition says ----------
+
+    /**
+     * The message has to describe the move the caller asked for. Reporting the state the guard wanted
+     * instead told someone who had asked to submit that they "cannot go from SUBMITTED to DRAFT", and
+     * cancelling twice reported a move "from CANCELED to CANCELED".
+     */
+    @Test
+    void aRefusalNamesTheTransitionThatWasActuallyAttempted() {
+        storedWithStatus(SubmissionStatus.SUBMITTED);
+
+        assertThatThrownBy(() -> service.submit(submission(SUBMISSION_ID, null)))
+                .isInstanceOfSatisfying(IllegalSubmissionTransitionException.class, refusal -> {
+                    assertThat(refusal.getFrom()).isEqualTo(SubmissionStatus.SUBMITTED);
+                    // What was asked for, not the state the guard happens to require.
+                    assertThat(refusal.getTo()).isEqualTo(SubmissionStatus.SUBMITTED);
+                });
+
+        storedWithStatus(SubmissionStatus.VOIDED);
+        assertThatThrownBy(() -> service.voidSubmission(SUBMISSION_ID))
+                .isInstanceOfSatisfying(IllegalSubmissionTransitionException.class, refusal -> {
+                    assertThat(refusal.getFrom()).isEqualTo(SubmissionStatus.VOIDED);
+                    assertThat(refusal.getTo()).isEqualTo(SubmissionStatus.VOIDED);
+                });
     }
 
     // ---------- the answers handed to the validator ----------
@@ -248,7 +320,7 @@ class FormSubmissionWorkflowServiceImplTest {
         when(formSubmissionDao.findById(SUBMISSION_ID)).thenReturn(Optional.of(FormSubmissionDTO.builder()
                 .id(SUBMISSION_ID)
                 .formDefinitionId(FORM_ID)
-                .submittedBy("ada")
+                .author("ada")
                 .status(status)
                 .build()));
     }
@@ -258,7 +330,7 @@ class FormSubmissionWorkflowServiceImplTest {
                 .id(id)
                 .formDefinitionId(FORM_ID)
                 .formCode("FORM")
-                .submittedBy("ada")
+                .author("ada")
                 .build();
         if (answers != null) {
             submission.setFieldSubmissions(answers);

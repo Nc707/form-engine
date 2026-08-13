@@ -7,7 +7,6 @@ import com.nc.formengine.model.dto.FormDefinitionDTO;
 import com.nc.formengine.model.dto.FormLayoutDTO;
 import com.nc.formengine.submission.model.dto.FieldSubmissionDTO;
 import com.nc.formengine.submission.model.dto.FormSubmissionDTO;
-import com.nc.formengine.submission.model.enums.SubmissionStatus;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.webmvc.test.autoconfigure.AutoConfigureMockMvc;
@@ -103,23 +102,45 @@ class ValidationIntegrationTest {
     @Test
     void shouldRejectAFormSubmissionWithoutAFormDefinitionId() throws Exception {
         FormSubmissionDTO submission = new FormSubmissionDTO();
-        submission.setSubmittedBy("user@example.com");
-        submission.setStatus(SubmissionStatus.DRAFT);
+        submission.setFormCode("some_form");
+        submission.setAuthor("user@example.com");
 
         postExpectingValidationFailure("/api/v1/form-submissions", submission)
                 .andExpect(jsonPath("$.errors[0].field").value("formDefinitionId"))
                 .andExpect(jsonPath("$.errors[0].message").value("formDefinitionId is required"));
     }
 
+    /**
+     * The column is NOT NULL, so leaving it out has to be caught on the way in. It used to reach the
+     * database and come back as a 500 for what is plainly a bad request.
+     */
     @Test
-    void shouldRejectAFormSubmissionWithoutAStatus() throws Exception {
+    void shouldRejectAFormSubmissionWithoutAFormCode() throws Exception {
         FormSubmissionDTO submission = new FormSubmissionDTO();
         submission.setFormDefinitionId(1L);
-        submission.setSubmittedBy("user@example.com");
+        submission.setAuthor("user@example.com");
 
         postExpectingValidationFailure("/api/v1/form-submissions", submission)
-                .andExpect(jsonPath("$.errors[0].field").value("status"))
-                .andExpect(jsonPath("$.errors[0].message").value("status is required"));
+                .andExpect(jsonPath("$.errors[0].field").value("formCode"))
+                .andExpect(jsonPath("$.errors[0].message").value("formCode is required"));
+    }
+
+    /**
+     * A status is not the caller's to supply: the lifecycle owns it. Demanding one used to force every
+     * client to name a state it had no business choosing.
+     */
+    @Test
+    void shouldAcceptAFormSubmissionThatNamesNoStatus() throws Exception {
+        FormSubmissionDTO submission = new FormSubmissionDTO();
+        submission.setFormDefinitionId(1L);
+        submission.setFormCode("some_form");
+        submission.setAuthor("user@example.com");
+
+        mockMvc.perform(post("/api/v1/form-submissions")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(submission)))
+                .andExpect(status().isCreated())
+                .andExpect(jsonPath("$.status").value("DRAFT"));
     }
 
     @Test

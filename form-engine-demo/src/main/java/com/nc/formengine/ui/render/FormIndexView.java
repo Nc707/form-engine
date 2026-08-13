@@ -107,7 +107,7 @@ class FormIndexView extends VerticalLayout {
      * the view that lists them cannot drift apart.
      */
     private List<FormSubmissionDTO> myDrafts() {
-        return submissionService.findBySubmittedBy(FormRendererView.DEMO_USER).stream()
+        return submissionService.findByAuthor(FormRendererView.DEMO_USER).stream()
                 .filter(submission -> submission.getStatus() == SubmissionStatus.DRAFT)
                 .toList();
     }

@@ -300,7 +300,7 @@ class FormRendererView extends VerticalLayout implements BeforeEnterObserver {
                 .id(submissionId)
                 .formDefinitionId(form.getId())
                 .formCode(form.getCode())
-                .submittedBy(DEMO_USER)
+                .author(DEMO_USER)
                 .fieldSubmissions(answers)
                 .build();
     }

@@ -53,7 +53,7 @@ class SubmissionBrowser extends Composite<VerticalLayout> {
      * return rows differently between the two requests that fetch page 1 and page 2, so scrolling
      * would skip and repeat rows.
      */
-    private static final Sort DEFAULT_SORT = Sort.by(Sort.Direction.DESC, "submittedAt")
+    private static final Sort DEFAULT_SORT = Sort.by(Sort.Direction.DESC, "createdAt")
             .and(Sort.by(Sort.Direction.DESC, "id"));
 
     private final FormSubmissionService submissionService;
@@ -141,9 +141,15 @@ class SubmissionBrowser extends Composite<VerticalLayout> {
                 .setHeader("Form")
                 .setAutoWidth(true);
 
-        grid.addColumn(FormSubmissionDTO::getSubmittedBy)
+        grid.addColumn(FormSubmissionDTO::getAuthor)
                 .setHeader("Author")
-                .setSortProperty("submittedBy")
+                .setSortProperty("author")
+                .setAutoWidth(true);
+
+        grid.addColumn(submission -> submission.getCreatedAt() == null
+                        ? "—" : submission.getCreatedAt().format(TIMESTAMP))
+                .setHeader("Started")
+                .setSortProperty("createdAt")
                 .setAutoWidth(true);
 
         grid.addColumn(SubmissionBrowser::describeSubmittedAt)
@@ -240,7 +246,8 @@ class SubmissionBrowser extends Composite<VerticalLayout> {
         List<FieldDefinitionDTO> fields =
                 fieldDefinitionService.findByFormDefinitionId(filter.formDefinitionId());
 
-        List<String> header = new ArrayList<>(List.of("Form", "Author", "Submitted", "Status"));
+        List<String> header =
+                new ArrayList<>(List.of("Form", "Author", "Started", "Submitted", "Status"));
         fields.forEach(field -> header.add(
                 field.getLabel() != null ? field.getLabel() : field.getName()));
 
@@ -256,7 +263,8 @@ class SubmissionBrowser extends Composite<VerticalLayout> {
     private List<String> row(FormSubmissionDTO submission, List<FieldDefinitionDTO> fields) {
         List<String> cells = new ArrayList<>(List.of(
                 submission.getFormCode() == null ? "" : submission.getFormCode(),
-                submission.getSubmittedBy() == null ? "" : submission.getSubmittedBy(),
+                submission.getAuthor() == null ? "" : submission.getAuthor(),
+                submission.getCreatedAt() == null ? "" : submission.getCreatedAt().format(TIMESTAMP),
                 describeSubmittedAt(submission),
                 submission.getStatus() == null ? "" : submission.getStatus().name()));
 
@@ -279,20 +287,18 @@ class SubmissionBrowser extends Composite<VerticalLayout> {
         return "%s (v%s · %s)".formatted(form.getTitle(), form.getVersion(), form.getStatus());
     }
 
-    /** A draft was never sent, and its {@code submittedAt} is only the moment the row was created. */
+    /** Null while it was never sent, which is what the column now stores rather than something else. */
     private static String describeSubmittedAt(FormSubmissionDTO submission) {
-        if (submission.getStatus() == SubmissionStatus.DRAFT || submission.getSubmittedAt() == null) {
-            return "—";
-        }
-        return submission.getSubmittedAt().format(TIMESTAMP);
+        return submission.getSubmittedAt() == null ? "—" : submission.getSubmittedAt().format(TIMESTAMP);
     }
 
     static Span statusBadge(SubmissionStatus status) {
         var badge = new Span(status == null ? "—" : status.name());
         badge.getElement().setAttribute("theme", "badge " + switch (status == null ? SubmissionStatus.DRAFT : status) {
             case SUBMITTED -> "success";
-            case CANCELED -> "error";
-            case DRAFT -> "contrast";
+            // Voiding a received response is a decision about it; abandoning a draft is not.
+            case VOIDED -> "error";
+            case DISCARDED, DRAFT -> "contrast";
         });
         return badge;
     }

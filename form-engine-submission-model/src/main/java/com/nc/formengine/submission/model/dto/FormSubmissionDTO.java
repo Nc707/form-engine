@@ -26,18 +26,30 @@ public class FormSubmissionDTO {
     @Positive(message = "formDefinitionId must be greater than 0")
     private Long formDefinitionId;
 
+    // NOT NULL in the schema, so demanded here too: omitting it used to fail as a 500 on the way in.
+    @NotBlank(message = "formCode is required")
     @Size(max = 100, message = "formCode must be at most 100 characters")
     private String formCode;
 
-    @NotBlank(message = "submittedBy is required")
-    @Size(max = 255, message = "submittedBy must be at most 255 characters")
-    private String submittedBy;
+    @NotBlank(message = "author is required")
+    @Size(max = 255, message = "author must be at most 255 characters")
+    private String author;
 
+    /** When it was started. Set on insert; a value sent by a caller is kept. */
+    private LocalDateTime createdAt;
+
+    /** When it was sent, or null while it never was. Only submitting sets this. */
     private LocalDateTime submittedAt;
 
-    @NotNull(message = "status is required")
+    /**
+     * Where the submission is in its lifecycle.
+     *
+     * <p>Deliberately not {@code @NotNull}: the status is owned by the lifecycle, not by the caller.
+     * A new submission starts as a {@code DRAFT} and moves on only through
+     * {@code FormSubmissionWorkflowService}.
+     */
     private SubmissionStatus status;
-    
+
     @Builder.Default
     private List<FieldSubmissionDTO> fieldSubmissions = new ArrayList<>();
 }

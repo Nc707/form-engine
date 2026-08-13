@@ -6,7 +6,6 @@ import com.nc.formengine.model.dto.FieldDefinitionDTO;
 import com.nc.formengine.model.dto.FieldOptionDTO;
 import com.nc.formengine.model.dto.FormDefinitionDTO;
 import com.nc.formengine.model.enums.FieldType;
-import com.nc.formengine.submission.business.service.FieldSubmissionService;
 import com.nc.formengine.submission.business.service.FormSubmissionWorkflowService;
 import com.nc.formengine.submission.business.service.SubmissionResult;
 import com.nc.formengine.submission.model.dto.FieldSubmissionDTO;
@@ -44,16 +43,13 @@ class ResponsesDemoData implements CommandLineRunner {
     private final FormDefinitionService formDefinitionService;
     private final FieldDefinitionService fieldDefinitionService;
     private final FormSubmissionWorkflowService workflowService;
-    private final FieldSubmissionService fieldSubmissionService;
 
     ResponsesDemoData(FormDefinitionService formDefinitionService,
                       FieldDefinitionService fieldDefinitionService,
-                      FormSubmissionWorkflowService workflowService,
-                      FieldSubmissionService fieldSubmissionService) {
+                      FormSubmissionWorkflowService workflowService) {
         this.formDefinitionService = formDefinitionService;
         this.fieldDefinitionService = fieldDefinitionService;
         this.workflowService = workflowService;
-        this.fieldSubmissionService = fieldSubmissionService;
     }
 
     @Override
@@ -87,15 +83,22 @@ class ResponsesDemoData implements CommandLineRunner {
                 "nombre", "Mara Ríos",
                 "pais", "BR"));
 
-        // Submitted and then withdrawn. Its answers have to survive the cancellation.
-        Long canceled = submit(v1Id, "jorge@example.com", Map.of(
+        // A draft its author gave up on. Nothing was ever sent.
+        Long abandoned = draft(v1Id, "sofia@example.com", Map.of(
+                "nombre", "Sofía Vera"));
+        if (abandoned != null) {
+            workflowService.discard(abandoned);
+        }
+
+        // A response that arrived and was then annulled. Its answers have to survive being voided.
+        Long annulled = submit(v1Id, "jorge@example.com", Map.of(
                 "nombre", "Jorge Díaz",
                 "nacimiento", "1978-01-30",
                 "pais", "AR",
                 "acepta", "false",
                 "canal", "web"));
-        if (canceled != null) {
-            workflowService.cancel(canceled);
+        if (annulled != null) {
+            workflowService.voidSubmission(annulled);
         }
 
         // Retire the field from v1 itself, after its submissions were made. A field dropped only
@@ -166,20 +169,20 @@ class ResponsesDemoData implements CommandLineRunner {
 
     // -- submissions ---------------------------------------------------------
 
-    private Long submit(Long formDefinitionId, String submittedBy, Map<String, String> answers) {
-        return store(formDefinitionId, submittedBy, answers, SubmissionStatus.SUBMITTED);
+    private Long submit(Long formDefinitionId, String author, Map<String, String> answers) {
+        return store(formDefinitionId, author, answers, SubmissionStatus.SUBMITTED);
     }
 
-    private Long draft(Long formDefinitionId, String submittedBy, Map<String, String> answers) {
-        return store(formDefinitionId, submittedBy, answers, SubmissionStatus.DRAFT);
+    private Long draft(Long formDefinitionId, String author, Map<String, String> answers) {
+        return store(formDefinitionId, author, answers, SubmissionStatus.DRAFT);
     }
 
-    private Long store(Long formDefinitionId, String submittedBy, Map<String, String> answers,
+    private Long store(Long formDefinitionId, String author, Map<String, String> answers,
                        SubmissionStatus status) {
         FormSubmissionDTO submission = FormSubmissionDTO.builder()
                 .formDefinitionId(formDefinitionId)
                 .formCode(CODE)
-                .submittedBy(submittedBy)
+                .author(author)
                 .status(status)
                 .fieldSubmissions(fieldSubmissions(formDefinitionId, answers))
                 .build();
@@ -189,18 +192,13 @@ class ResponsesDemoData implements CommandLineRunner {
                 : workflowService.submit(submission);
 
         if (!result.persisted()) {
-            log.warn("Demo submission by {} was rejected: {}", submittedBy, result.report());
+            log.warn("Demo submission by {} was rejected: {}", author, result.report());
             return null;
         }
 
-        // The submission is stored without its answers: writing a submission does not cascade into
-        // them, so each one has to be created against the saved id.
-        Long submissionId = result.submission().getId();
-        for (FieldSubmissionDTO answer : submission.getFieldSubmissions()) {
-            answer.setFormSubmissionId(submissionId);
-            fieldSubmissionService.create(answer);
-        }
-        return submissionId;
+        // A submission owns its answers and cascades into them, so they are already stored. Creating
+        // them again here is what used to give every seeded submission a duplicate of every answer.
+        return result.submission().getId();
     }
 
     private List<FieldSubmissionDTO> fieldSubmissions(Long formDefinitionId, Map<String, String> answers) {

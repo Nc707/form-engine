@@ -33,8 +33,8 @@ final class FormSubmissionSpecifications {
         if (filter.status() != null) {
             predicates.add(hasStatus(filter.status()));
         }
-        if (filter.submittedBy() != null && !filter.submittedBy().isBlank()) {
-            predicates.add(submittedByContains(filter.submittedBy()));
+        if (filter.author() != null && !filter.author().isBlank()) {
+            predicates.add(authorContains(filter.author()));
         }
 
         return predicates.isEmpty() ? Specification.unrestricted() : Specification.allOf(predicates);
@@ -49,8 +49,8 @@ final class FormSubmissionSpecifications {
     }
 
     /** Case-insensitive substring: this backs a search box, not a lookup by exact address. */
-    private static Specification<FormSubmission> submittedByContains(String fragment) {
+    private static Specification<FormSubmission> authorContains(String fragment) {
         String pattern = "%" + fragment.strip().toLowerCase() + "%";
-        return (root, query, builder) -> builder.like(builder.lower(root.get("submittedBy")), pattern);
+        return (root, query, builder) -> builder.like(builder.lower(root.get("author")), pattern);
     }
 }

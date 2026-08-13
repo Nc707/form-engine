@@ -13,8 +13,8 @@ import com.nc.formengine.submission.model.enums.SubmissionStatus;
  *                         the definition it was filled in against, and two versions of the same code
  *                         are different definitions
  * @param status           the lifecycle state to keep
- * @param submittedBy      matched as a case-insensitive substring, because this backs a search box
+ * @param author      matched as a case-insensitive substring, because this backs a search box
  *                         rather than an exact-match lookup
  */
-public record SubmissionFilter(Long formDefinitionId, SubmissionStatus status, String submittedBy) {
+public record SubmissionFilter(Long formDefinitionId, SubmissionStatus status, String author) {
 }

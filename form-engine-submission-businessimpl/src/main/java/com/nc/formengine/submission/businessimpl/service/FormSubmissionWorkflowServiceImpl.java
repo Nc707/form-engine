@@ -37,7 +37,7 @@ public class FormSubmissionWorkflowServiceImpl implements FormSubmissionWorkflow
 
     @Override
     public SubmissionResult saveDraft(FormSubmissionDTO submission) {
-        requireStoredIsDraft(submission.getId());
+        requireTransition(submission.getId(), SubmissionStatus.DRAFT);
 
         ValidationReport report = validate(submission, ValidationMode.DRAFT);
 
@@ -47,7 +47,7 @@ public class FormSubmissionWorkflowServiceImpl implements FormSubmissionWorkflow
 
     @Override
     public SubmissionResult submit(FormSubmissionDTO submission) {
-        requireStoredIsDraft(submission.getId());
+        requireTransition(submission.getId(), SubmissionStatus.SUBMITTED);
         requireFormAcceptsSubmissions(submission.getFormDefinitionId());
 
         ValidationReport report = validate(submission, ValidationMode.SUBMIT);
@@ -64,33 +64,59 @@ public class FormSubmissionWorkflowServiceImpl implements FormSubmissionWorkflow
     }
 
     @Override
-    public FormSubmissionDTO cancel(Long id) {
+    public FormSubmissionDTO discard(Long id) {
+        return moveTo(id, SubmissionStatus.DISCARDED, SubmissionStatus.DRAFT);
+    }
+
+    @Override
+    public FormSubmissionDTO voidSubmission(Long id) {
+        return moveTo(id, SubmissionStatus.VOIDED, SubmissionStatus.SUBMITTED);
+    }
+
+    /**
+     * Flips a submission's state, having checked it was in one the move is allowed from.
+     *
+     * <p>The stored row is read and modified rather than replaced, because saving a submission built
+     * from scratch would arrive with no answers and take the stored ones with it.
+     */
+    private FormSubmissionDTO moveTo(Long id, SubmissionStatus target, SubmissionStatus... allowedFrom) {
         FormSubmissionDTO stored = formSubmissionDao.findById(id)
                 .orElseThrow(() -> new FormSubmissionNotFoundException(id));
 
-        if (stored.getStatus() == SubmissionStatus.CANCELED) {
-            throw new IllegalSubmissionTransitionException(
-                    id, SubmissionStatus.CANCELED, SubmissionStatus.CANCELED);
+        if (!isAnyOf(stored.getStatus(), allowedFrom)) {
+            throw new IllegalSubmissionTransitionException(id, stored.getStatus(), target);
         }
 
-        stored.setStatus(SubmissionStatus.CANCELED);
+        stored.setStatus(target);
         return formSubmissionDao.save(stored);
     }
 
     /**
      * A submission may only be written while it is a draft. A brand-new submission (no id) has no
      * stored state to contradict, so it passes.
+     *
+     * <p>{@code target} is what the caller asked for, not what the guard wants: reporting the move the
+     * user tried to make is the only way the message can mean anything. Reporting the required state
+     * instead produced "cannot go from SUBMITTED to DRAFT" for someone who had asked to submit.
      */
-    private void requireStoredIsDraft(Long id) {
+    private void requireTransition(Long id, SubmissionStatus target) {
         if (id == null) {
             return;
         }
         FormSubmissionDTO stored = formSubmissionDao.findById(id)
                 .orElseThrow(() -> new FormSubmissionNotFoundException(id));
         if (stored.getStatus() != SubmissionStatus.DRAFT) {
-            throw new IllegalSubmissionTransitionException(
-                    id, stored.getStatus(), SubmissionStatus.DRAFT);
+            throw new IllegalSubmissionTransitionException(id, stored.getStatus(), target);
         }
+    }
+
+    private static boolean isAnyOf(SubmissionStatus status, SubmissionStatus... candidates) {
+        for (SubmissionStatus candidate : candidates) {
+            if (status == candidate) {
+                return true;
+            }
+        }
+        return false;
     }
 
     /**

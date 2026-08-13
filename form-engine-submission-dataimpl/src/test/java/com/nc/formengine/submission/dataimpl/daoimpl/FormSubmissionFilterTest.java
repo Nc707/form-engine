@@ -43,7 +43,7 @@ class FormSubmissionFilterTest {
         store(ALTA, "Ana@Example.com", SubmissionStatus.SUBMITTED);
         store(ALTA, "luis@example.com", SubmissionStatus.SUBMITTED);
         store(ALTA, "luis@example.com", SubmissionStatus.DRAFT);
-        store(ALTA, "mara@example.com", SubmissionStatus.CANCELED);
+        store(ALTA, "mara@example.com", SubmissionStatus.VOIDED);
         store(RECLAMO, "ana@example.com", SubmissionStatus.SUBMITTED);
     }
 
@@ -78,7 +78,8 @@ class FormSubmissionFilterTest {
         assertThat(counts).containsOnlyKeys(SubmissionStatus.values());
         assertThat(counts.get(SubmissionStatus.SUBMITTED)).isEqualTo(2L);
         assertThat(counts.get(SubmissionStatus.DRAFT)).isEqualTo(1L);
-        assertThat(counts.get(SubmissionStatus.CANCELED)).isEqualTo(1L);
+        assertThat(counts.get(SubmissionStatus.VOIDED)).isEqualTo(1L);
+        assertThat(counts.get(SubmissionStatus.DISCARDED)).isZero();
 
         assertThat(dao.countByStatus(new SubmissionFilter(RECLAMO, null, null)))
                 .containsEntry(SubmissionStatus.DRAFT, 0L);
@@ -87,12 +88,12 @@ class FormSubmissionFilterTest {
     @Test
     void theFilteredPageIsStillPagedAndSorted() {
         var firstPage = dao.findAll(new SubmissionFilter(ALTA, null, null),
-                PageRequest.of(0, 2, Sort.by(Sort.Direction.ASC, "submittedBy")));
+                PageRequest.of(0, 2, Sort.by(Sort.Direction.ASC, "author")));
 
         assertThat(firstPage.getTotalElements()).isEqualTo(4);
         assertThat(firstPage.getTotalPages()).isEqualTo(2);
         assertThat(firstPage.getContent())
-                .extracting(FormSubmissionDTO::getSubmittedBy)
+                .extracting(FormSubmissionDTO::getAuthor)
                 .containsExactly("Ana@Example.com", "luis@example.com");
     }
 
@@ -100,13 +101,16 @@ class FormSubmissionFilterTest {
         return dao.findAll(filter, PageRequest.of(0, 50)).getContent();
     }
 
-    private void store(Long formDefinitionId, String submittedBy, SubmissionStatus status) {
+    private void store(Long formDefinitionId, String author, SubmissionStatus status) {
         FormSubmission submission = new FormSubmission();
         submission.setFormDefinitionId(formDefinitionId);
         submission.setFormCode(formDefinitionId.equals(ALTA) ? "ALTA" : "RECLAMO");
-        submission.setSubmittedBy(submittedBy);
-        submission.setSubmittedAt(LocalDateTime.now());
+        submission.setAuthor(author);
         submission.setStatus(status);
+        // Only something that was actually sent has a submittedAt; createdAt is stamped on insert.
+        if (status == SubmissionStatus.SUBMITTED || status == SubmissionStatus.VOIDED) {
+            submission.setSubmittedAt(LocalDateTime.now());
+        }
         repository.save(submission);
     }
 }

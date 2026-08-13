@@ -195,10 +195,10 @@ class ErrorHandlingIntegrationTest {
                 .andExpect(status().isBadRequest())
                 .andExpect(content().contentTypeCompatibleWith(MediaType.APPLICATION_PROBLEM_JSON))
                 .andExpect(jsonPath("$.type").value("https://form-engine/errors/invalid-request"))
-                .andExpect(jsonPath("$.detail").value(
-                        "Unknown submission status: 'NOT_A_STATUS'. Allowed values are DRAFT, SUBMITTED, CANCELED."))
+                .andExpect(jsonPath("$.detail").value("Unknown submission status: 'NOT_A_STATUS'. "
+                        + "Allowed values are DRAFT, SUBMITTED, DISCARDED, VOIDED."))
                 .andExpect(jsonPath("$.allowedValues").isArray())
-                .andExpect(jsonPath("$.allowedValues.length()").value(3));
+                .andExpect(jsonPath("$.allowedValues.length()").value(4));
     }
 
     @Test

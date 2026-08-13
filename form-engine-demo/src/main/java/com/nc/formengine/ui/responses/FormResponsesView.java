@@ -114,7 +114,7 @@ class FormResponsesView extends VerticalLayout implements BeforeEnterObserver {
     private void showSummary(SubmissionFilter filter) {
         summary.removeAll();
         Map<SubmissionStatus, Long> counts = submissionService.countByStatus(
-                new SubmissionFilter(filter.formDefinitionId(), null, filter.submittedBy()));
+                new SubmissionFilter(filter.formDefinitionId(), null, filter.author()));
         for (SubmissionStatus status : SubmissionStatus.values()) {
             var badge = SubmissionBrowser.statusBadge(status);
             badge.setText(status.name() + ": " + counts.getOrDefault(status, 0L));

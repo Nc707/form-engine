@@ -75,8 +75,8 @@ public class FormSubmissionDaoImpl implements FormSubmissionDao {
     }
 
     @Override
-    public List<FormSubmissionDTO> findBySubmittedBy(String submittedBy) {
-        return jpaRepository.findBySubmittedBy(submittedBy).stream()
+    public List<FormSubmissionDTO> findByAuthor(String author) {
+        return jpaRepository.findByAuthor(author).stream()
                 .map(mapper::toDTO)
                 .collect(Collectors.toList());
     }

@@ -4,10 +4,13 @@ import com.nc.formengine.submission.model.enums.SubmissionStatus;
 
 /**
  * A state change the submission lifecycle does not allow, such as editing a submission that has
- * already been sent, or cancelling one that is already canceled. Reported as HTTP 409.
+ * already been sent, or voiding a draft nobody submitted. Reported as HTTP 409.
  *
  * <p>Distinct from {@link InvalidSubmissionStatusException}, which is about a status <em>value</em>
  * that does not exist at all. Here both states are real; the move between them is not.
+ *
+ * <p>{@code to} is the state the caller asked for, which is not always a state the lifecycle would
+ * ever move to from {@code from} — that is the whole point of the message.
  */
 public class IllegalSubmissionTransitionException extends SubmissionException {
 

@@ -8,17 +8,21 @@ import com.nc.formengine.submission.model.enums.SubmissionStatus;
  *
  * <p>{@link FormSubmissionService} is the plain CRUD view of submissions and stays that way. This is
  * the view that enforces the rules: which state changes are allowed, and what has to be true before
- * one is. The states form a small graph with a single terminal state:
+ * one is.
  *
  * <pre>
- *   DRAFT ──submit──&gt; SUBMITTED
- *     │                   │
- *     └─────cancel────────┴──&gt; CANCELED
+ *   DRAFT ──submit──&gt; SUBMITTED ──void──&gt; VOIDED
+ *     │
+ *     └──discard──&gt; DISCARDED
  * </pre>
  *
- * <p>{@link SubmissionStatus#CANCELED} is terminal, and there is no way back to
- * {@link SubmissionStatus#DRAFT} from {@link SubmissionStatus#SUBMITTED}: a submitted form is a
- * record of what someone actually sent, so it is not editable afterwards.
+ * <p>Both endings are terminal, and there is no way back to {@link SubmissionStatus#DRAFT} from
+ * {@link SubmissionStatus#SUBMITTED}: a submitted form is a record of what someone actually sent, so it
+ * is not editable afterwards. Which of the two endings applies follows from where you are — a draft can
+ * only be discarded, a sent response can only be voided — so neither operation needs to be told who is
+ * asking.
+ *
+ * @see SubmissionStatus
  */
 public interface FormSubmissionWorkflowService {
 
@@ -58,15 +62,36 @@ public interface FormSubmissionWorkflowService {
     SubmissionResult submit(FormSubmissionDTO submission);
 
     /**
-     * Withdraws a submission, from either {@link SubmissionStatus#DRAFT} or
-     * {@link SubmissionStatus#SUBMITTED}.
+     * Gives up on a draft, without sending it.
      *
-     * @param id the submission to cancel
-     * @return the canceled submission
+     * <p>The answers are kept: a discarded draft is a record that someone started and stopped, which is
+     * worth more than a deleted row. Nothing was ever submitted, so nothing is being retracted.
+     *
+     * @param id the draft to discard
+     * @return the discarded submission
      * @throws com.nc.formengine.submission.model.exception.IllegalSubmissionTransitionException
-     *         if it is already canceled
+     *         if it is not a draft
      * @throws com.nc.formengine.submission.model.exception.FormSubmissionNotFoundException
      *         if the id is unknown
      */
-    FormSubmissionDTO cancel(Long id);
+    FormSubmissionDTO discard(Long id);
+
+    /**
+     * Annuls a response that was already submitted, leaving it readable.
+     *
+     * <p>This is the form owner's decision about a response that arrived — a duplicate, a test, an
+     * answer given in error — and not the respondent taking something back. The answers are never
+     * deleted, so the record of what was sent survives being annulled.
+     *
+     * <p>Named {@code voidSubmission} only because {@code void} is a Java keyword; the state, and what
+     * every reader of it sees, is {@link SubmissionStatus#VOIDED}.
+     *
+     * @param id the submitted response to void
+     * @return the voided submission
+     * @throws com.nc.formengine.submission.model.exception.IllegalSubmissionTransitionException
+     *         if it was never submitted, or was already voided
+     * @throws com.nc.formengine.submission.model.exception.FormSubmissionNotFoundException
+     *         if the id is unknown
+     */
+    FormSubmissionDTO voidSubmission(Long id);
 }

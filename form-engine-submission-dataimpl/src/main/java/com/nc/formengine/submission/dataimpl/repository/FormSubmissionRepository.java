@@ -17,7 +17,7 @@ public interface FormSubmissionRepository
     
     List<FormSubmission> findByFormCode(String formCode);
     
-    List<FormSubmission> findBySubmittedBy(String submittedBy);
+    List<FormSubmission> findByAuthor(String author);
     
     List<FormSubmission> findByStatus(SubmissionStatus status);
 }

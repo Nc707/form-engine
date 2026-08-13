@@ -21,7 +21,7 @@ public interface FormSubmissionDao {
     
     List<FormSubmissionDTO> findByFormCode(String formCode);
     
-    List<FormSubmissionDTO> findBySubmittedBy(String submittedBy);
+    List<FormSubmissionDTO> findByAuthor(String author);
     
     List<FormSubmissionDTO> findByStatus(String status);
     

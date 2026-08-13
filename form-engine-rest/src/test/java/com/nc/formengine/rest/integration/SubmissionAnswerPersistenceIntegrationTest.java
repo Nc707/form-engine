@@ -112,7 +112,7 @@ class SubmissionAnswerPersistenceIntegrationTest {
         return FormSubmissionDTO.builder()
                 .formDefinitionId(form.getId())
                 .formCode(form.getCode())
-                .submittedBy("tester")
+                .author("tester")
                 .fieldSubmissions(new ArrayList<>(List.of(answers)))
                 .build();
     }
