@@ -38,27 +38,27 @@ class AnswerResolverTest {
     @Test
     void everythingAtOnce() {
         List<FieldDefinitionDTO> fields = List.of(
-                field(1L, "nombre", "Nombre completo", FieldType.TEXT),
-                field(2L, "edad", "Edad", FieldType.NUMBER),
-                field(3L, "acepta", "¿Acepta términos?", FieldType.BOOLEAN));
+                field(1L, "full_name", "Full name", FieldType.TEXT),
+                field(2L, "age", "Age", FieldType.NUMBER),
+                field(3L, "accepts_terms", "Accepts the terms", FieldType.BOOLEAN));
 
         FormSubmissionDTO submission = submission(
-                answer(1L, "nombre", "Ana"),
+                answer(1L, "full_name", "Ana"),
                 // Answered twice: the later answer is the one that counts.
-                answer(2L, "edad", "30"),
-                answer(2L, "edad", "34"),
+                answer(2L, "age", "30"),
+                answer(2L, "age", "34"),
                 // The field this belonged to is gone from the definition.
                 answer(99L, "motivo", "mudanza"),
                 // Gone, and without even a name snapshot to fall back on.
                 answer(98L, null, "x"));
-        // "acepta" is declared but never answered.
+        // "accepts_terms" is declared but never answered.
 
         List<ResolvedAnswer> resolved = resolver.resolve(submission, fields);
 
         assertThat(resolved).containsExactly(
-                new ResolvedAnswer("Nombre completo", "Ana", true, false),
-                new ResolvedAnswer("Edad", "34", true, false),
-                new ResolvedAnswer("¿Acepta términos?", "", false, false),
+                new ResolvedAnswer("Full name", "Ana", true, false),
+                new ResolvedAnswer("Age", "34", true, false),
+                new ResolvedAnswer("Accepts the terms", "", false, false),
                 new ResolvedAnswer("motivo", "mudanza", true, true),
                 new ResolvedAnswer("Field #98", "x", true, true));
     }
@@ -66,35 +66,35 @@ class AnswerResolverTest {
     @Test
     void labelsAreResolvedAgainstTheDefinitionTheSubmissionPointsAt() {
         when(fieldDefinitionService.findByFormDefinitionId(ARCHIVED_DEFINITION))
-                .thenReturn(List.of(field(1L, "nombre", "Nombre completo", FieldType.TEXT)));
+                .thenReturn(List.of(field(1L, "full_name", "Full name", FieldType.TEXT)));
 
-        FormSubmissionDTO submission = submission(answer(1L, "nombre", "Ana"));
+        FormSubmissionDTO submission = submission(answer(1L, "full_name", "Ana"));
 
         assertThat(resolver.resolve(submission))
                 .extracting(ResolvedAnswer::label)
-                .containsExactly("Nombre completo");
+                .containsExactly("Full name");
         verify(fieldDefinitionService).findByFormDefinitionId(ARCHIVED_DEFINITION);
     }
 
     /** Ids differ between versions, so a name snapshot is what rescues an answer whose id moved. */
     @Test
     void anAnswerWhoseIdIsUnknownIsStillMatchedByName() {
-        List<FieldDefinitionDTO> fields = List.of(field(42L, "nombre", "Nombre completo", FieldType.TEXT));
+        List<FieldDefinitionDTO> fields = List.of(field(42L, "full_name", "Full name", FieldType.TEXT));
 
-        List<ResolvedAnswer> resolved = resolver.resolve(submission(answer(1L, "nombre", "Ana")), fields);
+        List<ResolvedAnswer> resolved = resolver.resolve(submission(answer(1L, "full_name", "Ana")), fields);
 
         assertThat(resolved).containsExactly(
-                new ResolvedAnswer("Nombre completo", "Ana", true, false));
+                new ResolvedAnswer("Full name", "Ana", true, false));
     }
 
     /** The definition is gone entirely: every answer is orphaned, none is silently dropped. */
     @Test
     void aSubmissionWhoseDefinitionIsGoneKeepsAllItsAnswers() {
         List<ResolvedAnswer> resolved = resolver.resolve(
-                submission(answer(1L, "nombre", "Ana"), answer(2L, "edad", "34")), List.of());
+                submission(answer(1L, "full_name", "Ana"), answer(2L, "age", "34")), List.of());
 
         assertThat(resolved).allMatch(ResolvedAnswer::retired);
-        assertThat(resolved).extracting(ResolvedAnswer::label).containsExactly("nombre", "edad");
+        assertThat(resolved).extracting(ResolvedAnswer::label).containsExactly("full_name", "age");
     }
 
     @Test

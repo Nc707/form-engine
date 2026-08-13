@@ -27,7 +27,7 @@ class MaxValueSpecificationTest {
         SpecificationResult result = new MaxValueSpecification(100.0).isSatisfiedBy(100.01, NUMBER);
 
         assertThat(result.isSatisfied()).isFalse();
-        assertThat(result.getReasons()).containsExactly("El valor no puede ser mayor que 100.0");
+        assertThat(result.getReasons()).containsExactly("This answer cannot be greater than 100.0");
     }
 
     @Test
@@ -39,7 +39,7 @@ class MaxValueSpecificationTest {
     void rejectsAValueThatIsNeitherNumberNorText() {
         SpecificationResult result = new MaxValueSpecification(100.0).isSatisfiedBy(true, NUMBER);
 
-        assertThat(result.getReasons()).containsExactly("El valor no es un número válido");
+        assertThat(result.getReasons()).containsExactly("This answer is not a number");
     }
 
     @Test

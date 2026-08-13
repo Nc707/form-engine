@@ -40,9 +40,10 @@ public class FieldRestriction {
     @ToString.Exclude
     private FieldDefinition fieldDefinition;
 
+    /** Named as the DTO names it: one concept had three spellings across the three layers. */
     @Enumerated(EnumType.STRING)
-    @Column(nullable = false)
-    private RestrictionType type;
+    @Column(name = "restriction_type", nullable = false)
+    private RestrictionType restrictionType;
 
     /** The message the form author wrote, or null to use the default of the specification. */
     @Column(name = "error_message")

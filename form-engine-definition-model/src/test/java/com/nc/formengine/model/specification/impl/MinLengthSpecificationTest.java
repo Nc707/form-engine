@@ -30,14 +30,14 @@ class MinLengthSpecificationTest {
         SpecificationResult result = new MinLengthSpecification(3).isSatisfiedBy("ab", TEXT);
 
         assertThat(result.isSatisfied()).isFalse();
-        assertThat(result.getReasons()).containsExactly("El campo debe tener al menos 3 caracteres");
+        assertThat(result.getReasons()).containsExactly("This answer must be at least 3 characters long");
     }
 
     @Test
     void reportsTheCustomMessageWhenOneIsGiven() {
-        SpecificationResult result = new MinLengthSpecification(3, "Muy corto").isSatisfiedBy("ab", TEXT);
+        SpecificationResult result = new MinLengthSpecification(3, "Too short").isSatisfiedBy("ab", TEXT);
 
-        assertThat(result.getReasons()).containsExactly("Muy corto");
+        assertThat(result.getReasons()).containsExactly("Too short");
     }
 
     @Test
@@ -50,7 +50,7 @@ class MinLengthSpecificationTest {
         SpecificationResult result = new MinLengthSpecification(3).isSatisfiedBy(42, TEXT);
 
         assertThat(result.isSatisfied()).isFalse();
-        assertThat(result.getReasons()).containsExactly("El valor no es una cadena de texto");
+        assertThat(result.getReasons()).containsExactly("This answer is not text");
     }
 
     @Test

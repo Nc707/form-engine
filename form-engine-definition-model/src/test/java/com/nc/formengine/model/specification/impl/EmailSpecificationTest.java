@@ -27,14 +27,14 @@ class EmailSpecificationTest {
         SpecificationResult result = new EmailSpecification().isSatisfiedBy(address, TEXT);
 
         assertThat(result.isSatisfied()).isFalse();
-        assertThat(result.getReasons()).containsExactly("El formato del email es inválido");
+        assertThat(result.getReasons()).containsExactly("This is not a valid email address");
     }
 
     @Test
     void reportsTheCustomMessageWhenOneIsGiven() {
-        SpecificationResult result = new EmailSpecification("Revisá el correo").isSatisfiedBy("nope", TEXT);
+        SpecificationResult result = new EmailSpecification("Check the address").isSatisfiedBy("nope", TEXT);
 
-        assertThat(result.getReasons()).containsExactly("Revisá el correo");
+        assertThat(result.getReasons()).containsExactly("Check the address");
     }
 
     @Test
@@ -46,7 +46,7 @@ class EmailSpecificationTest {
     void rejectsAValueThatIsNotText() {
         SpecificationResult result = new EmailSpecification().isSatisfiedBy(42, TEXT);
 
-        assertThat(result.getReasons()).containsExactly("El valor no es una cadena de texto");
+        assertThat(result.getReasons()).containsExactly("This answer is not text");
     }
 
     @Test

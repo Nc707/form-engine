@@ -26,7 +26,7 @@ public class MaxLengthSpecification implements FieldSpecification {
     
     public MaxLengthSpecification(Integer maxLength) {
         this.maxLength = maxLength;
-        this.errorMessage = "El campo no puede tener más de " + maxLength + " caracteres";
+        this.errorMessage = "This answer cannot be longer than " + maxLength + " characters";
     }
     
     @Override
@@ -41,7 +41,7 @@ public class MaxLengthSpecification implements FieldSpecification {
         }
         
         if (!(value instanceof String str)) {
-            return SpecificationResult.notSatisfied("El valor no es una cadena de texto");
+            return SpecificationResult.notSatisfied("This answer is not text");
         }
         
         if (str.length() > maxLength) {

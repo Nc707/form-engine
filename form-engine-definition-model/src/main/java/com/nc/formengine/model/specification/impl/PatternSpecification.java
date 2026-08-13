@@ -28,7 +28,7 @@ public class PatternSpecification implements FieldSpecification {
     
     public PatternSpecification(String pattern) {
         this.pattern = pattern;
-        this.errorMessage = "El valor no cumple con el formato requerido";
+        this.errorMessage = "This answer is not in the expected format";
     }
     
     @Override
@@ -43,7 +43,7 @@ public class PatternSpecification implements FieldSpecification {
         }
         
         if (!(value instanceof String str)) {
-            return SpecificationResult.notSatisfied("El valor no es una cadena de texto");
+            return SpecificationResult.notSatisfied("This answer is not text");
         }
         
         try {
@@ -51,7 +51,11 @@ public class PatternSpecification implements FieldSpecification {
                 return SpecificationResult.notSatisfied(errorMessage);
             }
         } catch (PatternSyntaxException e) {
-            return SpecificationResult.notSatisfied("Patrón de expresión regular inválido: " + e.getMessage());
+            // The rule itself is broken, which is the form author's mistake and not the respondent's,
+            // so the message does not ask them to fix their answer. The field service refuses to store
+            // a pattern that will not compile, so this is only reachable by building one by hand.
+            return SpecificationResult.notSatisfied("This field's pattern rule is misconfigured "
+                + "and could not be checked");
         }
         
         return SpecificationResult.satisfied();

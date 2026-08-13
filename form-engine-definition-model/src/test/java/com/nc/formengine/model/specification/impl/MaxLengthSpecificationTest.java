@@ -27,7 +27,7 @@ class MaxLengthSpecificationTest {
         SpecificationResult result = new MaxLengthSpecification(5).isSatisfiedBy("abcdef", TEXT);
 
         assertThat(result.isSatisfied()).isFalse();
-        assertThat(result.getReasons()).containsExactly("El campo no puede tener más de 5 caracteres");
+        assertThat(result.getReasons()).containsExactly("This answer cannot be longer than 5 characters");
     }
 
     @Test
@@ -46,7 +46,7 @@ class MaxLengthSpecificationTest {
     void rejectsAValueThatIsNotText() {
         SpecificationResult result = new MaxLengthSpecification(5).isSatisfiedBy(123456, TEXT);
 
-        assertThat(result.getReasons()).containsExactly("El valor no es una cadena de texto");
+        assertThat(result.getReasons()).containsExactly("This answer is not text");
     }
 
     @Test

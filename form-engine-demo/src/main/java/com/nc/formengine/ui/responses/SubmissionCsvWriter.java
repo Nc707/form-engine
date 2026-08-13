@@ -11,8 +11,8 @@ import java.util.List;
  * spreadsheets read those as formulas, which turns someone's answer into code on the reader's
  * machine.
  *
- * <p>The output is UTF-8 with a byte-order mark, which is what makes Excel read the accents in
- * Spanish labels instead of mojibake.
+ * <p>The output is UTF-8 with a byte-order mark, which is what makes Excel read a label outside plain
+ * ASCII as the label rather than as mojibake.
  */
 final class SubmissionCsvWriter {
 

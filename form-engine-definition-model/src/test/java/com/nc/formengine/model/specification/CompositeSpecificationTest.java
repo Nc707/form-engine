@@ -75,7 +75,7 @@ class CompositeSpecificationTest {
         FieldSpecification specification = FieldSpecificationFactory.composite(List.of(tooShort, wrongShape));
 
         assertThat(specification.isSatisfiedBy("ab", TEXT).getReasons())
-            .containsExactly("El valor no cumple con el formato requerido");
+            .containsExactly("This answer is not in the expected format");
     }
 
     @Test
@@ -86,7 +86,7 @@ class CompositeSpecificationTest {
         FieldSpecification specification = FieldSpecificationFactory.composite(List.of(unordered, ordered));
 
         assertThat(specification.isSatisfiedBy("ab", TEXT).getReasons())
-            .containsExactly("El valor no cumple con el formato requerido");
+            .containsExactly("This answer is not in the expected format");
     }
 
     @Test

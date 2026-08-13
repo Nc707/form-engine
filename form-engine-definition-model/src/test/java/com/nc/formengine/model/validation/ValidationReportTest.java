@@ -12,9 +12,9 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 class ValidationReportTest {
 
     private static final FieldValidationError TOO_SHORT = FieldValidationError.brokenRestriction(
-        "nickname", 1L, RestrictionType.MIN_LENGTH, "El campo debe tener al menos 3 caracteres");
+        "nickname", 1L, RestrictionType.MIN_LENGTH, "This answer must be at least 3 characters long");
     private static final FieldValidationError BAD_EMAIL = FieldValidationError.brokenRestriction(
-        "email", 2L, RestrictionType.EMAIL, "El formato del email es inválido");
+        "email", 2L, RestrictionType.EMAIL, "This is not a valid email address");
 
     @Test
     void aReportWithoutErrorsIsValid() {

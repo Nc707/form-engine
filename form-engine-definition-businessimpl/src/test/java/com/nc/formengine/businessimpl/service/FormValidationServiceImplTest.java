@@ -92,14 +92,14 @@ class FormValidationServiceImplTest {
     @Test
     void usesTheMessageTheAuthorWroteOnTheFieldItself() {
         FieldDefinitionDTO field = text("nickname", true);
-        field.setRequiredMessage("Necesitamos tu apodo");
+        field.setRequiredMessage("We need your nickname");
         givenFields(field);
         givenNoDependencies();
 
         ValidationReport report = service.validate(FORM_ID, Map.of(), ValidationMode.SUBMIT);
 
         assertThat(report.errors()).singleElement()
-            .extracting(FieldValidationError::message).isEqualTo("Necesitamos tu apodo");
+            .extracting(FieldValidationError::message).isEqualTo("We need your nickname");
     }
 
     /**
@@ -108,7 +108,7 @@ class FormValidationServiceImplTest {
      */
     @Test
     void aDraftDemandsNothingEvenFromAFieldCarryingRules() {
-        givenFields(text("nickname", true, minLength(3, "Muy corto"), pattern("^[A-Z]+$")));
+        givenFields(text("nickname", true, minLength(3, "Too short"), pattern("^[A-Z]+$")));
         givenNoDependencies();
 
         assertThat(service.validate(FORM_ID, Map.of("nickname", ""), ValidationMode.DRAFT).valid()).isTrue();
@@ -117,7 +117,7 @@ class FormValidationServiceImplTest {
     /** An optional field left blank has nothing to judge, so its rules do not fire. */
     @Test
     void anOptionalFieldLeftBlankBreaksNoRules() {
-        givenFields(text("nickname", false, minLength(3, "Muy corto"), pattern("^[A-Z]+$")));
+        givenFields(text("nickname", false, minLength(3, "Too short"), pattern("^[A-Z]+$")));
         givenNoDependencies();
 
         assertThat(service.validate(FORM_ID, Map.of("nickname", "  "), ValidationMode.SUBMIT).valid()).isTrue();
@@ -133,13 +133,13 @@ class FormValidationServiceImplTest {
 
     @Test
     void aDraftStillJudgesTheAnswersItDoesHave() {
-        givenFields(text("nickname", true, minLength(3, "Muy corto")));
+        givenFields(text("nickname", true, minLength(3, "Too short")));
         givenNoDependencies();
 
         ValidationReport report = service.validate(FORM_ID, Map.of("nickname", "ab"), ValidationMode.DRAFT);
 
         assertThat(report.errors()).singleElement()
-            .extracting(FieldValidationError::message).isEqualTo("Muy corto");
+            .extracting(FieldValidationError::message).isEqualTo("Too short");
     }
 
     /**
@@ -157,7 +157,7 @@ class FormValidationServiceImplTest {
 
     @Test
     void reportsEveryRuleAnAnswerBreaks() {
-        givenFields(text("nickname", false, minLength(5, "Muy corto"), pattern("^[A-Z]+$")));
+        givenFields(text("nickname", false, minLength(5, "Too short"), pattern("^[A-Z]+$")));
         givenNoDependencies();
 
         ValidationReport report = service.validate(FORM_ID, Map.of("nickname", "ab"), ValidationMode.SUBMIT);
@@ -222,13 +222,13 @@ class FormValidationServiceImplTest {
 
     @Test
     void judgesASingleAnswerAgainstTheRulesOfItsField() {
-        FieldDefinitionDTO field = text("nickname", true, minLength(3, "Muy corto"));
+        FieldDefinitionDTO field = text("nickname", true, minLength(3, "Too short"));
         when(fieldDefinitionDao.findById(10L)).thenReturn(Optional.of(field));
         givenNoDependencies();
 
         assertThat(service.validateField(10L, "abcd", Map.of()).valid()).isTrue();
         assertThat(service.validateField(10L, "ab", Map.of()).errors())
-            .extracting(FieldValidationError::message).containsExactly("Muy corto");
+            .extracting(FieldValidationError::message).containsExactly("Too short");
     }
 
     @Test
