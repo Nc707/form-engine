@@ -181,7 +181,7 @@ class RendererWorkflowIntegrationTest {
                 .id(id)
                 .formDefinitionId(form.getId())
                 .formCode(form.getCode())
-                .submittedBy(FormRendererView.DEMO_USER)
+                .author(FormRendererView.DEMO_USER)
                 .fieldSubmissions(rows)
                 .build();
     }

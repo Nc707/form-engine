@@ -4,6 +4,7 @@ import com.nc.formengine.submission.dataimpl.entity.FieldSubmission;
 import com.nc.formengine.submission.dataimpl.entity.FormSubmission;
 import com.nc.formengine.submission.model.dto.FieldSubmissionDTO;
 import com.nc.formengine.submission.model.dto.FormSubmissionDTO;
+import com.nc.formengine.submission.model.enums.SubmissionStatus;
 
 import org.springframework.stereotype.Component;
 
@@ -46,7 +47,8 @@ public class FormSubmissionMapper {
                 .id(entity.getId())
                 .formDefinitionId(entity.getFormDefinitionId())
                 .formCode(entity.getFormCode())
-                .submittedBy(entity.getSubmittedBy())
+                .author(entity.getAuthor())
+                .createdAt(entity.getCreatedAt())
                 .submittedAt(entity.getSubmittedAt())
                 .status(entity.getStatus())
                 .fieldSubmissions(entity.getFieldSubmissions() != null ?
@@ -65,13 +67,12 @@ public class FormSubmissionMapper {
         entity.setId(dto.getId());
         entity.setFormDefinitionId(dto.getFormDefinitionId());
         entity.setFormCode(dto.getFormCode());
-        entity.setSubmittedBy(dto.getSubmittedBy());
+        entity.setAuthor(dto.getAuthor());
+        entity.setCreatedAt(dto.getCreatedAt());
         entity.setSubmittedAt(dto.getSubmittedAt());
-        // status is NOT NULL and defaults to SUBMITTED on the entity; only overwrite it when the
-        // DTO actually carries a value, otherwise a create without a status violates the constraint.
-        if (dto.getStatus() != null) {
-            entity.setStatus(dto.getStatus());
-        }
+        // status is NOT NULL and the entity has no default, because which state a submission is in is
+        // the workflow's to say. A DTO that names none starts as a draft.
+        entity.setStatus(dto.getStatus() != null ? dto.getStatus() : SubmissionStatus.DRAFT);
         // toDTO maps the answers, so toEntity must map them back. Dropping them here meant a
         // submission saved from a round-tripped DTO kept only its header row, and, since the
         // collection is cascaded with orphanRemoval, that saving it again deleted whatever answers
@@ -95,10 +96,11 @@ public class FormSubmissionMapper {
 
         entity.setFormDefinitionId(dto.getFormDefinitionId());
         entity.setFormCode(dto.getFormCode());
-        entity.setSubmittedBy(dto.getSubmittedBy());
+        entity.setAuthor(dto.getAuthor());
         if (dto.getStatus() != null) {
             entity.setStatus(dto.getStatus());
         }
+        // Only ever set, never cleared: a submitted response cannot un-know when it was sent.
         if (dto.getSubmittedAt() != null) {
             entity.setSubmittedAt(dto.getSubmittedAt());
         }

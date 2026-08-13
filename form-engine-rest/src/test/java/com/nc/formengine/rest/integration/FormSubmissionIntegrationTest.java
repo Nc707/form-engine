@@ -60,7 +60,7 @@ class FormSubmissionIntegrationTest {
         FormSubmissionDTO submissionToCreate = new FormSubmissionDTO();
         submissionToCreate.setFormDefinitionId(formDefinitionId);
         submissionToCreate.setFormCode(formCode);
-        submissionToCreate.setSubmittedBy("user@example.com");
+        submissionToCreate.setAuthor("user@example.com");
         submissionToCreate.setStatus(SubmissionStatus.DRAFT);
         submissionToCreate.setSubmittedAt(LocalDateTime.now());
 
@@ -74,7 +74,7 @@ class FormSubmissionIntegrationTest {
                 .andExpect(jsonPath("$.id").exists())
                 .andExpect(jsonPath("$.formDefinitionId").value(formDefinitionId))
                 .andExpect(jsonPath("$.formCode").value(formCode))
-                .andExpect(jsonPath("$.submittedBy").value("user@example.com"))
+                .andExpect(jsonPath("$.author").value("user@example.com"))
                 .andExpect(jsonPath("$.status").value("DRAFT"))
                 .andReturn();
 
@@ -87,14 +87,14 @@ class FormSubmissionIntegrationTest {
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.id").value(submissionId))
                 .andExpect(jsonPath("$.formDefinitionId").value(formDefinitionId))
-                .andExpect(jsonPath("$.submittedBy").value("user@example.com"))
+                .andExpect(jsonPath("$.author").value("user@example.com"))
                 .andExpect(jsonPath("$.status").value("DRAFT"));
 
         // Then - it shows up in the list for the form definition
         mockMvc.perform(get("/api/v1/form-submissions/by-form-definition/{formDefinitionId}", formDefinitionId))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$").isArray())
-                .andExpect(jsonPath("$[?(@.id == " + submissionId + ")].submittedBy").value("user@example.com"));
+                .andExpect(jsonPath("$[?(@.id == " + submissionId + ")].author").value("user@example.com"));
 
         // Then - it can be found by form code
         mockMvc.perform(get("/api/v1/form-submissions/by-form-code/{formCode}", formCode))
@@ -112,19 +112,19 @@ class FormSubmissionIntegrationTest {
         FormSubmissionDTO submission1 = new FormSubmissionDTO();
         submission1.setFormDefinitionId(formDefinitionId);
         submission1.setFormCode(formCode);
-        submission1.setSubmittedBy(user1);
+        submission1.setAuthor(user1);
         submission1.setStatus(SubmissionStatus.SUBMITTED);
 
         FormSubmissionDTO submission2 = new FormSubmissionDTO();
         submission2.setFormDefinitionId(formDefinitionId);
         submission2.setFormCode(formCode);
-        submission2.setSubmittedBy(user1);
+        submission2.setAuthor(user1);
         submission2.setStatus(SubmissionStatus.SUBMITTED);
 
         FormSubmissionDTO submission3 = new FormSubmissionDTO();
         submission3.setFormDefinitionId(formDefinitionId);
         submission3.setFormCode(formCode);
-        submission3.setSubmittedBy(user2);
+        submission3.setAuthor(user2);
         submission3.setStatus(SubmissionStatus.SUBMITTED);
 
         // When - creating the submissions
@@ -144,19 +144,19 @@ class FormSubmissionIntegrationTest {
                 .andExpect(status().isCreated());
 
         // Then - filtering by user returns alice's 2
-        mockMvc.perform(get("/api/v1/form-submissions/by-submitted-by/{submittedBy}", user1))
+        mockMvc.perform(get("/api/v1/form-submissions/by-author/{author}", user1))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$").isArray())
                 .andExpect(jsonPath("$.length()").value(2))
-                .andExpect(jsonPath("$[0].submittedBy").value(user1))
-                .andExpect(jsonPath("$[1].submittedBy").value(user1));
+                .andExpect(jsonPath("$[0].author").value(user1))
+                .andExpect(jsonPath("$[1].author").value(user1));
 
         // Then - filtering by user returns bob's 1
-        mockMvc.perform(get("/api/v1/form-submissions/by-submitted-by/{submittedBy}", user2))
+        mockMvc.perform(get("/api/v1/form-submissions/by-author/{author}", user2))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$").isArray())
                 .andExpect(jsonPath("$.length()").value(1))
-                .andExpect(jsonPath("$[0].submittedBy").value(user2));
+                .andExpect(jsonPath("$[0].author").value(user2));
     }
 
     @Test
@@ -165,20 +165,20 @@ class FormSubmissionIntegrationTest {
         FormSubmissionDTO draftSubmission = new FormSubmissionDTO();
         draftSubmission.setFormDefinitionId(formDefinitionId);
         draftSubmission.setFormCode(formCode);
-        draftSubmission.setSubmittedBy("user1@example.com");
+        draftSubmission.setAuthor("user1@example.com");
         draftSubmission.setStatus(SubmissionStatus.DRAFT);
 
         FormSubmissionDTO submittedSubmission = new FormSubmissionDTO();
         submittedSubmission.setFormDefinitionId(formDefinitionId);
         submittedSubmission.setFormCode(formCode);
-        submittedSubmission.setSubmittedBy("user2@example.com");
+        submittedSubmission.setAuthor("user2@example.com");
         submittedSubmission.setStatus(SubmissionStatus.SUBMITTED);
 
         FormSubmissionDTO completedSubmission = new FormSubmissionDTO();
         completedSubmission.setFormDefinitionId(formDefinitionId);
         completedSubmission.setFormCode(formCode);
-        completedSubmission.setSubmittedBy("user3@example.com");
-        completedSubmission.setStatus(SubmissionStatus.CANCELED);
+        completedSubmission.setAuthor("user3@example.com");
+        completedSubmission.setStatus(SubmissionStatus.VOIDED);
 
         // When - creating the submissions
         mockMvc.perform(post("/api/v1/form-submissions")
@@ -216,7 +216,7 @@ class FormSubmissionIntegrationTest {
         FormSubmissionDTO submissionToCreate = new FormSubmissionDTO();
         submissionToCreate.setFormDefinitionId(formDefinitionId);
         submissionToCreate.setFormCode(formCode);
-        submissionToCreate.setSubmittedBy("user@example.com");
+        submissionToCreate.setAuthor("user@example.com");
         submissionToCreate.setStatus(SubmissionStatus.DRAFT);
 
         MvcResult createResult = mockMvc.perform(post("/api/v1/form-submissions")
@@ -234,7 +234,7 @@ class FormSubmissionIntegrationTest {
         FormSubmissionDTO submissionToUpdate = new FormSubmissionDTO();
         submissionToUpdate.setFormDefinitionId(formDefinitionId);
         submissionToUpdate.setFormCode(formCode);
-        submissionToUpdate.setSubmittedBy("user@example.com");
+        submissionToUpdate.setAuthor("user@example.com");
         submissionToUpdate.setStatus(SubmissionStatus.SUBMITTED);
 
         mockMvc.perform(put("/api/v1/form-submissions/{id}", submissionId)
@@ -256,7 +256,7 @@ class FormSubmissionIntegrationTest {
         FormSubmissionDTO submissionToCreate = new FormSubmissionDTO();
         submissionToCreate.setFormDefinitionId(formDefinitionId);
         submissionToCreate.setFormCode(formCode);
-        submissionToCreate.setSubmittedBy("temp@example.com");
+        submissionToCreate.setAuthor("temp@example.com");
         submissionToCreate.setStatus(SubmissionStatus.DRAFT);
 
         MvcResult createResult = mockMvc.perform(post("/api/v1/form-submissions")

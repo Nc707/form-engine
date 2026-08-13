@@ -62,8 +62,8 @@ public class FormSubmissionServiceImpl implements FormSubmissionService {
 
     @Override
     @Transactional(readOnly = true)
-    public List<FormSubmissionDTO> findBySubmittedBy(String submittedBy) {
-        return formSubmissionDao.findBySubmittedBy(submittedBy);
+    public List<FormSubmissionDTO> findByAuthor(String author) {
+        return formSubmissionDao.findByAuthor(author);
     }
 
     @Override

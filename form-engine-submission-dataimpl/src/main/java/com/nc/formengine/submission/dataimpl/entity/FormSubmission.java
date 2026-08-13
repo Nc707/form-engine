@@ -40,16 +40,27 @@ public class FormSubmission {
     @Column(name = "form_code", nullable = false)
     private String formCode;
 
-    @Column(name = "submitted_by")
-    private String submittedBy;
+    /** Who filled this in. Named for what is true of a draft too, which nobody has submitted. */
+    @Column(nullable = false)
+    private String author;
 
-    @Column(name = "submitted_at", nullable = false)
+    /** When it was started. Every submission has one, including a draft that is never sent. */
+    @Column(name = "created_at", nullable = false)
+    private LocalDateTime createdAt;
+
+    /**
+     * When it was actually sent, or null if it never was.
+     *
+     * <p>This column used to be stamped on insert and called the same thing, so every draft carried a
+     * "submitted at" for something nobody had submitted, and the views had to print a dash over it.
+     */
+    @Column(name = "submitted_at")
     private LocalDateTime submittedAt;
 
+    /** No default: which state a submission is in is the workflow's to say, never the caller's. */
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)
-    @Builder.Default
-    private SubmissionStatus status = SubmissionStatus.SUBMITTED;
+    private SubmissionStatus status;
 
     @OneToMany(mappedBy = "formSubmission", cascade = CascadeType.ALL, orphanRemoval = true)
     @Builder.Default
@@ -58,8 +69,8 @@ public class FormSubmission {
 
     @PrePersist
     protected void onCreate() {
-        if (submittedAt == null) {
-            submittedAt = LocalDateTime.now();
+        if (createdAt == null) {
+            createdAt = LocalDateTime.now();
         }
     }
 

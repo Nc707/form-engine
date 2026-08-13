@@ -53,7 +53,7 @@ class FormSubmissionPersistenceTest {
         FormSubmission submission = new FormSubmission();
         submission.setFormDefinitionId(7L);
         submission.setFormCode("ALTA");
-        submission.setSubmittedBy("ana@example.com");
+        submission.setAuthor("ana@example.com");
         submission.setSubmittedAt(LocalDateTime.now());
         submission.setStatus(SubmissionStatus.SUBMITTED);
 
@@ -75,18 +75,21 @@ class FormSubmissionPersistenceTest {
         return answer;
     }
 
-    /** The path {@code FormSubmissionWorkflowService.cancel} takes: read, flip the status, save. */
+    /**
+     * The path {@code FormSubmissionWorkflowService.voidSubmission} takes: read, flip the status, save.
+     * The whole point of voiding rather than deleting is that the answers stay readable.
+     */
     @Test
-    void cancellingASubmissionKeepsItsAnswers() {
+    void voidingASubmissionKeepsItsAnswers() {
         FormSubmissionDTO stored = dao.findById(submissionId).orElseThrow();
         assertThat(stored.getFieldSubmissions()).hasSize(3);
 
-        stored.setStatus(SubmissionStatus.CANCELED);
+        stored.setStatus(SubmissionStatus.VOIDED);
         dao.save(stored);
         flushAndClear();
 
         FormSubmissionDTO reread = dao.findById(submissionId).orElseThrow();
-        assertThat(reread.getStatus()).isEqualTo(SubmissionStatus.CANCELED);
+        assertThat(reread.getStatus()).isEqualTo(SubmissionStatus.VOIDED);
         assertThat(reread.getFieldSubmissions())
                 .extracting(answer -> answer.getFieldName() + "=" + answer.getValue())
                 .containsExactlyInAnyOrder("nombre=Ana", "edad=34", "acepta=true");
@@ -99,7 +102,7 @@ class FormSubmissionPersistenceTest {
                 .id(submissionId)
                 .formDefinitionId(7L)
                 .formCode("ALTA")
-                .submittedBy("ana@example.com")
+                .author("ana@example.com")
                 .status(SubmissionStatus.DRAFT)
                 .build();
 
@@ -155,7 +158,7 @@ class FormSubmissionPersistenceTest {
         FormSubmissionDTO fresh = FormSubmissionDTO.builder()
                 .formDefinitionId(9L)
                 .formCode("RECLAMO")
-                .submittedBy("luis@example.com")
+                .author("luis@example.com")
                 .status(SubmissionStatus.DRAFT)
                 .build();
 

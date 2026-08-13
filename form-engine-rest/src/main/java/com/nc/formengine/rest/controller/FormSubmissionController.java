@@ -79,16 +79,16 @@ public class FormSubmissionController {
         return ResponseEntity.ok(submissions);
     }
 
-    @GetMapping("/by-submitted-by/{submittedBy}")
+    @GetMapping("/by-author/{author}")
     @Operation(summary = "List the submissions of one user")
-    public ResponseEntity<List<FormSubmissionDTO>> findBySubmittedBy(@PathVariable String submittedBy) {
-        List<FormSubmissionDTO> submissions = formSubmissionService.findBySubmittedBy(submittedBy);
+    public ResponseEntity<List<FormSubmissionDTO>> findByAuthor(@PathVariable String author) {
+        List<FormSubmissionDTO> submissions = formSubmissionService.findByAuthor(author);
         return ResponseEntity.ok(submissions);
     }
 
     @GetMapping("/by-status/{status}")
     @Operation(summary = "List the submissions in one status",
-            description = "Status must be DRAFT, SUBMITTED or CANCELED.")
+            description = "Status must be DRAFT, SUBMITTED, DISCARDED or VOIDED.")
     @ApiResponse(responseCode = "400", description = "Unknown status; the body lists the allowed values.")
     public ResponseEntity<List<FormSubmissionDTO>> findByStatus(@PathVariable String status) {
         List<FormSubmissionDTO> submissions = formSubmissionService.findByStatus(status);

@@ -98,7 +98,7 @@ class FieldSubmissionIntegrationTest {
         FormSubmissionDTO formSubmission = new FormSubmissionDTO();
         formSubmission.setFormDefinitionId(formDefinitionId);
         formSubmission.setFormCode("SURVEY_FORM");
-        formSubmission.setSubmittedBy("testuser@example.com");
+        formSubmission.setAuthor("testuser@example.com");
         formSubmission.setStatus(SubmissionStatus.DRAFT);
 
         MvcResult submissionResult = mockMvc.perform(post("/api/v1/form-submissions")
@@ -192,7 +192,7 @@ class FieldSubmissionIntegrationTest {
         FormSubmissionDTO formSubmission2 = new FormSubmissionDTO();
         formSubmission2.setFormDefinitionId(formDefinitionId);
         formSubmission2.setFormCode("SURVEY_FORM");
-        formSubmission2.setSubmittedBy("user2@example.com");
+        formSubmission2.setAuthor("user2@example.com");
         formSubmission2.setStatus(SubmissionStatus.SUBMITTED);
 
         MvcResult submission2Result = mockMvc.perform(post("/api/v1/form-submissions")

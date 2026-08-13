@@ -25,8 +25,10 @@ import com.vaadin.flow.router.PageTitle;
 import com.vaadin.flow.router.Route;
 import com.vaadin.flow.theme.lumo.LumoUtility;
 
+import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.List;
+import java.util.function.Supplier;
 
 /**
  * One submission, read back.
@@ -77,14 +79,39 @@ class SubmissionDetailView extends VerticalLayout implements BeforeEnterObserver
     private void show(FormSubmissionDTO submission) {
         removeAll();
 
-        var cancelButton = new Button("Cancel submission", click -> confirmCancel(submission));
-        cancelButton.addThemeVariants(ButtonVariant.LUMO_ERROR);
-        // CANCELED is terminal, so there is nothing this button could do from there.
-        cancelButton.setEnabled(submission.getStatus() != SubmissionStatus.CANCELED);
-
-        add(new ViewToolbar("Submission detail", cancelButton),
+        // Which ending applies follows from where the submission is, so the view offers one or none
+        // rather than one button that means different things.
+        Button ending = endingButton(submission);
+        add(ending == null
+                        ? new ViewToolbar("Submission detail")
+                        : new ViewToolbar("Submission detail", ending),
                 metadata(submission),
                 answers(submission));
+    }
+
+    /**
+     * The action available from this submission's state, or null when it has already ended.
+     *
+     * <p>A draft can only be discarded, by whoever was filling it in. A submitted response can only be
+     * voided, by whoever owns the form. Neither is the other, and offering both would ask the user to
+     * pick which of two meanings they meant.
+     */
+    private Button endingButton(FormSubmissionDTO submission) {
+        return switch (submission.getStatus()) {
+            case DRAFT -> endingButton("Discard draft",
+                    "Discard this draft?",
+                    "The draft by " + orDash(submission.getAuthor())
+                            + " will be discarded. Its answers are kept, but it is never sent.",
+                    () -> workflowService.discard(submission.getId()),
+                    "Draft discarded");
+            case SUBMITTED -> endingButton("Void response",
+                    "Void this response?",
+                    "The response by " + orDash(submission.getAuthor())
+                            + " will stop counting. Its answers stay readable, and this is final.",
+                    () -> workflowService.voidSubmission(submission.getId()),
+                    "Response voided");
+            case DISCARDED, VOIDED -> null;
+        };
     }
 
     private FormLayout metadata(FormSubmissionDTO submission) {
@@ -96,18 +123,16 @@ class SubmissionDetailView extends VerticalLayout implements BeforeEnterObserver
         layout.addClassNames(LumoUtility.Padding.MEDIUM);
         layout.addFormItem(new Span(SubmissionBrowser.describe(form)), "Form");
         layout.addFormItem(new Span(orDash(submission.getFormCode())), "Code");
-        layout.addFormItem(new Span(orDash(submission.getSubmittedBy())), "Author");
-        layout.addFormItem(new Span(submission.getStatus() == SubmissionStatus.DRAFT
-                        || submission.getSubmittedAt() == null
-                        ? "—"
-                        : submission.getSubmittedAt().format(TIMESTAMP)),
-                "Submitted");
+        layout.addFormItem(new Span(orDash(submission.getAuthor())), "Author");
+        layout.addFormItem(new Span(timestamp(submission.getCreatedAt())), "Started");
+        // Null when it was never sent, which is now something the column can say for itself.
+        layout.addFormItem(new Span(timestamp(submission.getSubmittedAt())), "Submitted");
         layout.addFormItem(SubmissionBrowser.statusBadge(submission.getStatus()), "Status");
 
         if (form != null && form.getStatus() == FormDefinitionStatus.ARCHIVED) {
             layout.addFormItem(
-                    note("This answer belongs to an archived version. The labels below are "
-                            + "las de esa versión, no las de la versión publicada hoy."),
+                    note("This answer belongs to an archived version. The labels below are that "
+                            + "version's, not those of the version published today."),
                     "");
         }
         return layout;
@@ -157,7 +182,7 @@ class SubmissionDetailView extends VerticalLayout implements BeforeEnterObserver
             return text;
         }
 
-        var retired = new Span("campo retirado");
+        var retired = new Span("retired field");
         retired.getElement().setAttribute("theme", "badge contrast small");
 
         var withMark = new HorizontalLayout(text, retired);
@@ -167,31 +192,38 @@ class SubmissionDetailView extends VerticalLayout implements BeforeEnterObserver
         return withMark;
     }
 
-    /** Asks before doing it, in a dialog the application owns rather than a browser prompt. */
-    private void confirmCancel(FormSubmissionDTO submission) {
-        var dialog = new Dialog();
-        dialog.setHeaderTitle("Cancel this submission?");
-        dialog.add(new Span("The submission by " + orDash(submission.getSubmittedBy())
-                + " will be canceled. That is final: there is no way back."));
+    private Button endingButton(String label, String question, String consequence,
+                                Supplier<FormSubmissionDTO> action, String done) {
+        var button = new Button(label, click -> confirm(label, question, consequence, action, done));
+        button.addThemeVariants(ButtonVariant.LUMO_ERROR);
+        return button;
+    }
 
-        var confirm = new Button("Cancel submission", click -> {
+    /** Asks before doing it, in a dialog the application owns rather than a browser prompt. */
+    private void confirm(String label, String question, String consequence,
+                         Supplier<FormSubmissionDTO> action, String done) {
+        var dialog = new Dialog();
+        dialog.setHeaderTitle(question);
+        dialog.add(new Span(consequence));
+
+        var proceed = new Button(label, click -> {
             dialog.close();
-            cancel(submission);
+            apply(action, done);
         });
-        confirm.addThemeVariants(ButtonVariant.LUMO_PRIMARY, ButtonVariant.LUMO_ERROR);
+        proceed.addThemeVariants(ButtonVariant.LUMO_PRIMARY, ButtonVariant.LUMO_ERROR);
 
         var dismiss = new Button("Back", click -> dialog.close());
         dismiss.addThemeVariants(ButtonVariant.LUMO_TERTIARY);
 
-        dialog.getFooter().add(dismiss, confirm);
+        dialog.getFooter().add(dismiss, proceed);
         dialog.open();
     }
 
-    private void cancel(FormSubmissionDTO submission) {
+    private void apply(Supplier<FormSubmissionDTO> action, String done) {
         try {
-            FormSubmissionDTO canceled = workflowService.cancel(submission.getId());
-            Notifications.success("Submission canceled");
-            show(canceled);
+            FormSubmissionDTO updated = action.get();
+            Notifications.success(done);
+            show(updated);
         } catch (RuntimeException ex) {
             // The workflow refuses transitions it does not allow; what it says is what the user needs.
             Notifications.error(ex.getMessage());
@@ -206,5 +238,9 @@ class SubmissionDetailView extends VerticalLayout implements BeforeEnterObserver
 
     private String orDash(String value) {
         return value == null || value.isBlank() ? "—" : value;
+    }
+
+    private String timestamp(LocalDateTime moment) {
+        return moment == null ? "—" : moment.format(TIMESTAMP);
     }
 }
