@@ -25,7 +25,13 @@ public class FieldDefinitionDTO {
     private FieldType type;
     private Integer orderIndex;
     private Boolean required;
-    
+
+    /**
+     * What to say when this field is required and was left unanswered.
+     * If null, the engine's default message is used.
+     */
+    private String requiredMessage;
+
     /**
      * List of validation restrictions for this field.
      * Uses the Specification pattern for flexible, composable validation rules.

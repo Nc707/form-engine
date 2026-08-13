@@ -6,8 +6,6 @@ import com.nc.formengine.model.specification.impl.MaxLengthSpecification;
 import com.nc.formengine.model.specification.impl.MaxValueSpecification;
 import com.nc.formengine.model.specification.impl.MinLengthSpecification;
 import com.nc.formengine.model.specification.impl.MinValueSpecification;
-import com.nc.formengine.model.specification.impl.NotEmptySpecification;
-import com.nc.formengine.model.specification.impl.NotNullSpecification;
 import com.nc.formengine.model.specification.impl.PatternSpecification;
 
 import java.util.Comparator;
@@ -41,8 +39,8 @@ public final class FieldSpecificationFactory {
      * Builds the specification for a single restriction.
      *
      * <p>Parameters are read under the keys documented on {@link FieldRestrictionDTO}: {@code
-     * minLength}, {@code maxLength}, {@code minValue}, {@code maxValue} and {@code pattern}. The
-     * remaining three restriction types take no parameter.
+     * minLength}, {@code maxLength}, {@code minValue}, {@code maxValue} and {@code pattern}.
+     * {@code EMAIL} takes none.
      *
      * @param restriction the restriction to enforce; may be null
      * @return the specification enforcing it, never null
@@ -56,12 +54,6 @@ public final class FieldSpecificationFactory {
         String message = restriction.getErrorMessage();
 
         return switch (restriction.getRestrictionType()) {
-            case NOT_NULL -> hasText(message)
-                ? new NotNullSpecification(message)
-                : new NotNullSpecification();
-            case NOT_EMPTY -> hasText(message)
-                ? new NotEmptySpecification(message)
-                : new NotEmptySpecification();
             case EMAIL -> hasText(message)
                 ? new EmailSpecification(message)
                 : new EmailSpecification();

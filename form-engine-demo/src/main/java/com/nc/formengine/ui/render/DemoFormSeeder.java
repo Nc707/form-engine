@@ -111,8 +111,7 @@ class DemoFormSeeder {
                         option("Vaadin", "vaadin", 2),
                         option("SQL", "sql", 3)),
                 field("needs_visa", "I need a work visa", FieldType.BOOLEAN, 6, false),
-                field("visa_country", "Passport country", FieldType.TEXT, 7, true,
-                        restriction(RestrictionType.NOT_EMPTY, Map.of(), null))));
+                field("visa_country", "Passport country", FieldType.TEXT, 7, true)));
 
         return FormDefinitionDTO.builder()
                 .code(CODE)

@@ -32,7 +32,7 @@ public class FieldRestrictionDTO {
     private Long fieldDefinitionId;
     
     /**
-     * Type of restriction (NOT_NULL, MIN_LENGTH, MAX_VALUE, etc.).
+     * Type of restriction (MIN_LENGTH, MAX_VALUE, PATTERN, etc.).
      */
     private RestrictionType restrictionType;
     

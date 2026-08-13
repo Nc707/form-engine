@@ -32,9 +32,7 @@ class RestrictionParameterSpecTest {
     }
 
     @Test
-    void theThreeParameterlessRulesTakeNothing() {
-        assertThat(RestrictionParameterSpec.of(RestrictionType.NOT_NULL).hasParameter()).isFalse();
-        assertThat(RestrictionParameterSpec.of(RestrictionType.NOT_EMPTY).hasParameter()).isFalse();
+    void theOnlyParameterlessRuleTakesNothing() {
         assertThat(RestrictionParameterSpec.of(RestrictionType.EMAIL).hasParameter()).isFalse();
         assertThat(RestrictionParameterSpec.parameters(RestrictionType.EMAIL, "ignored")).isEmpty();
     }
@@ -102,30 +100,28 @@ class RestrictionParameterSpecTest {
     void readingAnAbsentParameterGivesNothing() {
         assertThat(RestrictionParameterSpec.read(RestrictionType.MIN_LENGTH, Map.of())).isNull();
         assertThat(RestrictionParameterSpec.read(RestrictionType.MIN_LENGTH, null)).isNull();
-        assertThat(RestrictionParameterSpec.read(RestrictionType.NOT_NULL, Map.of("x", 1))).isNull();
+        assertThat(RestrictionParameterSpec.read(RestrictionType.EMAIL, Map.of("x", 1))).isNull();
     }
 
+    /** The editor has to say so rather than offer an empty dropdown. */
     @Test
-    void onlyRequirednessAppliesToTheTypesWithoutTextOrNumbers() {
+    void noRuleAtAllAppliesToTheTypesWithoutTextOrNumbers() {
         for (FieldType type : new FieldType[]{FieldType.DATE, FieldType.BOOLEAN,
                 FieldType.SELECT, FieldType.MULTI_SELECT}) {
             assertThat(RestrictionParameterSpec.applicableTo(type))
                     .as("applicable to %s", type)
-                    .containsExactly(RestrictionType.NOT_NULL);
+                    .isEmpty();
         }
     }
 
     @Test
     void textAndNumbersGetTheirOwnRulesInAStableOrder() {
         assertThat(RestrictionParameterSpec.applicableTo(FieldType.TEXT)).containsExactly(
-                RestrictionType.NOT_NULL,
-                RestrictionType.NOT_EMPTY,
                 RestrictionType.MIN_LENGTH,
                 RestrictionType.MAX_LENGTH,
                 RestrictionType.PATTERN,
                 RestrictionType.EMAIL);
         assertThat(RestrictionParameterSpec.applicableTo(FieldType.NUMBER)).containsExactly(
-                RestrictionType.NOT_NULL,
                 RestrictionType.MIN_VALUE,
                 RestrictionType.MAX_VALUE);
         assertThat(RestrictionParameterSpec.applicableTo(null)).isEmpty();

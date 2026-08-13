@@ -84,6 +84,7 @@ class FormDefinitionVersionCopier {
         copy.setType(source.getType());
         copy.setOrderIndex(source.getOrderIndex());
         copy.setRequired(source.getRequired());
+        copy.setRequiredMessage(source.getRequiredMessage());
 
         List<FieldRestriction> restrictions = new ArrayList<>();
         for (FieldRestriction sourceRestriction : source.getRestrictions()) {

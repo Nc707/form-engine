@@ -8,6 +8,7 @@ import com.nc.formengine.model.dto.FieldRestrictionDTO;
 import com.nc.formengine.model.enums.FieldType;
 import com.nc.formengine.model.enums.RestrictionType;
 import com.nc.formengine.model.validation.FieldValidationError;
+import com.nc.formengine.model.validation.ValidationErrorCause;
 import com.nc.formengine.model.validation.ValidationMode;
 import com.nc.formengine.model.validation.ValidationReport;
 import org.junit.jupiter.api.BeforeEach;
@@ -69,8 +70,10 @@ class FormValidationServiceImplTest {
         assertThat(report.errors()).singleElement().satisfies(error -> {
             assertThat(error.fieldName()).isEqualTo("nickname");
             assertThat(error.fieldDefinitionId()).isEqualTo(10L);
-            assertThat(error.restriction()).isEqualTo(RestrictionType.NOT_NULL);
-            assertThat(error.message()).isEqualTo("El campo es obligatorio");
+            assertThat(error.cause()).isEqualTo(ValidationErrorCause.REQUIRED);
+            // Not attributed to any restriction: no restriction asked for it.
+            assertThat(error.restriction()).isNull();
+            assertThat(error.message()).isEqualTo("This field is required");
         });
     }
 
@@ -85,18 +88,37 @@ class FormValidationServiceImplTest {
     }
 
     @Test
-    void usesTheMessageTheAuthorWroteOnTheFieldsOwnPresenceRule() {
-        FieldRestrictionDTO notNull = FieldRestrictionDTO.builder()
-            .restrictionType(RestrictionType.NOT_NULL)
-            .errorMessage("Necesitamos tu apodo")
-            .build();
-        givenFields(text("nickname", true, notNull));
+    void usesTheMessageTheAuthorWroteOnTheFieldItself() {
+        FieldDefinitionDTO field = text("nickname", true);
+        field.setRequiredMessage("Necesitamos tu apodo");
+        givenFields(field);
         givenNoDependencies();
 
         ValidationReport report = service.validate(FORM_ID, Map.of(), ValidationMode.SUBMIT);
 
         assertThat(report.errors()).singleElement()
             .extracting(FieldValidationError::message).isEqualTo("Necesitamos tu apodo");
+    }
+
+    /**
+     * The old model needed a rule to be skipped here, because a {@code NOT_NULL} restriction demanded
+     * a value that draft mode was in the middle of not demanding. Nothing to skip any more.
+     */
+    @Test
+    void aDraftDemandsNothingEvenFromAFieldCarryingRules() {
+        givenFields(text("nickname", true, minLength(3, "Muy corto"), pattern("^[A-Z]+$")));
+        givenNoDependencies();
+
+        assertThat(service.validate(FORM_ID, Map.of("nickname", ""), ValidationMode.DRAFT).valid()).isTrue();
+    }
+
+    /** An optional field left blank has nothing to judge, so its rules do not fire. */
+    @Test
+    void anOptionalFieldLeftBlankBreaksNoRules() {
+        givenFields(text("nickname", false, minLength(3, "Muy corto"), pattern("^[A-Z]+$")));
+        givenNoDependencies();
+
+        assertThat(service.validate(FORM_ID, Map.of("nickname", "  "), ValidationMode.SUBMIT).valid()).isTrue();
     }
 
     @Test
@@ -213,7 +235,7 @@ class FormValidationServiceImplTest {
         givenNoDependencies();
 
         assertThat(service.validateField(10L, null, Map.of()).errors())
-            .extracting(FieldValidationError::restriction).containsExactly(RestrictionType.NOT_NULL);
+            .extracting(FieldValidationError::cause).containsExactly(ValidationErrorCause.REQUIRED);
     }
 
     @Test

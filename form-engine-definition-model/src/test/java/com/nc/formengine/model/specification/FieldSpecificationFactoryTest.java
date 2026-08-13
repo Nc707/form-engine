@@ -8,8 +8,6 @@ import com.nc.formengine.model.specification.impl.MaxLengthSpecification;
 import com.nc.formengine.model.specification.impl.MaxValueSpecification;
 import com.nc.formengine.model.specification.impl.MinLengthSpecification;
 import com.nc.formengine.model.specification.impl.MinValueSpecification;
-import com.nc.formengine.model.specification.impl.NotEmptySpecification;
-import com.nc.formengine.model.specification.impl.NotNullSpecification;
 import com.nc.formengine.model.specification.impl.PatternSpecification;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
@@ -33,15 +31,11 @@ class FieldSpecificationFactoryTest {
 
         assertThat(specification.getClass().getPackageName())
             .as("%s must map to a real specification and not to the permissive fallback", type)
-            .isEqualTo(NotNullSpecification.class.getPackageName());
+            .isEqualTo(EmailSpecification.class.getPackageName());
     }
 
     @Test
     void buildsTheSpecificationMatchingTheRestrictionType() {
-        assertThat(FieldSpecificationFactory.from(wellFormed(RestrictionType.NOT_NULL)))
-            .isInstanceOf(NotNullSpecification.class);
-        assertThat(FieldSpecificationFactory.from(wellFormed(RestrictionType.NOT_EMPTY)))
-            .isInstanceOf(NotEmptySpecification.class);
         assertThat(FieldSpecificationFactory.from(wellFormed(RestrictionType.EMAIL)))
             .isInstanceOf(EmailSpecification.class);
         assertThat(FieldSpecificationFactory.from(wellFormed(RestrictionType.MIN_LENGTH)))
@@ -170,7 +164,7 @@ class FieldSpecificationFactoryTest {
             case MIN_VALUE -> Map.of("minValue", 5);
             case MAX_VALUE -> Map.of("maxValue", 5);
             case PATTERN -> Map.of("pattern", "^[A-Z]+$");
-            case NOT_NULL, NOT_EMPTY, EMAIL -> Map.of();
+            case EMAIL -> Map.of();
         };
 
         return FieldRestrictionDTO.builder()

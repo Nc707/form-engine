@@ -48,6 +48,15 @@ public class FieldDefinition {
     private Boolean required = false;
 
     /**
+     * What to say when a required field was left unanswered, or null for the engine's default.
+     *
+     * <p>It lives next to the flag it belongs to. It used to be read off the field's {@code NOT_NULL}
+     * restriction, which meant a form author had to add a redundant rule just to word the message.
+     */
+    @Column(name = "required_message")
+    private String requiredMessage;
+
+    /**
      * The validation rules of this field, owned by it: deleting the field deletes them, and dropping
      * one from the list deletes that row.
      */

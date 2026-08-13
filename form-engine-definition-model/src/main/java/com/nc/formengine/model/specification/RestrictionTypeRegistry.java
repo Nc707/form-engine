@@ -11,26 +11,20 @@ import java.util.Set;
 /**
  * Registry that maps restriction types to their applicable field types.
  * Used for filtering and validating which restrictions can be applied to which fields.
+ *
+ * <p>Nothing here is universal, and that is the point: a restriction judges the shape of an answer, and
+ * shape is what a field type is. DATE, BOOLEAN, SELECT and MULTI_SELECT have no configurable rule at
+ * all — everything true of their answers is already decided by the type itself, by the {@code required}
+ * flag, or by the choices the field offers.
  */
 public final class RestrictionTypeRegistry {
-    
+
     private static final Map<RestrictionType, Set<FieldType>> APPLICABILITY_MAP;
-    
+
     static {
         Map<RestrictionType, Set<FieldType>> map = new HashMap<>();
-        
-        // Universal restrictions (apply to all field types)
-        map.put(RestrictionType.NOT_NULL, Set.of(
-            FieldType.TEXT, 
-            FieldType.NUMBER, 
-            FieldType.DATE, 
-            FieldType.BOOLEAN, 
-            FieldType.SELECT, 
-            FieldType.MULTI_SELECT
-        ));
-        
+
         // Text-specific restrictions
-        map.put(RestrictionType.NOT_EMPTY, Set.of(FieldType.TEXT));
         map.put(RestrictionType.MIN_LENGTH, Set.of(FieldType.TEXT));
         map.put(RestrictionType.MAX_LENGTH, Set.of(FieldType.TEXT));
         map.put(RestrictionType.PATTERN, Set.of(FieldType.TEXT));

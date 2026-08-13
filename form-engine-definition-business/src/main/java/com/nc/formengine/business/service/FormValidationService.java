@@ -27,8 +27,8 @@ public interface FormValidationService {
      * entirely, so a stale answer left behind by a field that has since been hidden cannot make the
      * form unsubmittable.
      *
-     * <p>A field that is required and unanswered reports a single {@code NOT_NULL} error and none of
-     * its other restrictions, since those would only restate that the answer is missing.
+     * <p>A field that is required and unanswered reports a single {@code REQUIRED} error and none of
+     * its restrictions, since those would only restate that the answer is missing.
      *
      * @param formDefinitionId the form to validate against
      * @param values           the current answers, keyed by field name; may be null or empty
@@ -43,8 +43,8 @@ public interface FormValidationService {
      * Validates a single answer, as strictly as {@link ValidationMode#SUBMIT} would.
      *
      * <p>This is what a UI calls as the user leaves a field, so it takes the rest of the answers too:
-     * they decide whether the field is currently visible, and they are what cross-field restrictions
-     * read.
+     * they are what decides whether the field is currently visible. No restriction reads them — a
+     * restriction judges one answer, and cannot name another field.
      *
      * @param fieldDefinitionId the field the answer belongs to
      * @param value             the answer to judge; may be null
