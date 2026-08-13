@@ -1,6 +1,7 @@
 package com.nc.formengine.model.specification;
 
 import com.nc.formengine.model.dto.FieldRestrictionDTO;
+import com.nc.formengine.model.enums.RestrictionType;
 import com.nc.formengine.model.specification.impl.EmailSpecification;
 import com.nc.formengine.model.specification.impl.MaxLengthSpecification;
 import com.nc.formengine.model.specification.impl.MaxValueSpecification;
@@ -38,9 +39,8 @@ public final class FieldSpecificationFactory {
     /**
      * Builds the specification for a single restriction.
      *
-     * <p>Parameters are read under the keys documented on {@link FieldRestrictionDTO}: {@code
-     * minLength}, {@code maxLength}, {@code minValue}, {@code maxValue} and {@code pattern}.
-     * {@code EMAIL} takes none.
+     * <p>Parameters are read under the keys {@link RestrictionParameter} declares, which is also where
+     * anything that <em>writes</em> a parameter gets them from.
      *
      * @param restriction the restriction to enforce; may be null
      * @return the specification enforcing it, never null
@@ -58,7 +58,7 @@ public final class FieldSpecificationFactory {
                 ? new EmailSpecification(message)
                 : new EmailSpecification();
             case MIN_LENGTH -> {
-                Integer minLength = intParameter(parameters, "minLength");
+                Integer minLength = intParameter(parameters, keyOf(RestrictionType.MIN_LENGTH));
                 if (minLength == null) {
                     yield ALWAYS_SATISFIED;
                 }
@@ -67,7 +67,7 @@ public final class FieldSpecificationFactory {
                     : new MinLengthSpecification(minLength);
             }
             case MAX_LENGTH -> {
-                Integer maxLength = intParameter(parameters, "maxLength");
+                Integer maxLength = intParameter(parameters, keyOf(RestrictionType.MAX_LENGTH));
                 if (maxLength == null) {
                     yield ALWAYS_SATISFIED;
                 }
@@ -76,7 +76,7 @@ public final class FieldSpecificationFactory {
                     : new MaxLengthSpecification(maxLength);
             }
             case MIN_VALUE -> {
-                Double minValue = doubleParameter(parameters, "minValue");
+                Double minValue = doubleParameter(parameters, keyOf(RestrictionType.MIN_VALUE));
                 if (minValue == null) {
                     yield ALWAYS_SATISFIED;
                 }
@@ -85,7 +85,7 @@ public final class FieldSpecificationFactory {
                     : new MinValueSpecification(minValue);
             }
             case MAX_VALUE -> {
-                Double maxValue = doubleParameter(parameters, "maxValue");
+                Double maxValue = doubleParameter(parameters, keyOf(RestrictionType.MAX_VALUE));
                 if (maxValue == null) {
                     yield ALWAYS_SATISFIED;
                 }
@@ -94,7 +94,7 @@ public final class FieldSpecificationFactory {
                     : new MaxValueSpecification(maxValue);
             }
             case PATTERN -> {
-                String pattern = stringParameter(parameters, "pattern");
+                String pattern = stringParameter(parameters, keyOf(RestrictionType.PATTERN));
                 if (!hasText(pattern)) {
                     yield ALWAYS_SATISFIED;
                 }
@@ -164,6 +164,10 @@ public final class FieldSpecificationFactory {
     private static String stringParameter(Map<String, Object> parameters, String name) {
         Object value = parameters != null ? parameters.get(name) : null;
         return value != null ? value.toString() : null;
+    }
+
+    private static String keyOf(RestrictionType type) {
+        return RestrictionParameter.of(type).key();
     }
 
     private static boolean hasText(String text) {

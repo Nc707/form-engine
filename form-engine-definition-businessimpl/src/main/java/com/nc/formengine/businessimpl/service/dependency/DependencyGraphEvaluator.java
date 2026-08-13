@@ -218,8 +218,12 @@ public final class DependencyGraphEvaluator {
     }
 
     /**
-     * Keys the result by field name, as the service contract requires. Field names are not unique in
-     * the schema; on a collision the last field of the form wins.
+     * Keys the result by field name, as the service contract requires.
+     *
+     * <p>A name identifies a field within its form — enforced by the field service and by a unique
+     * constraint on {@code (form_definition_id, name)} — so no state can be lost to a collision here.
+     * It once could: two fields of one name meant the later one silently replaced the earlier, dropping
+     * it from both dependency resolution and validation with nothing anywhere to say why.
      */
     private static Map<String, FieldState> projectByName(Iterable<FieldDefinitionDTO> fields,
                                                          Map<Long, FieldState> statesById) {

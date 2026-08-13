@@ -34,7 +34,7 @@ class FieldDefinitionIntegrationTest {
     void setUp() throws Exception {
         // Create a form to attach the fields to
         FormDefinitionDTO form = new FormDefinitionDTO();
-        form.setCode("TEST_FORM");
+        form.setCode("test_form");
         form.setTitle("Test Form");
         form.setVersion(1);
 

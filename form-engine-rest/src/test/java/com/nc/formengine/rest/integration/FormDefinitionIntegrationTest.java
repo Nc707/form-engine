@@ -30,7 +30,7 @@ class FormDefinitionIntegrationTest {
     void shouldCreateFormDefinitionAndRetrieveIt() throws Exception {
         // Given - a form
         FormDefinitionDTO formToCreate = new FormDefinitionDTO();
-        formToCreate.setCode("CONTACT_FORM");
+        formToCreate.setCode("contact_form");
         formToCreate.setTitle("Contact Form");
         formToCreate.setDescription("A form to collect contact information");
         formToCreate.setVersion(1);
@@ -43,7 +43,7 @@ class FormDefinitionIntegrationTest {
                 .content(formJson))
                 .andExpect(status().isCreated())
                 .andExpect(jsonPath("$.id").exists())
-                .andExpect(jsonPath("$.code").value("CONTACT_FORM"))
+                .andExpect(jsonPath("$.code").value("contact_form"))
                 .andExpect(jsonPath("$.title").value("Contact Form"))
                 .andExpect(jsonPath("$.version").value(1))
                 .andReturn();
@@ -56,29 +56,29 @@ class FormDefinitionIntegrationTest {
         mockMvc.perform(get("/api/v1/form-definitions/{id}", formId))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.id").value(formId))
-                .andExpect(jsonPath("$.code").value("CONTACT_FORM"))
+                .andExpect(jsonPath("$.code").value("contact_form"))
                 .andExpect(jsonPath("$.title").value("Contact Form"))
                 .andExpect(jsonPath("$.description").value("A form to collect contact information"))
                 .andExpect(jsonPath("$.version").value(1));
 
         // Then - it can be fetched by code
-        mockMvc.perform(get("/api/v1/form-definitions/by-code/{code}", "CONTACT_FORM"))
+        mockMvc.perform(get("/api/v1/form-definitions/by-code/{code}", "contact_form"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.id").value(formId))
-                .andExpect(jsonPath("$.code").value("CONTACT_FORM"));
+                .andExpect(jsonPath("$.code").value("contact_form"));
 
         // Then - it appears in the list of all forms
         mockMvc.perform(get("/api/v1/form-definitions"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$").isArray())
-                .andExpect(jsonPath("$[?(@.id == " + formId + ")].code").value("CONTACT_FORM"));
+                .andExpect(jsonPath("$[?(@.id == " + formId + ")].code").value("contact_form"));
     }
 
     @Test
     void shouldUpdateFormDefinition() throws Exception {
         // Given - a form
         FormDefinitionDTO formToCreate = new FormDefinitionDTO();
-        formToCreate.setCode("UPDATE_TEST");
+        formToCreate.setCode("update_test");
         formToCreate.setTitle("Original Name");
         formToCreate.setVersion(1);
 
@@ -95,7 +95,7 @@ class FormDefinitionIntegrationTest {
 
         // When - updating the form, asking for a version bump along the way
         FormDefinitionDTO formToUpdate = new FormDefinitionDTO();
-        formToUpdate.setCode("UPDATE_TEST");
+        formToUpdate.setCode("update_test");
         formToUpdate.setTitle("Updated Name");
         formToUpdate.setDescription("Updated description");
         formToUpdate.setVersion(2);
@@ -125,7 +125,7 @@ class FormDefinitionIntegrationTest {
     void shouldDeleteFormDefinition() throws Exception {
         // Given - a form
         FormDefinitionDTO formToCreate = new FormDefinitionDTO();
-        formToCreate.setCode("DELETE_TEST");
+        formToCreate.setCode("delete_test");
         formToCreate.setTitle("To Be Deleted");
         formToCreate.setVersion(1);
 
@@ -153,7 +153,7 @@ class FormDefinitionIntegrationTest {
     void shouldCheckIfFormCodeExists() throws Exception {
         // Given - a form
         FormDefinitionDTO formToCreate = new FormDefinitionDTO();
-        formToCreate.setCode("EXISTS_TEST");
+        formToCreate.setCode("exists_test");
         formToCreate.setTitle("Exists Test");
         formToCreate.setVersion(1);
 
@@ -163,7 +163,7 @@ class FormDefinitionIntegrationTest {
                 .andExpect(status().isCreated());
 
         // Then - the code is reported as taken
-        MvcResult existsResult = mockMvc.perform(get("/api/v1/form-definitions/exists-by-code/{code}", "EXISTS_TEST"))
+        MvcResult existsResult = mockMvc.perform(get("/api/v1/form-definitions/exists-by-code/{code}", "exists_test"))
                 .andExpect(status().isOk())
                 .andReturn();
 

@@ -38,21 +38,25 @@ public class FormLayoutServiceImpl implements FormLayoutService {
     private final FieldRepository fieldRepository;
     private final FormLayoutMapper formLayoutMapper;
     private final FieldLayoutMapper fieldLayoutMapper;
+    private final DefinitionMutationGuard guard;
 
     public FormLayoutServiceImpl(FormLayoutRepository formLayoutRepository,
                                  FormRepository formRepository,
                                  FieldRepository fieldRepository,
                                  FormLayoutMapper formLayoutMapper,
-                                 FieldLayoutMapper fieldLayoutMapper) {
+                                 FieldLayoutMapper fieldLayoutMapper,
+                                 DefinitionMutationGuard guard) {
         this.formLayoutRepository = formLayoutRepository;
         this.formRepository = formRepository;
         this.fieldRepository = fieldRepository;
         this.formLayoutMapper = formLayoutMapper;
         this.fieldLayoutMapper = fieldLayoutMapper;
+        this.guard = guard;
     }
 
     @Override
     public FormLayoutDTO createLayout(FormLayoutDTO layoutDTO) {
+        guard.requireDraft(layoutDTO.getFormDefinitionId());
         validateLayout(layoutDTO);
 
         FormDefinition formDefinition = formRepository.findById(layoutDTO.getFormDefinitionId())
@@ -84,10 +88,11 @@ public class FormLayoutServiceImpl implements FormLayoutService {
 
     @Override
     public FormLayoutDTO updateLayout(Long layoutId, FormLayoutDTO layoutDTO) {
-        validateLayout(layoutDTO);
-
         FormLayout existingLayout = formLayoutRepository.findById(layoutId)
                 .orElseThrow(() -> new FormLayoutNotFoundException(layoutId));
+        guard.requireDraft(existingLayout.getFormDefinition().getId());
+        guard.requireDraft(layoutDTO.getFormDefinitionId());
+        validateLayout(layoutDTO);
 
         existingLayout.setDeviceType(layoutDTO.getDeviceType());
 
@@ -113,6 +118,8 @@ public class FormLayoutServiceImpl implements FormLayoutService {
 
     @Override
     public void deleteLayout(Long layoutId) {
+        formLayoutRepository.findById(layoutId)
+                .ifPresent(layout -> guard.requireDraft(layout.getFormDefinition().getId()));
         formLayoutRepository.deleteById(layoutId);
         log.info("Deleted layout {}", layoutId);
     }

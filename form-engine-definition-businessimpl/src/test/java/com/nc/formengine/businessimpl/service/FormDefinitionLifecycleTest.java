@@ -1,12 +1,15 @@
 package com.nc.formengine.businessimpl.service;
 
+import com.nc.formengine.data.dao.FieldDefinitionDao;
 import com.nc.formengine.data.dao.FormDao;
+import com.nc.formengine.model.dto.FieldDefinitionDTO;
 import com.nc.formengine.model.dto.FormDefinitionDTO;
 import com.nc.formengine.model.enums.FormDefinitionStatus;
 import com.nc.formengine.model.exception.DuplicateResourceException;
 import com.nc.formengine.model.exception.FormDefinitionNotEditableException;
 import com.nc.formengine.model.exception.FormDefinitionNotFoundException;
 import com.nc.formengine.model.exception.InvalidFormDefinitionTransitionException;
+import com.nc.formengine.model.exception.ValidationFailedException;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
@@ -35,20 +38,28 @@ class FormDefinitionLifecycleTest {
     private static final Long FORM_ID = 1L;
 
     private FormDao formDao;
+    private FieldDefinitionDao fieldDefinitionDao;
     private FormDefinitionServiceImpl service;
 
     @BeforeEach
     void setUp() {
         formDao = mock(FormDao.class);
-        service = new FormDefinitionServiceImpl(formDao);
+        fieldDefinitionDao = mock(FieldDefinitionDao.class);
+        // The real guard rather than a mock: what it refuses is part of what these tests are about.
+        service = new FormDefinitionServiceImpl(formDao, fieldDefinitionDao,
+                new DefinitionMutationGuard(formDao, fieldDefinitionDao));
         when(formDao.save(any(FormDefinitionDTO.class))).thenAnswer(call -> call.getArgument(0));
+        // A form with something to fill in, which is what publishing needs. Tests about the empty case
+        // override this.
+        when(fieldDefinitionDao.findByFormDefinitionId(anyLong()))
+                .thenReturn(List.of(FieldDefinitionDTO.builder().id(50L).name("nickname").build()));
     }
 
     @Test
     void aNewFormIsVersionOneAndADraft() {
-        when(formDao.existsByCode("NEW")).thenReturn(false);
+        when(formDao.existsByCode("new_form")).thenReturn(false);
 
-        service.create(FormDefinitionDTO.builder().code("NEW").title("New").build());
+        service.create(FormDefinitionDTO.builder().code("new_form").title("New").build());
 
         FormDefinitionDTO saved = captureSaved();
         assertThat(saved.getVersion()).isEqualTo(1);
@@ -58,10 +69,10 @@ class FormDefinitionLifecycleTest {
     /** A caller cannot open a form straight into PUBLISHED and skip the draft stage. */
     @Test
     void aNewFormIgnoresTheStatusAndVersionTheCallerAsksFor() {
-        when(formDao.existsByCode("NEW")).thenReturn(false);
+        when(formDao.existsByCode("new_form")).thenReturn(false);
 
         service.create(FormDefinitionDTO.builder()
-                .code("NEW").title("New").version(7).status(FormDefinitionStatus.PUBLISHED).build());
+                .code("new_form").title("New").version(7).status(FormDefinitionStatus.PUBLISHED).build());
 
         FormDefinitionDTO saved = captureSaved();
         assertThat(saved.getVersion()).isEqualTo(1);
@@ -70,10 +81,10 @@ class FormDefinitionLifecycleTest {
 
     @Test
     void aCodeMayOnlyBeOpenedOnce() {
-        when(formDao.existsByCode("TAKEN")).thenReturn(true);
+        when(formDao.existsByCode("taken")).thenReturn(true);
 
         assertThatThrownBy(() -> service.create(
-                FormDefinitionDTO.builder().code("TAKEN").title("Another").build()))
+                FormDefinitionDTO.builder().code("taken").title("Another").build()))
                 .isInstanceOf(DuplicateResourceException.class);
     }
 
@@ -110,17 +121,17 @@ class FormDefinitionLifecycleTest {
         stored(FormDefinitionStatus.DRAFT);
 
         service.update(FORM_ID, FormDefinitionDTO.builder()
-                .code("SOMETHING_ELSE").version(9).title("Edited").build());
+                .code("something_else").version(9).title("Edited").build());
 
         FormDefinitionDTO saved = captureSaved();
-        assertThat(saved.getCode()).isEqualTo("FORM");
+        assertThat(saved.getCode()).isEqualTo("form");
         assertThat(saved.getVersion()).isEqualTo(1);
     }
 
     @Test
     void publishingMakesADraftLive() {
         stored(FormDefinitionStatus.DRAFT);
-        when(formDao.findLatestPublishedByCode("FORM")).thenReturn(Optional.empty());
+        when(formDao.findLatestPublishedByCode("form")).thenReturn(Optional.empty());
 
         service.publish(FORM_ID);
 
@@ -131,9 +142,9 @@ class FormDefinitionLifecycleTest {
     void publishingArchivesTheVersionItReplaces() {
         stored(FormDefinitionStatus.DRAFT);
         FormDefinitionDTO previous = FormDefinitionDTO.builder()
-                .id(99L).code("FORM").title("Form").version(1)
+                .id(99L).code("form").title("Form").version(1)
                 .status(FormDefinitionStatus.PUBLISHED).build();
-        when(formDao.findLatestPublishedByCode("FORM")).thenReturn(Optional.of(previous));
+        when(formDao.findLatestPublishedByCode("form")).thenReturn(Optional.of(previous));
 
         service.publish(FORM_ID);
 
@@ -174,14 +185,64 @@ class FormDefinitionLifecycleTest {
                 .isInstanceOf(FormDefinitionNotFoundException.class);
     }
 
+    /**
+     * A live form with nothing in it renders nothing, validates nothing, and calls an empty submission
+     * valid. This rule used to exist only in the builder's button-enabling logic.
+     */
+    @Test
+    void anEmptyFormCannotBePublished() {
+        stored(FormDefinitionStatus.DRAFT);
+        when(fieldDefinitionDao.findByFormDefinitionId(anyLong())).thenReturn(List.of());
+
+        assertThatThrownBy(() -> service.publish(FORM_ID))
+                .isInstanceOf(ValidationFailedException.class);
+
+        verify(formDao, never()).save(any());
+    }
+
+    /** The shape of a code is a domain rule, not a nicety the editor happens to check. */
+    @Test
+    void aCodeThatCouldNotBeUsedAsAKeyIsRefused() {
+        assertThatThrownBy(() -> service.create(
+                FormDefinitionDTO.builder().code("ALTA-CLIENTE").title("Customers").build()))
+                .isInstanceOf(ValidationFailedException.class);
+
+        verify(formDao, never()).save(any());
+    }
+
     @Test
     void aPublishedFormCanBeVersioned() {
         stored(FormDefinitionStatus.PUBLISHED);
         FormDefinitionDTO copy = FormDefinitionDTO.builder()
-                .id(2L).code("FORM").version(2).status(FormDefinitionStatus.DRAFT).build();
+                .id(2L).code("form").version(2).status(FormDefinitionStatus.DRAFT).build();
         when(formDao.copyAsNewVersion(FORM_ID)).thenReturn(Optional.of(copy));
 
         assertThat(service.createNewVersion(FORM_ID)).isEqualTo(copy);
+    }
+
+    @Test
+    void anArchivedFormCanBeVersioned() {
+        stored(FormDefinitionStatus.ARCHIVED);
+        FormDefinitionDTO copy = FormDefinitionDTO.builder()
+                .id(2L).code("form").version(2).status(FormDefinitionStatus.DRAFT).build();
+        when(formDao.copyAsNewVersion(FORM_ID)).thenReturn(Optional.of(copy));
+
+        assertThat(service.createNewVersion(FORM_ID)).isEqualTo(copy);
+    }
+
+    /**
+     * Branching a draft would leave two concurrent drafts of one code. Publishing the older afterwards
+     * makes findByCode ("newest") and findLatestPublishedByCode ("live") disagree about what the code
+     * means, which is a form with two answers to "which version is this?".
+     */
+    @Test
+    void aDraftCannotBeVersioned() {
+        stored(FormDefinitionStatus.DRAFT);
+
+        assertThatThrownBy(() -> service.createNewVersion(FORM_ID))
+                .isInstanceOf(InvalidFormDefinitionTransitionException.class);
+
+        verify(formDao, never()).copyAsNewVersion(anyLong());
     }
 
     @Test
@@ -206,7 +267,7 @@ class FormDefinitionLifecycleTest {
     private void stored(FormDefinitionStatus status) {
         when(formDao.findById(FORM_ID)).thenReturn(Optional.of(FormDefinitionDTO.builder()
                 .id(FORM_ID)
-                .code("FORM")
+                .code("form")
                 .title("Form")
                 .version(1)
                 .status(status)

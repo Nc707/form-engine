@@ -8,6 +8,7 @@ import jakarta.persistence.Id;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
 import jakarta.persistence.Table;
+import jakarta.persistence.UniqueConstraint;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Getter;
@@ -18,7 +19,11 @@ import lombok.ToString;
 import java.util.Objects;
 
 @Entity
-@Table(name = "field_options")
+// An answer names an option by its value, and the renderer resolves it by taking the first match, so a
+// repeated value would make one of the two options unreachable and unreadable.
+@Table(name = "field_options",
+    uniqueConstraints = @UniqueConstraint(name = "uq_option_value_per_field",
+        columnNames = {"field_definition_id", "`value`"}))
 @Getter
 @Setter
 @Builder

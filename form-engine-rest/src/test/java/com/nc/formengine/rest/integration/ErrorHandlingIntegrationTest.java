@@ -65,7 +65,7 @@ class ErrorHandlingIntegrationTest {
     @Test
     void shouldReturnNotFoundWhenUpdatingAnUnknownFormDefinition() throws Exception {
         FormDefinitionDTO form = new FormDefinitionDTO();
-        form.setCode("GHOST_FORM");
+        form.setCode("ghost_form");
         form.setTitle("Ghost");
         form.setVersion(1);
 
@@ -124,7 +124,7 @@ class ErrorHandlingIntegrationTest {
     void shouldReturnBadRequestWhenCreatingWithAnId() throws Exception {
         FormDefinitionDTO form = new FormDefinitionDTO();
         form.setId(42L);
-        form.setCode("HAS_ID");
+        form.setCode("has_id");
         form.setTitle("Has an id");
         form.setVersion(1);
 
@@ -140,7 +140,7 @@ class ErrorHandlingIntegrationTest {
     @Test
     void shouldReturnConflictWhenTheFormCodeIsAlreadyTaken() throws Exception {
         FormDefinitionDTO form = new FormDefinitionDTO();
-        form.setCode("DUPLICATE_CODE");
+        form.setCode("duplicate_code");
         form.setTitle("First");
         form.setVersion(1);
         String json = objectMapper.writeValueAsString(form);
@@ -159,13 +159,13 @@ class ErrorHandlingIntegrationTest {
                 .andExpect(jsonPath("$.type").value("https://form-engine/errors/duplicate-resource"))
                 .andExpect(jsonPath("$.title").value("Duplicate Resource"))
                 .andExpect(jsonPath("$.field").value("code"))
-                .andExpect(jsonPath("$.value").value("DUPLICATE_CODE"));
+                .andExpect(jsonPath("$.value").value("duplicate_code"));
     }
 
     @Test
     void shouldAllowAFormToKeepItsOwnCodeOnUpdate() throws Exception {
         FormDefinitionDTO form = new FormDefinitionDTO();
-        form.setCode("KEEPS_CODE");
+        form.setCode("keeps_code");
         form.setTitle("Original");
         form.setVersion(1);
 
@@ -178,7 +178,7 @@ class ErrorHandlingIntegrationTest {
                 FormDefinitionDTO.class).getId();
 
         FormDefinitionDTO update = new FormDefinitionDTO();
-        update.setCode("KEEPS_CODE");
+        update.setCode("keeps_code");
         update.setTitle("Renamed");
         update.setVersion(2);
 
@@ -222,8 +222,8 @@ class ErrorHandlingIntegrationTest {
 
     @Test
     void shouldReturnUnprocessableEntityWhenALayoutReferencesAnotherFormsField() throws Exception {
-        Long targetFormId = createFormWithFields("LAYOUT_TARGET").getId();
-        FormDefinitionDTO otherForm = createFormWithFields("LAYOUT_OTHER");
+        Long targetFormId = createFormWithFields("layout_target").getId();
+        FormDefinitionDTO otherForm = createFormWithFields("layout_other");
         Long foreignFieldId = otherForm.getFields().get(0).getId();
 
         FormLayoutDTO layout = FormLayoutDTO.builder()
@@ -250,7 +250,7 @@ class ErrorHandlingIntegrationTest {
 
     @Test
     void shouldReturnNotFoundWhenNoLayoutCanBeResolved() throws Exception {
-        Long formId = createFormWithFields("NO_LAYOUT").getId();
+        Long formId = createFormWithFields("no_layout").getId();
 
         mockMvc.perform(get("/api/v1/form-layouts/form/{id}/resolve", formId)
                         .param("deviceType", "MOBILE"))

@@ -37,7 +37,7 @@ class FormSubmissionIntegrationTest {
     void setUp() throws Exception {
         // Create a form for the submissions
         FormDefinitionDTO form = new FormDefinitionDTO();
-        form.setCode("CONTACT_FORM");
+        form.setCode("contact_form");
         form.setTitle("Contact Form");
         form.setVersion(1);
 
@@ -159,65 +159,59 @@ class FormSubmissionIntegrationTest {
                 .andExpect(jsonPath("$[0].author").value(user2));
     }
 
+    /**
+     * The status filter works, and the CRUD door cannot fabricate a state to filter for.
+     *
+     * <p>All three of these ask to be created in a different state and all three come back a draft.
+     * That used to be honoured, which is how a {@code SUBMITTED} row with no answers, against a form
+     * nobody had published, could be stored through a documented endpoint.
+     */
     @Test
-    void shouldFilterSubmissionsByStatus() throws Exception {
-        // Given - submissions in different statuses
-        FormSubmissionDTO draftSubmission = new FormSubmissionDTO();
-        draftSubmission.setFormDefinitionId(formDefinitionId);
-        draftSubmission.setFormCode(formCode);
-        draftSubmission.setAuthor("user1@example.com");
-        draftSubmission.setStatus(SubmissionStatus.DRAFT);
+    void shouldFilterByStatusAndCreateEverythingAsADraft() throws Exception {
+        createAsking("user1@example.com", SubmissionStatus.DRAFT);
+        createAsking("user2@example.com", SubmissionStatus.SUBMITTED);
+        createAsking("user3@example.com", SubmissionStatus.VOIDED);
 
-        FormSubmissionDTO submittedSubmission = new FormSubmissionDTO();
-        submittedSubmission.setFormDefinitionId(formDefinitionId);
-        submittedSubmission.setFormCode(formCode);
-        submittedSubmission.setAuthor("user2@example.com");
-        submittedSubmission.setStatus(SubmissionStatus.SUBMITTED);
-
-        FormSubmissionDTO completedSubmission = new FormSubmissionDTO();
-        completedSubmission.setFormDefinitionId(formDefinitionId);
-        completedSubmission.setFormCode(formCode);
-        completedSubmission.setAuthor("user3@example.com");
-        completedSubmission.setStatus(SubmissionStatus.VOIDED);
-
-        // When - creating the submissions
-        mockMvc.perform(post("/api/v1/form-submissions")
-                .contentType(MediaType.APPLICATION_JSON)
-                .content(objectMapper.writeValueAsString(draftSubmission)))
-                .andExpect(status().isCreated());
-
-        mockMvc.perform(post("/api/v1/form-submissions")
-                .contentType(MediaType.APPLICATION_JSON)
-                .content(objectMapper.writeValueAsString(submittedSubmission)))
-                .andExpect(status().isCreated());
-
-        mockMvc.perform(post("/api/v1/form-submissions")
-                .contentType(MediaType.APPLICATION_JSON)
-                .content(objectMapper.writeValueAsString(completedSubmission)))
-                .andExpect(status().isCreated());
-
-        // Then - filtering by DRAFT
         mockMvc.perform(get("/api/v1/form-submissions/by-status/{status}", "DRAFT"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$").isArray())
-                .andExpect(jsonPath("$.length()").value(1))
-                .andExpect(jsonPath("$[0].status").value("DRAFT"));
+                .andExpect(jsonPath("$.length()").value(3));
 
-        // Then - filtering by SUBMITTED
         mockMvc.perform(get("/api/v1/form-submissions/by-status/{status}", "SUBMITTED"))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.length()").value(1))
-                .andExpect(jsonPath("$[0].status").value("SUBMITTED"));
+                .andExpect(jsonPath("$.length()").value(0));
+
+        mockMvc.perform(get("/api/v1/form-submissions/by-status/{status}", "VOIDED"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.length()").value(0));
     }
 
+    private void createAsking(String author, SubmissionStatus requested) throws Exception {
+        FormSubmissionDTO submission = new FormSubmissionDTO();
+        submission.setFormDefinitionId(formDefinitionId);
+        submission.setFormCode(formCode);
+        submission.setAuthor(author);
+        submission.setStatus(requested);
+
+        mockMvc.perform(post("/api/v1/form-submissions")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(submission)))
+                .andExpect(status().isCreated())
+                .andExpect(jsonPath("$.status").value("DRAFT"));
+    }
+
+    /**
+     * An update can change what a submission says, and not where it is.
+     *
+     * <p>Submitting is a validated move that also checks the form still accepts answers, so it cannot
+     * be a side effect of a plain PUT. It used to be exactly that.
+     */
     @Test
-    void shouldUpdateFormSubmission() throws Exception {
-        // Given - a submission
+    void shouldUpdateWhatASubmissionSaysButNotItsStatus() throws Exception {
         FormSubmissionDTO submissionToCreate = new FormSubmissionDTO();
         submissionToCreate.setFormDefinitionId(formDefinitionId);
         submissionToCreate.setFormCode(formCode);
         submissionToCreate.setAuthor("user@example.com");
-        submissionToCreate.setStatus(SubmissionStatus.DRAFT);
 
         MvcResult createResult = mockMvc.perform(post("/api/v1/form-submissions")
                 .contentType(MediaType.APPLICATION_JSON)
@@ -230,11 +224,10 @@ class FormSubmissionIntegrationTest {
                 FormSubmissionDTO.class);
         Long submissionId = createdSubmission.getId();
 
-        // When - moving the status to SUBMITTED
         FormSubmissionDTO submissionToUpdate = new FormSubmissionDTO();
         submissionToUpdate.setFormDefinitionId(formDefinitionId);
         submissionToUpdate.setFormCode(formCode);
-        submissionToUpdate.setAuthor("user@example.com");
+        submissionToUpdate.setAuthor("someone.else@example.com");
         submissionToUpdate.setStatus(SubmissionStatus.SUBMITTED);
 
         mockMvc.perform(put("/api/v1/form-submissions/{id}", submissionId)
@@ -242,12 +235,13 @@ class FormSubmissionIntegrationTest {
                 .content(objectMapper.writeValueAsString(submissionToUpdate)))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.id").value(submissionId))
-                .andExpect(jsonPath("$.status").value("SUBMITTED"));
+                .andExpect(jsonPath("$.author").value("someone.else@example.com"))
+                .andExpect(jsonPath("$.status").value("DRAFT"));
 
-        // Then - the changes are persisted
         mockMvc.perform(get("/api/v1/form-submissions/{id}", submissionId))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.status").value("SUBMITTED"));
+                .andExpect(jsonPath("$.author").value("someone.else@example.com"))
+                .andExpect(jsonPath("$.status").value("DRAFT"));
     }
 
     @Test

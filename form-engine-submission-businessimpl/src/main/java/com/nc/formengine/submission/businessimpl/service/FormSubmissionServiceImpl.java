@@ -17,6 +17,13 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 
+/**
+ * Reading and writing submissions, without their lifecycle.
+ *
+ * <p>The plain CRUD view. It can change what a submission <em>says</em>, never where it is: moving
+ * between states is {@code FormSubmissionWorkflowService}'s alone, because that is the only path that
+ * validates and that checks the form still accepts answers.
+ */
 @Service
 @RequiredArgsConstructor
 @Transactional
@@ -29,16 +36,24 @@ public class FormSubmissionServiceImpl implements FormSubmissionService {
         if (formSubmissionDTO.getId() != null) {
             throw new IllegalArgumentException("New form submission should not have an ID");
         }
+        // Every submission starts as a draft, whatever the caller asked for. Honouring a requested
+        // state let a client store a SUBMITTED row with no answers, against a form nobody had
+        // published — defeating the one guarantee submitting exists to give.
+        formSubmissionDTO.setStatus(SubmissionStatus.DRAFT);
+        formSubmissionDTO.setSubmittedAt(null);
         return formSubmissionDao.save(formSubmissionDTO);
     }
 
     @Override
     public FormSubmissionDTO update(Long id, FormSubmissionDTO formSubmissionDTO) {
-        // Existence check: throws if the id is unknown.
-        formSubmissionDao.findById(id)
+        FormSubmissionDTO stored = formSubmissionDao.findById(id)
                 .orElseThrow(() -> new FormSubmissionNotFoundException(id));
-        
+
         formSubmissionDTO.setId(id);
+        // The state, and the moment of sending, belong to the lifecycle. Editing them here would let a
+        // caller un-void a response or claim one was submitted when it never was.
+        formSubmissionDTO.setStatus(stored.getStatus());
+        formSubmissionDTO.setSubmittedAt(stored.getSubmittedAt());
         return formSubmissionDao.save(formSubmissionDTO);
     }
 

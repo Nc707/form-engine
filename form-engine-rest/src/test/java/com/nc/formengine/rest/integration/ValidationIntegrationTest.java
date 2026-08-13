@@ -51,7 +51,7 @@ class ValidationIntegrationTest {
     @Test
     void shouldRejectAFormDefinitionWithABlankTitle() throws Exception {
         FormDefinitionDTO form = new FormDefinitionDTO();
-        form.setCode("BLANK_TITLE");
+        form.setCode("blank_title");
         form.setTitle("   ");
         form.setVersion(1);
 
@@ -63,7 +63,7 @@ class ValidationIntegrationTest {
     @Test
     void shouldRejectAFormDefinitionWithoutAVersion() throws Exception {
         FormDefinitionDTO form = new FormDefinitionDTO();
-        form.setCode("NO_VERSION");
+        form.setCode("no_version");
         form.setTitle("No version");
 
         postExpectingValidationFailure("/api/v1/form-definitions", form)
@@ -74,7 +74,7 @@ class ValidationIntegrationTest {
     @Test
     void shouldRejectANonPositiveVersion() throws Exception {
         FormDefinitionDTO form = new FormDefinitionDTO();
-        form.setCode("BAD_VERSION");
+        form.setCode("bad_version");
         form.setTitle("Bad version");
         form.setVersion(0);
 

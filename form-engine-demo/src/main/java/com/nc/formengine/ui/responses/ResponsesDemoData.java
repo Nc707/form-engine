@@ -25,20 +25,22 @@ import java.util.Map;
  * Something for the response viewer to show.
  *
  * <p>The database is in-memory and recreated on every start, so without this the viewer opens empty
- * and the one case it exists for cannot be seen at all. What it builds is that case: a form whose
- * first version collected answers and was then archived by publishing a second version that dropped
- * a field. The submissions against v1 still hold an answer to that field, which is what the detail
- * view has to show as retired.
+ * and the case it exists for cannot be seen at all. What it builds is that case: a form whose first
+ * version collected answers and was then archived by a second version that no longer asks one of the
+ * questions. The v1 submissions are still read against v1, so they keep the dropped field and its
+ * answers; the v2 submission is read against v2 and does not have it. That is what versioning is for.
  *
- * <p>Order matters. Submissions can only be made against a published form, so v1 has to collect them
- * before v2 is published and archives it.
+ * <p>Order matters, twice over. Submissions can only be made against a published form, so v1 has to
+ * collect them before v2 is published and archives it. And a field can only be dropped from a draft, so
+ * dropping it happens on v2 before v2 goes live — never on the published v1, whose stored answers would
+ * otherwise start being judged against rules nobody filling it in ever saw.
  */
 @Component
 class ResponsesDemoData implements CommandLineRunner {
 
     private static final Logger log = LoggerFactory.getLogger(ResponsesDemoData.class);
 
-    private static final String CODE = "ALTA-CLIENTE";
+    private static final String CODE = "customer_onboarding";
 
     private final FormDefinitionService formDefinitionService;
     private final FieldDefinitionService fieldDefinitionService;
@@ -63,58 +65,56 @@ class ResponsesDemoData implements CommandLineRunner {
         Long v1Id = v1.getId();
 
         submit(v1Id, "ana@example.com", Map.of(
-                "nombre", "Ana Pérez",
-                "nacimiento", "1990-04-12",
-                "pais", "AR",
-                "intereses", "deportes,musica",
-                "acepta", "true",
-                "canal", "sucursal"));
+                "full_name", "Ana Pérez",
+                "birth_date", "1990-04-12",
+                "country", "ar",
+                "interests", "sports,music",
+                "accepts_terms", "true",
+                "contact_channel", "branch"));
 
         submit(v1Id, "luis@example.com", Map.of(
-                "nombre", "Luis Gómez",
-                "nacimiento", "1985-11-03",
-                "pais", "UY",
-                "intereses", "viajes",
-                "acepta", "true",
-                "canal", "telefono"));
+                "full_name", "Luis Gómez",
+                "birth_date", "1985-11-03",
+                "country", "uy",
+                "interests", "travel",
+                "accepts_terms", "true",
+                "contact_channel", "phone"));
 
         // A draft: still being filled in, so it is missing answers on purpose.
         draft(v1Id, "mara@example.com", Map.of(
-                "nombre", "Mara Ríos",
-                "pais", "BR"));
+                "full_name", "Mara Ríos",
+                "country", "br"));
 
-        // A draft its author gave up on. Nothing was ever sent.
+        // A draft its author gave up on. Nothing was ever sent, so nothing is being retracted.
         Long abandoned = draft(v1Id, "sofia@example.com", Map.of(
-                "nombre", "Sofía Vera"));
+                "full_name", "Sofía Vera"));
         if (abandoned != null) {
             workflowService.discard(abandoned);
         }
 
         // A response that arrived and was then annulled. Its answers have to survive being voided.
         Long annulled = submit(v1Id, "jorge@example.com", Map.of(
-                "nombre", "Jorge Díaz",
-                "nacimiento", "1978-01-30",
-                "pais", "AR",
-                "acepta", "false",
-                "canal", "web"));
+                "full_name", "Jorge Díaz",
+                "birth_date", "1978-01-30",
+                "country", "ar",
+                "accepts_terms", "false",
+                "contact_channel", "web"));
         if (annulled != null) {
             workflowService.voidSubmission(annulled);
         }
 
-        // Retire the field from v1 itself, after its submissions were made. A field dropped only
-        // from v2 would prove nothing: submissions point at v1, where it would still exist. What
-        // makes an answer retired is that its own definition no longer declares the field.
-        retire("canal", v1Id);
-
+        // v2 stops asking for the contact channel. The field is dropped from the new draft, not from
+        // the live v1 — v1 keeps it, which is why its submissions stay fully readable.
         FormDefinitionDTO v2 = formDefinitionService.createNewVersion(v1Id);
+        retire("contact_channel", v2.getId());
         formDefinitionService.publish(v2.getId());
 
         submit(v2.getId(), "nadia@example.com", Map.of(
-                "nombre", "Nadia Costa",
-                "nacimiento", "1996-07-21",
-                "pais", "BR",
-                "intereses", "musica,viajes",
-                "acepta", "true"));
+                "full_name", "Nadia Costa",
+                "birth_date", "1996-07-21",
+                "country", "br",
+                "interests", "music,travel",
+                "accepts_terms", "true"));
 
         log.info("Demo data ready: '{}' v1 (archived) and v2 (published), with submissions on both", CODE);
     }
@@ -123,23 +123,23 @@ class ResponsesDemoData implements CommandLineRunner {
 
     private FormDefinitionDTO firstVersion() {
         List<FieldDefinitionDTO> fields = new ArrayList<>(List.of(
-                field("nombre", "Nombre completo", FieldType.TEXT, 0, true, null),
-                field("nacimiento", "Fecha de nacimiento", FieldType.DATE, 1, false, null),
-                field("pais", "País", FieldType.SELECT, 2, false,
-                        List.of(option("AR", "Argentina", 0), option("UY", "Uruguay", 1),
-                                option("BR", "Brasil", 2))),
-                field("intereses", "Intereses", FieldType.MULTI_SELECT, 3, false,
-                        List.of(option("deportes", "Deportes", 0), option("musica", "Música", 1),
-                                option("viajes", "Viajes", 2))),
-                field("acepta", "¿Acepta los términos?", FieldType.BOOLEAN, 4, false, null),
-                // Dropped in v2: this is the field the viewer has to show as retired.
-                field("canal", "Canal de contacto", FieldType.SELECT, 5, false,
-                        List.of(option("web", "Sitio web", 0), option("sucursal", "Sucursal", 1),
-                                option("telefono", "Teléfono", 2)))));
+                field("full_name", "Full name", FieldType.TEXT, 0, true, null),
+                field("birth_date", "Date of birth", FieldType.DATE, 1, false, null),
+                field("country", "Country", FieldType.SELECT, 2, false,
+                        List.of(option("ar", "Argentina", 0), option("uy", "Uruguay", 1),
+                                option("br", "Brazil", 2))),
+                field("interests", "Interests", FieldType.MULTI_SELECT, 3, false,
+                        List.of(option("sports", "Sports", 0), option("music", "Music", 1),
+                                option("travel", "Travel", 2))),
+                field("accepts_terms", "Accepts the terms", FieldType.BOOLEAN, 4, false, null),
+                // v2 stops asking this. v1 keeps it, and so do the answers given under v1.
+                field("contact_channel", "Preferred contact", FieldType.SELECT, 5, false,
+                        List.of(option("web", "Website", 0), option("branch", "Branch", 1),
+                                option("phone", "Phone", 2)))));
 
         return FormDefinitionDTO.builder()
                 .code(CODE)
-                .title("Alta de cliente")
+                .title("Customer onboarding")
                 .description("Sample form for the response viewer")
                 .version(1)
                 .fields(fields)
@@ -159,7 +159,13 @@ class ResponsesDemoData implements CommandLineRunner {
         return FieldOptionDTO.builder().value(value).label(label).orderIndex(order).build();
     }
 
-    /** Ids differ between versions, so the field to drop has to be looked up in that version. */
+    /**
+     * Drops a field from a draft version.
+     *
+     * <p>Ids differ between versions, so the field has to be looked up in the version being edited —
+     * and that version has to be a draft, which is the whole reason this runs on v2 before it is
+     * published rather than on the v1 that is already collecting answers.
+     */
     private void retire(String name, Long formDefinitionId) {
         fieldDefinitionService.findByFormDefinitionId(formDefinitionId).stream()
                 .filter(field -> name.equals(field.getName()))
