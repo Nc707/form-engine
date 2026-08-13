@@ -27,7 +27,6 @@ final class RestrictionListEditor extends VerticalLayout {
     private final VerticalLayout rows = new VerticalLayout();
     private final List<RestrictionRow> restrictionRows = new ArrayList<>();
     private final Span hint = new Span();
-    private final Button add = new Button("Add rule", VaadinIcon.PLUS.create(), event -> addRow());
 
     private FieldType fieldType;
 
@@ -40,6 +39,7 @@ final class RestrictionListEditor extends VerticalLayout {
 
         hint.addClassNames(LumoUtility.TextColor.SECONDARY, LumoUtility.FontSize.SMALL);
 
+        var add = new Button("Add rule", VaadinIcon.PLUS.create(), event -> addRow());
         add.addThemeVariants(ButtonVariant.LUMO_SMALL, ButtonVariant.LUMO_TERTIARY);
 
         add(hint, rows, add);
@@ -48,23 +48,17 @@ final class RestrictionListEditor extends VerticalLayout {
     /**
      * Points every row at the rules the field's type allows.
      *
-     * <p>Four of the six types allow none at all. Saying so, and taking the Add button away, is better
-     * than offering to add a rule and then showing an empty dropdown.
+     * <p>Four of the six types allow none, and {@link FieldDialog} hides this editor entirely for those
+     * rather than showing a section that can only say "nothing here". So the hint only has to speak for
+     * the types that do have rules.
      */
     void setFieldType(FieldType type) {
         this.fieldType = type;
         restrictionRows.forEach(row -> row.setFieldType(type));
-        List<RestrictionType> applicable = RestrictionParameterSpec.applicableTo(type);
-        add.setVisible(!applicable.isEmpty());
-        if (applicable.isEmpty()) {
-            hint.setText("This kind of field has no rules to configure. "
-                    + "Use Required above, and its options, to say what a valid answer is.");
-        } else if (applicable.size() == 1) {
-            hint.setText("One rule applies to this kind of field.");
-        } else {
-            hint.setText("Rules are checked from the top down, "
-                    + "and the first one that fails is the message shown.");
-        }
+        hint.setText(RestrictionParameterSpec.applicableTo(type).size() == 1
+                ? "One rule applies to this kind of field."
+                : "Rules are checked from the top down, "
+                        + "and the first one that fails is the message shown.");
     }
 
     /** Shows the stored rules, in the order the engine will apply them. */
