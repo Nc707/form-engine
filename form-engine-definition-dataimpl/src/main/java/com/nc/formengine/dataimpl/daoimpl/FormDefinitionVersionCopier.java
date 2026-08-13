@@ -119,7 +119,6 @@ class FormDefinitionVersionCopier {
             FormLayout layoutCopy = new FormLayout();
             layoutCopy.setFormDefinition(target);
             layoutCopy.setDeviceType(sourceLayout.getDeviceType());
-            layoutCopy.setCustomDeviceName(sourceLayout.getCustomDeviceName());
 
             List<FieldLayout> fieldLayouts = new ArrayList<>();
             for (FieldLayout sourceFieldLayout : sourceLayout.getFieldLayouts()) {
@@ -135,9 +134,6 @@ class FormDefinitionVersionCopier {
                 fieldLayoutCopy.setColumn(sourceFieldLayout.getColumn());
                 fieldLayoutCopy.setColspan(sourceFieldLayout.getColspan());
                 fieldLayoutCopy.setRowspan(sourceFieldLayout.getRowspan());
-                fieldLayoutCopy.setComponentType(sourceFieldLayout.getComponentType());
-                fieldLayoutCopy.setCustomProperties(new HashMap<>(sourceFieldLayout.getCustomProperties()));
-                fieldLayoutCopy.setVisible(sourceFieldLayout.getVisible());
                 fieldLayouts.add(fieldLayoutCopy);
             }
             layoutCopy.setFieldLayouts(fieldLayouts);

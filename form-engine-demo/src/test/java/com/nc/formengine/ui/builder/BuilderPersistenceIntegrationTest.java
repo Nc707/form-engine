@@ -182,7 +182,7 @@ class BuilderPersistenceIntegrationTest {
                 .formDefinitionId(formId)
                 .fieldLayouts(new ArrayList<>(List.of(FieldLayoutDTO.builder()
                         .fieldDefinitionId(fieldId).row(0).column(0).colspan(12).rowspan(1)
-                        .visible(true).build())))
+                        .build())))
                 .build());
 
         // The raw delete cannot work: field_layouts.field_definition_id is NOT NULL and nothing

@@ -232,7 +232,6 @@ class ErrorHandlingIntegrationTest {
                 .fieldLayouts(List.of(FieldLayoutDTO.builder()
                         .fieldDefinitionId(foreignFieldId)
                         .row(0).column(0).colspan(12).rowspan(1)
-                        .visible(true)
                         .build()))
                 .build();
 

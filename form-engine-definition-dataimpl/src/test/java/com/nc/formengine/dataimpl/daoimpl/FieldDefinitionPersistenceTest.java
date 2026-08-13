@@ -74,7 +74,6 @@ class FieldDefinitionPersistenceTest {
         assertThat(minLength.getErrorMessage()).isEqualTo("Muy corto");
         assertThat(minLength.getOrderIndex()).isZero();
         assertThat(minLength.getFieldDefinitionId()).isEqualTo(saved.getId());
-        assertThat(minLength.getApplicableFieldTypes()).containsExactly(FieldType.TEXT);
     }
 
     /**

@@ -24,7 +24,6 @@ public class FormLayoutMapper {
                 .id(entity.getId())
                 .formDefinitionId(entity.getFormDefinition() != null ? entity.getFormDefinition().getId() : null)
                 .deviceType(entity.getDeviceType())
-                .customDeviceName(entity.getCustomDeviceName())
                 .fieldLayouts(entity.getFieldLayouts() != null ?
                     entity.getFieldLayouts().stream()
                         .map(fieldLayoutMapper::toDTO)
@@ -40,7 +39,6 @@ public class FormLayoutMapper {
         FormLayout entity = new FormLayout();
         entity.setId(dto.getId());
         entity.setDeviceType(dto.getDeviceType());
-        entity.setCustomDeviceName(dto.getCustomDeviceName());
 
         return entity;
     }

@@ -67,14 +67,6 @@ public class FieldDefinition {
     @ToString.Exclude
     private List<FieldOption> options = new ArrayList<>();
 
-    @OneToMany(mappedBy = "triggerField", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
-    @ToString.Exclude
-    private List<FieldDependency> triggeredDependencies;
-
-    @OneToMany(mappedBy = "dependentField", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
-    @ToString.Exclude
-    private List<FieldDependency> myDependencies;
-
     @Override
     public boolean equals(Object other) {
         if (this == other) {

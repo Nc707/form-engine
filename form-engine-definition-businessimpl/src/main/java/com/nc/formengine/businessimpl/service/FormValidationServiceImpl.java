@@ -115,7 +115,6 @@ public class FormValidationServiceImpl implements FormValidationService {
         FieldContext context = FieldContext.builder()
             .fieldType(field.getType())
             .fieldName(field.getName())
-            .formData(formValues)
             .build();
 
         List<FieldValidationError> errors = new ArrayList<>();

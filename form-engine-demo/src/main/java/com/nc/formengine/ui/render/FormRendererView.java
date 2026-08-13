@@ -186,10 +186,6 @@ class FormRendererView extends VerticalLayout implements BeforeEnterObserver {
 
     /**
      * The layout for this device, or null to let {@link LayoutGridRenderer} stack the fields.
-     *
-     * <p>Deliberately {@code resolveLayout} and not {@code resolveLayoutOrDefault}: the default the
-     * service builds is one full-width field per row, which is exactly what stacking already does,
-     * and asking for it would mean a database read to learn nothing.
      */
     private FormLayoutDTO resolveLayout() {
         return layoutService.resolveLayout(form.getId(), deviceType()).orElse(null);

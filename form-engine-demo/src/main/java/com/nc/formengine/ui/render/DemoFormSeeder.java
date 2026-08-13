@@ -156,7 +156,6 @@ class DemoFormSeeder {
                 .column(column)
                 .colspan(colspan)
                 .rowspan(1)
-                .visible(true)
                 .build();
     }
 

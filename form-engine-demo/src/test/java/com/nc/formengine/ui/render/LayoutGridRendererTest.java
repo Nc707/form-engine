@@ -59,14 +59,16 @@ class LayoutGridRendererTest {
         assertThat(cells.get(1).getStyle().get("grid-row")).isEqualTo("4 / span 1");
     }
 
+    /**
+     * A layout places every field it names. Whether a field is shown at all is the dependency
+     * engine's answer, and the validator reads the same answer — so the two cannot disagree.
+     */
     @Test
-    void aFieldTheLayoutHidesIsNotRendered() {
+    void everyPlacedFieldIsRendered() {
         var editors = editors(field(1L, "a", 0), field(2L, "b", 1));
-        var hidden = placement(2L, 1, 0, 12, 1);
-        hidden.setVisible(false);
-        var layout = layout(placement(1L, 0, 0, 12, 1), hidden);
+        var layout = layout(placement(1L, 0, 0, 12, 1), placement(2L, 1, 0, 12, 1));
 
-        assertThat(cellsOf(LayoutGridRenderer.render(editors, layout))).hasSize(1);
+        assertThat(cellsOf(LayoutGridRenderer.render(editors, layout))).hasSize(2);
     }
 
     @Test
@@ -136,7 +138,6 @@ class LayoutGridRendererTest {
                 .column(column)
                 .colspan(colspan)
                 .rowspan(rowspan)
-                .visible(true)
                 .build();
     }
 

@@ -1,6 +1,5 @@
 package com.nc.formengine.dataimpl.entity;
 
-import com.nc.formengine.model.enums.ComponentType;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Getter;
@@ -9,8 +8,6 @@ import lombok.Setter;
 import lombok.ToString;
 
 import jakarta.persistence.*;
-import java.util.HashMap;
-import java.util.Map;
 import java.util.Objects;
 
 @Entity
@@ -45,21 +42,6 @@ public class FieldLayout {
     private Integer colspan;
 
     private Integer rowspan;
-
-    @Enumerated(EnumType.STRING)
-    @Column(name = "component_type")
-    private ComponentType componentType;
-
-    @ElementCollection(fetch = FetchType.EAGER)
-    @CollectionTable(name = "field_layout_properties", joinColumns = @JoinColumn(name = "field_layout_id"))
-    @MapKeyColumn(name = "property_key")
-    @Column(name = "property_value", columnDefinition = "TEXT")
-    @Builder.Default
-    private Map<String, String> customProperties = new HashMap<>();
-
-    @Column(nullable = false)
-    @Builder.Default
-    private Boolean visible = true;
 
     @Override
     public boolean equals(Object other) {
