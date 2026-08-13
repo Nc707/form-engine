@@ -40,7 +40,7 @@ class FieldSubmissionIntegrationTest {
     void setUp() throws Exception {
         // 1. Create a form
         FormDefinitionDTO form = new FormDefinitionDTO();
-        form.setCode("SURVEY_FORM");
+        form.setCode("survey_form");
         form.setTitle("Survey Form");
         form.setVersion(1);
 
@@ -97,7 +97,7 @@ class FieldSubmissionIntegrationTest {
         // 3. Create a submission of the form
         FormSubmissionDTO formSubmission = new FormSubmissionDTO();
         formSubmission.setFormDefinitionId(formDefinitionId);
-        formSubmission.setFormCode("SURVEY_FORM");
+        formSubmission.setFormCode("survey_form");
         formSubmission.setAuthor("testuser@example.com");
         formSubmission.setStatus(SubmissionStatus.DRAFT);
 
@@ -191,7 +191,7 @@ class FieldSubmissionIntegrationTest {
         // Given - a second form submission
         FormSubmissionDTO formSubmission2 = new FormSubmissionDTO();
         formSubmission2.setFormDefinitionId(formDefinitionId);
-        formSubmission2.setFormCode("SURVEY_FORM");
+        formSubmission2.setFormCode("survey_form");
         formSubmission2.setAuthor("user2@example.com");
         formSubmission2.setStatus(SubmissionStatus.SUBMITTED);
 

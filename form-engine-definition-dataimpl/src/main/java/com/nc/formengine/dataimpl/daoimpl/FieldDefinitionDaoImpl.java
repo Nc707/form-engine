@@ -77,9 +77,23 @@ public class FieldDefinitionDaoImpl implements FieldDefinitionDao {
                 .collect(Collectors.toList());
     }
 
+    /**
+     * Deletes a field, taking it out of its form's collection as well.
+     *
+     * <p>Both halves are needed. A form owns its fields with {@code cascade = ALL}, so deleting the row
+     * while a loaded parent still lists the field makes the cascade write it straight back at flush —
+     * the delete appears to succeed and changes nothing. Whether the parent happens to be loaded is not
+     * something a caller can know, so keeping the association consistent is this method's job.
+     */
     @Override
     public void deleteById(Long id) {
-        jpaRepository.deleteById(id);
+        jpaRepository.findById(id).ifPresent(field -> {
+            FormDefinition owner = field.getFormDefinition();
+            if (owner != null && owner.getFields() != null) {
+                owner.getFields().removeIf(sibling -> id.equals(sibling.getId()));
+            }
+            jpaRepository.delete(field);
+        });
     }
 
     @Override

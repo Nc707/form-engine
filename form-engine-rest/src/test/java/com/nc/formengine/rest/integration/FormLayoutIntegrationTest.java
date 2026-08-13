@@ -157,7 +157,7 @@ class FormLayoutIntegrationTest {
 
     private FormDefinitionDTO createTestForm() throws Exception {
         FormDefinitionDTO formToCreate = new FormDefinitionDTO();
-        formToCreate.setCode("TEST_FORM_" + System.currentTimeMillis());
+        formToCreate.setCode("test_form_" + System.currentTimeMillis());
         formToCreate.setTitle("Test Form");
         formToCreate.setDescription("A test form for layout testing");
         formToCreate.setVersion(1);

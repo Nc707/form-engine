@@ -14,7 +14,12 @@ import java.util.List;
 import java.util.Objects;
 
 @Entity
-@Table(name = "field_definitions")
+// A name is the key the validator and the dependency evaluator resolve a field by, so two fields of a
+// form cannot share one. Enforced in the service as well, which is what produces a 409 instead of a
+// constraint violation; this is the backstop for anything that reaches the schema another way.
+@Table(name = "field_definitions",
+    uniqueConstraints = @UniqueConstraint(name = "uq_field_per_form",
+        columnNames = {"form_definition_id", "name"}))
 @Getter
 @Setter
 @Builder

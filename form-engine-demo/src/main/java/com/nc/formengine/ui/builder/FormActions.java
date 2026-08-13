@@ -9,12 +9,11 @@ import com.nc.formengine.model.enums.FormDefinitionStatus;
  * the index grid and in the editor alike. Two views asking the same question have to get the same
  * answer, and the way to guarantee that is to have only one place that answers it.
  *
- * <p>It matters more than a tidiness argument would suggest. Only {@code FormDefinitionService}
- * guards its own writes — {@code update}, {@code publish} and {@code deleteById} call for a draft.
- * {@code FieldDefinitionService} and {@code FieldDependencyService} check nothing at all, so editing
- * a field of a published form succeeds at the service layer. For everything except the form header,
- * this record and the check it feeds are the only thing standing between a user and a state the rest
- * of the engine considers impossible.
+ * <p>It decides which controls to offer, and nothing more. Every rule it reads is enforced in the
+ * business layer as well — a published form refuses writes to its fields, options, dependencies and
+ * layouts, an empty form refuses to be published, and a draft refuses to be versioned — so a control
+ * this record leaves enabled by mistake cannot produce a state the engine considers impossible. It used
+ * to be the only thing standing between a user and exactly that.
  *
  * @param editable    whether the definition may still be changed
  * @param publishable whether the form may go live now

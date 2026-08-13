@@ -44,7 +44,7 @@ class SubmissionAnswerPersistenceIntegrationTest {
     @BeforeEach
     void setUp() {
         form = formDefinitionService.create(FormDefinitionDTO.builder()
-                .code("ANSWER_PERSISTENCE_" + System.nanoTime())
+                .code("answer_persistence_" + System.nanoTime())
                 .title("Answer persistence")
                 .version(1)
                 .fields(new ArrayList<>(List.of(

@@ -1,6 +1,7 @@
 package com.nc.formengine.businessimpl.service;
 
 import com.nc.formengine.business.service.FormDefinitionService;
+import com.nc.formengine.data.dao.FieldDefinitionDao;
 import com.nc.formengine.data.dao.FormDao;
 import com.nc.formengine.model.dto.FormDefinitionDTO;
 import com.nc.formengine.model.enums.FormDefinitionStatus;
@@ -8,6 +9,8 @@ import com.nc.formengine.model.exception.DuplicateResourceException;
 import com.nc.formengine.model.exception.FormDefinitionNotEditableException;
 import com.nc.formengine.model.exception.FormDefinitionNotFoundException;
 import com.nc.formengine.model.exception.InvalidFormDefinitionTransitionException;
+import com.nc.formengine.model.exception.ValidationFailedException;
+import com.nc.formengine.model.rules.DefinitionRules;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -21,12 +24,16 @@ import java.util.Optional;
 public class FormDefinitionServiceImpl implements FormDefinitionService {
 
     private final FormDao formDao;
+    private final FieldDefinitionDao fieldDefinitionDao;
+    private final DefinitionMutationGuard guard;
 
     @Override
     public FormDefinitionDTO create(FormDefinitionDTO formDefinitionDTO) {
         if (formDefinitionDTO.getId() != null) {
             throw new IllegalArgumentException("New form should not have an ID");
         }
+        guard.requireNoProblems("The form",
+                DefinitionRules.checkForm(formDefinitionDTO.getCode(), formDefinitionDTO.getTitle()));
         requireCodeIsFree(formDefinitionDTO.getCode());
 
         // The lifecycle owns these two, not the caller: a form is born as version 1 of a draft.
@@ -55,6 +62,7 @@ public class FormDefinitionServiceImpl implements FormDefinitionService {
             throw new InvalidFormDefinitionTransitionException(
                     id, definition.getStatus(), FormDefinitionStatus.PUBLISHED);
         }
+        requireHasFields(id);
 
         // Only one version of a code may be live, so whatever was published before steps aside.
         // Archived rather than deleted: submissions made under it still have to be interpretable.
@@ -71,7 +79,15 @@ public class FormDefinitionServiceImpl implements FormDefinitionService {
 
     @Override
     public FormDefinitionDTO createNewVersion(Long id) {
-        requireExisting(id);
+        FormDefinitionDTO source = requireExisting(id);
+        if (source.getStatus() == FormDefinitionStatus.DRAFT) {
+            // A draft is the thing you get by versioning, not something to version. Branching one would
+            // leave two concurrent drafts of a code, and publishing the older afterwards would make
+            // findByCode ("newest") and findLatestPublishedByCode ("live") disagree about what the code
+            // means. Editing the draft is what a caller wants here.
+            throw new InvalidFormDefinitionTransitionException(
+                    id, FormDefinitionStatus.DRAFT, FormDefinitionStatus.DRAFT);
+        }
         return formDao.copyAsNewVersion(id)
                 .orElseThrow(() -> new FormDefinitionNotFoundException(id));
     }
@@ -89,6 +105,19 @@ public class FormDefinitionServiceImpl implements FormDefinitionService {
     private void requireCodeIsFree(String code) {
         if (code != null && formDao.existsByCode(code)) {
             throw new DuplicateResourceException("Form", "code", code);
+        }
+    }
+
+    /**
+     * A form has to have something to fill in before it can accept answers.
+     *
+     * <p>Publishing an empty form produces something that renders nothing, validates nothing and
+     * accepts an empty submission as valid — which is a live form in name only.
+     */
+    private void requireHasFields(Long id) {
+        if (fieldDefinitionDao.findByFormDefinitionId(id).isEmpty()) {
+            throw new ValidationFailedException("The form has nothing to fill in",
+                    "A form needs at least one field before it can be published.");
         }
     }
 
