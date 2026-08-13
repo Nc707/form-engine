@@ -167,7 +167,7 @@ Errors are RFC 7807 problem details, served as `application/problem+json` by a s
 
 ## Tests
 
-404 tests, all run by `mvn install` and by CI.
+413 tests, all run by `mvn install` and by CI.
 
 | Where | What it covers |
 |---|---|
@@ -175,7 +175,7 @@ Errors are RFC 7807 problem details, served as `application/problem+json` by a s
 | `form-engine-definition-dataimpl` | What survives the database: restrictions, options, and that a new version shares no row with the one it was copied from |
 | `form-engine-definition-businessimpl` | The dependency graph and its cycles, validation decisions, the definition lifecycle, and every invariant the domain now enforces rather than the builder |
 | `form-engine-submission-*` | The submission state machine, and that writing a submission back does not delete the answers the request said nothing about |
-| `form-engine-rest` | The API through `MockMvc`, status codes, problem bodies, the springdoc integration |
+| `form-engine-rest` | The API through `MockMvc`: status codes, problem bodies, the springdoc integration, and that the domain rules hold on the HTTP path too |
 | `form-engine-demo` | The builder's policy and parameter names, the layout grid, answer resolution against archived versions, the renderer's save/submit workflow |
 
 ## Scope
