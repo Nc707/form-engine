@@ -9,15 +9,19 @@ to the form, not a change to this package.
 **`FieldSpecification`** — a functional interface: does this value satisfy this rule? Specifications
 compose with `and`, `or` and `not`.
 
-**`FieldContext`** — what a rule needs to know beyond the value itself: the field's type and name, the
-rest of the form's answers (for cross-field rules), and any extra metadata.
+**`FieldContext`** — what a rule needs to know beyond the value itself: the field's type and its name.
+Nothing more, because no restriction can name another field, so there is nothing cross-field to carry.
 
 **`SpecificationResult`** — satisfied or not, with the reasons when not.
 
 **`FieldRestrictionDTO`** — the persisted form of a rule: its type, its parameters, an optional custom
-message, which field types it applies to, and its evaluation order.
+message, and its evaluation order.
 
 **`FieldSpecificationFactory`** — the bridge from stored data to behaviour.
+
+**`RestrictionParameter`** — the name and type of the parameter each restriction takes. The one table:
+whatever writes a parameter and whatever reads it both come here, so the two cannot spell a key
+differently.
 
 **`RestrictionTypeRegistry`** — which restriction types make sense for which field types.
 
@@ -54,12 +58,16 @@ Only `TEXT` and `NUMBER` have any. `DATE`, `BOOLEAN`, `SELECT` and `MULTI_SELECT
 judges the shape of an answer, and for those types the shape is already settled by the field type, the
 `required` flag and the option list. The builder says so out loud instead of offering an empty dropdown.
 
-**The parameter key matters and is not checked for you.** The factory is permissive by design: an
-unknown restriction type, or a missing or unreadable parameter, yields a specification that accepts
-every value. A rule nobody can satisfy would leave a form unsubmittable with no way for the user to
-resolve it, so failing open is the right trade — but it does mean a misspelled key produces a rule
-that silently never fires rather than an error. `RestrictionParameterSpec` in the demo's builder is
-where the UI keeps these names in one place, and `RestrictionParameterSpecTest` pins the failure mode.
+**Evaluation fails open; storing does not.** The factory is permissive by design: an unknown restriction
+type, or a missing or unreadable parameter, yields a specification that accepts every value. A rule
+nobody can satisfy would leave a form unsubmittable with no way for the user to resolve it, so failing
+open is the right trade at evaluation time.
+
+On its own that traded one problem for another: a rule with a missing parameter was stored, shown in the
+editor, and silently enforced nothing. Two things close it. `RestrictionParameter` is the single table of
+keys, so the writer and the reader cannot disagree about a name. And `DefinitionRules`, enforced by
+`FieldDefinitionService`, refuses to store a rule whose parameter is absent or unreadable — so the
+permissive branch stays as the safety net it was meant to be, rather than the normal outcome of a typo.
 
 ## Using it
 
@@ -134,10 +142,12 @@ boolean applicable = RestrictionTypeRegistry.isApplicable(RestrictionType.MIN_LE
 
 1. Write a class implementing `FieldSpecification`.
 2. Declare the field types it applies to as a constant.
-3. Implement `isSatisfiedBy`, returning satisfied when the field type does not apply.
+3. Implement `isSatisfiedBy`, returning satisfied when the field type does not apply, and satisfied on
+   null — presence is the field's `required` flag, never a rule.
 4. Add the constant to `RestrictionType`.
 5. Register its applicability in `RestrictionTypeRegistry`.
-6. **Add the case to the `switch` in `FieldSpecificationFactory.from`.** Without this the restriction
+6. Declare its parameter, if it takes one, in `RestrictionParameter`.
+7. **Add the case to the `switch` in `FieldSpecificationFactory.from`.** Without this the restriction
    is stored but never enforced. The `switch` has no `default` branch on purpose, so adding the enum
    constant makes the compiler point at this step.
 
