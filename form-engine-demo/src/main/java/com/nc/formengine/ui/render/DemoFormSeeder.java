@@ -15,6 +15,7 @@ import com.nc.formengine.model.enums.DependencyEffect;
 import com.nc.formengine.model.enums.FieldType;
 import com.nc.formengine.model.enums.FormDefinitionStatus;
 import com.nc.formengine.model.enums.RestrictionType;
+import com.nc.formengine.model.validation.AnswerCodec;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.context.event.ApplicationReadyEvent;
@@ -79,8 +80,7 @@ class DemoFormSeeder {
                 .triggerFieldId(fieldIds.get("needs_visa"))
                 .dependentFieldId(fieldIds.get("visa_country"))
                 .condition(DependencyCondition.EQUALS)
-                // The value a checkbox answer takes, per FieldComponentFactory's boolean editor.
-                .triggerValue("true")
+                .triggerValue(AnswerCodec.encodeBoolean(true))
                 .effect(DependencyEffect.SHOW)
                 .build());
 

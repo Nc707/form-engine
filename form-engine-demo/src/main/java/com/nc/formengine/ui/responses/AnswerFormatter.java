@@ -3,31 +3,27 @@ package com.nc.formengine.ui.responses;
 import com.nc.formengine.model.dto.FieldDefinitionDTO;
 import com.nc.formengine.model.dto.FieldOptionDTO;
 import com.nc.formengine.model.enums.FieldType;
+import com.nc.formengine.model.validation.AnswerCodec;
 
 import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
 import java.time.format.DateTimeParseException;
-import java.util.Arrays;
 import java.util.List;
 import java.util.stream.Collectors;
 
 /**
  * Reads a stored answer back out.
  *
- * <p>This is the inverse of {@link com.nc.formengine.ui.shared.FieldComponentFactory}, which decides
- * how each {@link FieldType} is written down: a checkbox becomes {@code "true"}, a date becomes an
- * ISO string, a multi-select becomes one comma-joined string, and a select stores an option's value
- * rather than the label the user actually picked. Those two classes have to agree, so change them
- * together.
+ * <p>How each {@link FieldType} is written down comes from {@link AnswerCodec}, so this reads the same
+ * format the engine validates and the renderer writes, rather than a third guess at it. What is left
+ * here is presentation: a boolean reads as Yes or No, a date in the local format, and a choice as the
+ * label the user picked rather than the value stored for it.
  *
  * <p>Anything that does not parse is shown as it was stored. A viewer's job is to report what is in
  * the database, and a value the current definition cannot explain is exactly what someone reading
  * old submissions needs to see.
  */
 final class AnswerFormatter {
-
-    /** The separator {@code FieldComponentFactory} joins multi-select answers with. */
-    private static final String MULTI_VALUE_SEPARATOR = ",";
 
     private static final DateTimeFormatter DATE_FORMAT = DateTimeFormatter.ofPattern("dd/MM/yyyy");
 
@@ -52,10 +48,10 @@ final class AnswerFormatter {
     }
 
     private static String formatBoolean(String value) {
-        if ("true".equalsIgnoreCase(value)) {
+        if (AnswerCodec.TRUE.equalsIgnoreCase(value)) {
             return "Yes";
         }
-        if ("false".equalsIgnoreCase(value)) {
+        if (AnswerCodec.FALSE.equalsIgnoreCase(value)) {
             return "No";
         }
         return value;
@@ -70,9 +66,7 @@ final class AnswerFormatter {
     }
 
     private static String formatMultiSelect(FieldDefinitionDTO field, String value) {
-        return Arrays.stream(value.split(MULTI_VALUE_SEPARATOR))
-                .map(String::trim)
-                .filter(part -> !part.isEmpty())
+        return AnswerCodec.decodeSelections(value).stream()
                 .map(part -> labelOf(field, part))
                 .collect(Collectors.joining(", "));
     }

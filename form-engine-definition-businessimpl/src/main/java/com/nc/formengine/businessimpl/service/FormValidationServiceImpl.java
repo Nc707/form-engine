@@ -5,10 +5,13 @@ import com.nc.formengine.business.service.FormValidationService;
 import com.nc.formengine.data.dao.FieldDefinitionDao;
 import com.nc.formengine.model.dependency.FieldState;
 import com.nc.formengine.model.dto.FieldDefinitionDTO;
+import com.nc.formengine.model.dto.FieldOptionDTO;
 import com.nc.formengine.model.dto.FieldRestrictionDTO;
+import com.nc.formengine.model.enums.FieldType;
 import com.nc.formengine.model.specification.FieldContext;
 import com.nc.formengine.model.specification.FieldSpecificationFactory;
 import com.nc.formengine.model.specification.SpecificationResult;
+import com.nc.formengine.model.validation.AnswerCodec;
 import com.nc.formengine.model.validation.Answers;
 import com.nc.formengine.model.validation.FieldValidationError;
 import com.nc.formengine.model.validation.ValidationMode;
@@ -23,6 +26,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.Set;
+import java.util.stream.Collectors;
 
 /**
  * Applies the restrictions stored with a form to the answers given for it.
@@ -119,6 +124,11 @@ public class FormValidationServiceImpl implements FormValidationService {
             return List.of();
         }
 
+        List<FieldValidationError> notOptions = validateOptionMembership(field, value);
+        if (!notOptions.isEmpty()) {
+            return notOptions;
+        }
+
         FieldContext context = FieldContext.builder()
             .fieldType(field.getType())
             .fieldName(field.getName())
@@ -158,6 +168,34 @@ public class FormValidationServiceImpl implements FormValidationService {
 
     private FieldState baseStateOf(FieldDefinitionDTO field) {
         return new FieldState(true, Boolean.TRUE.equals(field.getRequired()));
+    }
+
+    /**
+     * Refuses a choice the field does not offer.
+     *
+     * <p>Not a restriction anyone configures: an answer outside a field's own options is never valid,
+     * so there would be nothing to turn off. Until this existed the only thing keeping a SELECT honest
+     * was the widget, and any string at all could be stored through the API.
+     *
+     * <p>An option removed in a later version is not judged here — old answers are read against the
+     * definition they were filled under, and validation only ever runs against the current one.
+     */
+    private List<FieldValidationError> validateOptionMembership(FieldDefinitionDTO field, Object value) {
+        if (field.getType() != FieldType.SELECT && field.getType() != FieldType.MULTI_SELECT) {
+            return List.of();
+        }
+
+        Set<String> offered = field.getOptions() == null ? Set.of() : field.getOptions().stream()
+            .filter(Objects::nonNull)
+            .map(FieldOptionDTO::getValue)
+            .filter(Objects::nonNull)
+            .collect(Collectors.toSet());
+
+        return AnswerCodec.decodeSelections(value).stream()
+            .filter(chosen -> !offered.contains(chosen))
+            .map(chosen -> FieldValidationError.notAnOption(field.getName(), field.getId(),
+                "'" + chosen + "' is not one of the choices for this field"))
+            .toList();
     }
 
     /** The message for a missing required answer: the field author's own, or the engine's default. */
