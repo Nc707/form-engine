@@ -167,7 +167,7 @@ Errors are RFC 7807 problem details, served as `application/problem+json` by a s
 
 ## Tests
 
-413 tests, all run by `mvn install` and by CI.
+414 tests, all run by `mvn install` and by CI.
 
 | Where | What it covers |
 |---|---|
