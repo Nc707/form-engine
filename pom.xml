@@ -34,6 +34,7 @@
   	<module>form-engine-submission-dataimpl</module>
   	<module>form-engine-submission-business</module>
   	<module>form-engine-submission-businessimpl</module>
+  	<module>form-engine-flow</module>
   	<module>form-engine-rest</module>
   	<module>form-engine-demo</module>
   </modules>
@@ -101,6 +102,11 @@
             <dependency>
                 <groupId>com.nc</groupId>
                 <artifactId>form-engine-submission-businessimpl</artifactId>
+                <version>${form-engine.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>com.nc</groupId>
+                <artifactId>form-engine-flow</artifactId>
                 <version>${form-engine.version}</version>
             </dependency>
         </dependencies>
