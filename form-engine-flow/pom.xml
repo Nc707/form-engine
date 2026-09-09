@@ -1,0 +1,92 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+    <modelVersion>4.0.0</modelVersion>
+
+    <parent>
+        <groupId>com.nc</groupId>
+        <artifactId>form-engine</artifactId>
+        <version>0.0.1-SNAPSHOT</version>
+    </parent>
+
+    <artifactId>form-engine-flow</artifactId>
+    <name>Form Engine Flow (Vaadin)</name>
+    <description>Vaadin views and components for Form Engine, packaged to be added to any Spring Boot application</description>
+
+    <dependencies>
+        <!-- Internal dependencies - Business layer (interfaces + implementations).
+             The implementations are required at runtime: the interface modules alone
+             provide no beans to inject into the views. Each implementation module
+             auto-configures its own beans, so a consumer needs no scan configuration. -->
+        <dependency>
+            <groupId>com.nc</groupId>
+            <artifactId>form-engine-definition-business</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>com.nc</groupId>
+            <artifactId>form-engine-definition-businessimpl</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>com.nc</groupId>
+            <artifactId>form-engine-submission-business</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>com.nc</groupId>
+            <artifactId>form-engine-submission-businessimpl</artifactId>
+        </dependency>
+
+        <!-- Internal dependencies - Data implementations (entities + repositories) -->
+        <dependency>
+            <groupId>com.nc</groupId>
+            <artifactId>form-engine-definition-dataimpl</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>com.nc</groupId>
+            <artifactId>form-engine-submission-dataimpl</artifactId>
+        </dependency>
+
+        <!-- Vaadin. vaadin-core, not vaadin: the full artifact drags the commercial
+             components (Charts, GridPro, CRUD, Map, Board, Dashboard) onto the
+             classpath under the Vaadin Commercial License. Nothing here uses them,
+             and their terms do not sit with the AGPL this project ships under.
+             Declared explicitly, and not left to come in transitively, so that
+             constraint stays visible to anyone reading this module. -->
+        <dependency>
+            <groupId>com.vaadin</groupId>
+            <artifactId>vaadin-core</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>com.vaadin</groupId>
+            <artifactId>vaadin-spring-boot-starter</artifactId>
+        </dependency>
+
+        <!-- Auto-configuration: this module registers its own beans and routes. -->
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-autoconfigure</artifactId>
+        </dependency>
+
+        <!-- Lombok -->
+        <dependency>
+            <groupId>org.projectlombok</groupId>
+            <artifactId>lombok</artifactId>
+            <optional>true</optional>
+        </dependency>
+
+        <!-- Testing. The views themselves are not tested; what is, is the logic they sit on,
+             plus that a bare application picks all of this up with no scan configuration. -->
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-test</artifactId>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>com.h2database</groupId>
+            <artifactId>h2</artifactId>
+            <scope>test</scope>
+        </dependency>
+    </dependencies>
+
+    <!-- No vaadin-maven-plugin and no spring-boot-maven-plugin: building the frontend
+         bundle and repackaging a fat jar are the consuming application's job, not a
+         library's. -->
+</project>
