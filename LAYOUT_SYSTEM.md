@@ -43,7 +43,7 @@ Resolution, in order:
 
 ## Authoring
 
-There is no layout editor. Layouts are created over REST or by the demo seeder; the Vaadin builder
+There is no layout editor. Layouts are created over REST or by the demo seeder; the builder
 designs a form's fields, not their placement.
 
 ## Endpoints
