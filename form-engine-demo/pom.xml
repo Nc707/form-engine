@@ -65,6 +65,19 @@
             <plugin>
                 <groupId>org.springframework.boot</groupId>
                 <artifactId>spring-boot-maven-plugin</artifactId>
+                <!-- The repackage goal has to be asked for. It is bound to the package phase by
+                     spring-boot-starter-parent, and this project imports the Boot BOM instead of
+                     inheriting that parent, so without this execution `mvn package` produces a
+                     plain jar with no Main-Class and no BOOT-INF: `java -jar` on it fails, and the
+                     Docker image has nothing to run. -->
+                <executions>
+                    <execution>
+                        <id>repackage</id>
+                        <goals>
+                            <goal>repackage</goal>
+                        </goals>
+                    </execution>
+                </executions>
                 <configuration>
                     <excludes>
                         <exclude>
