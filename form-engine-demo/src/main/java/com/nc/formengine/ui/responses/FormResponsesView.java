@@ -74,7 +74,7 @@ class FormResponsesView extends VerticalLayout implements BeforeEnterObserver {
         body.setPadding(false);
         body.setSpacing(false);
 
-        add(new ViewToolbar("Por formulario", formPicker), summary, body);
+        add(new ViewToolbar("Responses by form", formPicker), summary, body);
         setFlexGrow(1, body);
     }
 
