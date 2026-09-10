@@ -3,6 +3,7 @@ package com.nc.formengine.flow.builder;
 import com.nc.formengine.model.dto.FieldDefinitionDTO;
 import com.nc.formengine.model.enums.FieldType;
 import com.nc.formengine.model.enums.RestrictionType;
+import com.nc.formengine.model.rules.DefinitionRules;
 import com.vaadin.flow.component.button.Button;
 import com.vaadin.flow.component.button.ButtonVariant;
 import com.vaadin.flow.component.checkbox.Checkbox;
@@ -209,7 +210,7 @@ final class FieldDialog extends Dialog {
                         ? new ArrayList<>(options.toDtos()) : new ArrayList<>())
                 .build();
 
-        List<String> found = BuilderValidation.validateField(candidate, siblings);
+        List<String> found = DefinitionRules.checkField(candidate, siblings);
         if (!found.isEmpty()) {
             problems.removeAll();
             found.forEach(problem -> problems.add(new Div(new Span(problem))));

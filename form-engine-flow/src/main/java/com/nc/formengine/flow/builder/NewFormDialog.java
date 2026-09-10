@@ -1,6 +1,7 @@
 package com.nc.formengine.flow.builder;
 
 import com.nc.formengine.model.dto.FormDefinitionDTO;
+import com.nc.formengine.model.rules.DefinitionRules;
 import com.vaadin.flow.component.button.Button;
 import com.vaadin.flow.component.button.ButtonVariant;
 import com.vaadin.flow.component.dialog.Dialog;
@@ -82,7 +83,7 @@ final class NewFormDialog extends Dialog {
 
     private void submit() {
         List<String> found = new ArrayList<>(
-                BuilderValidation.validateNewForm(code.getValue(), title.getValue()));
+                DefinitionRules.checkForm(code.getValue(), title.getValue()));
         if (found.isEmpty() && codeTaken.test(code.getValue())) {
             found.add("A form with the code '" + code.getValue() + "' already exists. "
                     + "Use 'New version' on it instead.");

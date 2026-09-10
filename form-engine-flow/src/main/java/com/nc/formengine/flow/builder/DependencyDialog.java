@@ -6,6 +6,7 @@ import com.nc.formengine.model.dto.FieldOptionDTO;
 import com.nc.formengine.model.enums.DependencyCondition;
 import com.nc.formengine.model.enums.DependencyEffect;
 import com.nc.formengine.model.enums.FieldType;
+import com.nc.formengine.model.rules.DefinitionRules;
 import com.vaadin.flow.component.button.Button;
 import com.vaadin.flow.component.button.ButtonVariant;
 import com.vaadin.flow.component.combobox.ComboBox;
@@ -124,7 +125,7 @@ final class DependencyDialog extends Dialog {
     private void onTriggerChanged(FieldDefinitionDTO chosen, String initialValue) {
         FieldType type = chosen == null ? null : chosen.getType();
 
-        List<DependencyCondition> available = BuilderValidation.conditionsFor(type);
+        List<DependencyCondition> available = DefinitionRules.conditionsFor(type);
         DependencyCondition current = condition.getValue();
         condition.setItems(available);
         if (current != null && available.contains(current)) {
@@ -236,7 +237,7 @@ final class DependencyDialog extends Dialog {
                 .triggerValue(valueReader.get())
                 .build();
 
-        List<String> found = BuilderValidation.validateDependency(candidate, fields);
+        List<String> found = DefinitionRules.checkDependency(candidate, fields);
         if (!found.isEmpty()) {
             problems.removeAll();
             found.forEach(problem -> problems.add(new Div(new Span(problem))));
