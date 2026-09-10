@@ -2,24 +2,25 @@
  * Vaadin views and components for the form engine, packaged so that an application only has to add
  * the dependency.
  *
- * <p>The module is laid out by what a class <em>is</em>, not by which screen it happens to serve:
+ * <p>Everything lives in this one package on purpose. The alternative — a package per kind, or per
+ * screen — reads well in a file tree but forces every collaborator a view is built from to be
+ * {@code public}, which turns the whole inside of the module into API that cannot be changed
+ * without breaking someone. Flat and package-private keeps the supported surface to what is
+ * deliberately exposed:
  *
  * <ul>
- *   <li>{@code view} — the routed screens, one subpackage per feature. These are what
- *       {@link com.nc.formengine.flow.autoconfigure.FormEngineRouteRegistrar} mounts, and what an
- *       application names to navigate or to build a menu item.
- *   <li>{@code components} — Vaadin components with no route of their own: the dialogs and panels
- *       the builder is made of, the submission browser, the shared toolbar, and the field widgets
- *       every screen renders answers with.
- *   <li>{@code utils} — the helpers the two above stand on: policy, formatting, ordering, the
- *       builder's write session, CSV, and the notification toasts.
- *   <li>{@code autoconfigure} and {@code spi} — how the module registers itself, and the one
- *       question it has to ask the application back.
+ *   <li>the seven routed views, which an application navigates to and builds menu items from,
+ *       listed in {@link com.nc.formengine.flow.FormEngineViews};
+ *   <li>{@link com.nc.formengine.flow.SubmissionBrowser}, {@link com.nc.formengine.flow.ViewToolbar},
+ *       {@link com.nc.formengine.flow.FieldEditor} and
+ *       {@link com.nc.formengine.flow.FieldComponentFactory}, for embedding rather than routing;
+ *   <li>{@link com.nc.formengine.flow.AnswerResolver} and
+ *       {@link com.nc.formengine.flow.ResolvedAnswer}, which read a submission back against the
+ *       definition version it was filled under;
+ *   <li>{@code autoconfigure}, which registers all of it, and {@code spi}, the one question the
+ *       module has to ask the application back.
  * </ul>
  *
- * <p>One consequence worth knowing: because a view and the components it is made of no longer share
- * a package, most of this is {@code public} that would otherwise not need to be. Being public here
- * is not a promise of API stability — {@code view}, {@code spi},
- * {@link com.nc.formengine.flow.FormEngineViews} and the properties are the supported surface.
+ * <p>Everything else is package-private, and is meant to stay that way.
  */
 package com.nc.formengine.flow;

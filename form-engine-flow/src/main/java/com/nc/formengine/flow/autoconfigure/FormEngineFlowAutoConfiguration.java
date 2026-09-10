@@ -1,7 +1,7 @@
 package com.nc.formengine.flow.autoconfigure;
 
 import com.nc.formengine.business.service.FieldDefinitionService;
-import com.nc.formengine.flow.utils.responses.AnswerResolver;
+import com.nc.formengine.flow.AnswerResolver;
 import com.nc.formengine.flow.spi.SubmissionAuthorProvider;
 import com.vaadin.flow.component.Component;
 import com.vaadin.flow.server.VaadinServiceInitListener;
