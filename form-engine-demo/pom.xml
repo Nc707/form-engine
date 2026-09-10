@@ -9,38 +9,15 @@
     </parent>
 
     <artifactId>form-engine-demo</artifactId>
-    <name>Form Engine Demo (Vaadin)</name>
-    <description>Vaadin UI for Form Engine: form builder, renderer and submission viewer</description>
+    <name>Form Engine Demo</name>
+    <description>Runnable sample application: seeds two forms and shows the form-engine-flow views</description>
 
     <dependencies>
-        <!-- Internal dependencies - Business layer (interfaces + implementations).
-             The implementations are required at runtime: the interface modules alone
-             provide no beans to inject into the views. -->
+        <!-- The Vaadin views and components, and through them the whole engine. This is the
+             one dependency an application needs; everything under it auto-configures itself. -->
         <dependency>
             <groupId>com.nc</groupId>
-            <artifactId>form-engine-definition-business</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>com.nc</groupId>
-            <artifactId>form-engine-definition-businessimpl</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>com.nc</groupId>
-            <artifactId>form-engine-submission-business</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>com.nc</groupId>
-            <artifactId>form-engine-submission-businessimpl</artifactId>
-        </dependency>
-
-        <!-- Internal dependencies - Data implementations (entities + repositories) -->
-        <dependency>
-            <groupId>com.nc</groupId>
-            <artifactId>form-engine-definition-dataimpl</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>com.nc</groupId>
-            <artifactId>form-engine-submission-dataimpl</artifactId>
+            <artifactId>form-engine-flow</artifactId>
         </dependency>
 
         <!-- Vaadin. vaadin-core, not vaadin: the full artifact drags the commercial
@@ -79,15 +56,6 @@
             <groupId>org.projectlombok</groupId>
             <artifactId>lombok</artifactId>
             <optional>true</optional>
-        </dependency>
-
-        <!-- Testing. The views themselves are not tested; what is, is the logic they sit on:
-             resolving a submission's answers against the definition it was filled in against,
-             reading the stored encoding back out, and writing CSV. -->
-        <dependency>
-            <groupId>org.springframework.boot</groupId>
-            <artifactId>spring-boot-starter-test</artifactId>
-            <scope>test</scope>
         </dependency>
     </dependencies>
 

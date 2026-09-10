@@ -18,13 +18,13 @@ import org.springframework.boot.autoconfigure.SpringBootApplication;
  * own beans, entities and repositories. The one package it does name is the views', which are not
  * beans of this application but classes Spring has to find to instantiate.
  */
-@SpringBootApplication(scanBasePackages = {"com.nc.formengine.demo", "com.nc.formengine.ui"})
+@SpringBootApplication(scanBasePackages = {"com.nc.formengine.demo", "com.nc.formengine.flow"})
 /**
  * Where Vaadin looks for {@code @Route} classes.
  *
  * <p>Component scanning is not enough. Without this, Vaadin scans the auto-configuration package —
  * the package of this class, {@code com.nc.formengine.demo} — and every view lives in
- * {@code com.nc.formengine.ui}, so it finds none of them: the application starts perfectly well and
+ * {@code com.nc.formengine.flow}, so it finds none of them: the application starts perfectly well and
  * serves "No views found" for every URL. The {@code vaadin.allowed-packages} property does not
  * cover this; it filters what the frontend resource scan reads, it does not widen the set of
  * packages the route scan starts from.
