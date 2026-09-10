@@ -1,12 +1,12 @@
 package com.nc.formengine.flow.autoconfigure;
 
-import com.nc.formengine.flow.builder.FormBuilderIndexView;
-import com.nc.formengine.flow.builder.FormBuilderView;
-import com.nc.formengine.flow.render.FormIndexView;
-import com.nc.formengine.flow.render.FormRendererView;
-import com.nc.formengine.flow.responses.FormResponsesView;
-import com.nc.formengine.flow.responses.SubmissionDetailView;
-import com.nc.formengine.flow.responses.SubmissionListView;
+import com.nc.formengine.flow.view.builder.FormBuilderIndexView;
+import com.nc.formengine.flow.view.builder.FormBuilderView;
+import com.nc.formengine.flow.view.render.FormIndexView;
+import com.nc.formengine.flow.view.render.FormRendererView;
+import com.nc.formengine.flow.view.responses.FormResponsesView;
+import com.nc.formengine.flow.view.responses.SubmissionDetailView;
+import com.nc.formengine.flow.view.responses.SubmissionListView;
 import com.vaadin.flow.component.Component;
 import com.vaadin.flow.router.RouteConfiguration;
 import com.vaadin.flow.server.ServiceInitEvent;
@@ -30,7 +30,7 @@ import java.util.stream.Stream;
  * with no parent chain and leaving the annotation in place is what gets the views wrapped in
  * whatever shell the application has, with nothing asked of the application.
  */
-class FormEngineRouteRegistrar implements VaadinServiceInitListener {
+public class FormEngineRouteRegistrar implements VaadinServiceInitListener {
 
     private final FormEngineFlowProperties.Routes routes;
 
