@@ -13,7 +13,6 @@ import com.vaadin.flow.component.orderedlayout.HorizontalLayout;
 import com.vaadin.flow.component.orderedlayout.VerticalLayout;
 import com.vaadin.flow.router.BeforeEnterEvent;
 import com.vaadin.flow.router.BeforeEnterObserver;
-import com.vaadin.flow.router.Menu;
 import com.vaadin.flow.router.PageTitle;
 import com.vaadin.flow.router.Route;
 import com.vaadin.flow.router.RouteParameters;
@@ -32,7 +31,6 @@ import java.util.Map;
 // why this must not register itself at startup.
 @Route(value = "form-engine/responses/form/:formId?", registerAtStartup = false)
 @PageTitle("Responses by form")
-@Menu(order = 3, icon = "vaadin:clipboard-text", title = "Responses by form")
 public class FormResponsesView extends VerticalLayout implements BeforeEnterObserver {
 
     static final String FORM_ID = "formId";

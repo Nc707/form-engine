@@ -5,7 +5,6 @@ import com.nc.formengine.business.service.FormDefinitionService;
 import com.nc.formengine.submission.business.service.FormSubmissionService;
 import com.nc.formengine.flow.shared.ViewToolbar;
 import com.vaadin.flow.component.orderedlayout.VerticalLayout;
-import com.vaadin.flow.router.Menu;
 import com.vaadin.flow.router.PageTitle;
 import com.vaadin.flow.router.Route;
 
@@ -15,7 +14,6 @@ import com.vaadin.flow.router.Route;
 // why this must not register itself at startup.
 @Route(value = "form-engine/responses", registerAtStartup = false)
 @PageTitle("Responses")
-@Menu(order = 2, icon = "vaadin:records", title = "Responses")
 public class SubmissionListView extends VerticalLayout {
 
     SubmissionListView(FormSubmissionService submissionService,
