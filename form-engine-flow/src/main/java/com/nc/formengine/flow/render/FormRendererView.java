@@ -68,7 +68,6 @@ import java.util.Optional;
 @PageTitle("Fill a form")
 public class FormRendererView extends VerticalLayout implements BeforeEnterObserver {
 
-    /** There is no authentication in this demo, so every submission is filed under one name. */
     static final String FORM_ID = "formId";
     static final String SUBMISSION_ID = "submissionId";
 
