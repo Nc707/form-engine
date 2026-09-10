@@ -7,6 +7,7 @@ import com.nc.formengine.submission.business.service.FormSubmissionService;
 import com.nc.formengine.submission.model.dto.FormSubmissionDTO;
 import com.nc.formengine.submission.model.enums.SubmissionStatus;
 import com.nc.formengine.flow.shared.ViewToolbar;
+import com.nc.formengine.flow.spi.SubmissionAuthorProvider;
 import com.vaadin.flow.component.button.Button;
 import com.vaadin.flow.component.button.ButtonVariant;
 import com.vaadin.flow.component.grid.Grid;
@@ -39,10 +40,14 @@ public class FormIndexView extends VerticalLayout {
 
     private final FormDefinitionService formService;
     private final FormSubmissionService submissionService;
+    private final SubmissionAuthorProvider authorProvider;
 
-    FormIndexView(FormDefinitionService formService, FormSubmissionService submissionService) {
+    FormIndexView(FormDefinitionService formService,
+                  FormSubmissionService submissionService,
+                  SubmissionAuthorProvider authorProvider) {
         this.formService = formService;
         this.submissionService = submissionService;
+        this.authorProvider = authorProvider;
 
         setSizeFull();
         setPadding(false);
@@ -109,12 +114,12 @@ public class FormIndexView extends VerticalLayout {
     }
 
     /**
-     * The drafts of the current user. There is no authentication in this demo, so everything is filed
-     * under one name, kept in {@link FormRendererView#DEMO_USER} so that the view that writes them and
-     * the view that lists them cannot drift apart.
+     * The drafts of whoever is looking. Both this and the renderer that writes them go through the
+     * same {@link SubmissionAuthorProvider}, so the two cannot drift apart no matter what the
+     * application answers.
      */
     private List<FormSubmissionDTO> myDrafts() {
-        return submissionService.findByAuthor(FormRendererView.DEMO_USER).stream()
+        return submissionService.findByAuthor(authorProvider.currentAuthor()).stream()
                 .filter(submission -> submission.getStatus() == SubmissionStatus.DRAFT)
                 .toList();
     }

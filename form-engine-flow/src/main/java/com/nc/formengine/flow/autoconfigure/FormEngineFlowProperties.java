@@ -10,8 +10,23 @@ public class FormEngineFlowProperties {
 
     private final Routes routes = new Routes();
 
+    /**
+     * Who submissions are attributed to when the application has not said. Replacing
+     * {@link com.nc.formengine.flow.spi.SubmissionAuthorProvider} is how an application with real
+     * accounts answers that properly.
+     */
+    private String defaultAuthor = "anonymous";
+
     public Routes getRoutes() {
         return routes;
+    }
+
+    public String getDefaultAuthor() {
+        return defaultAuthor;
+    }
+
+    public void setDefaultAuthor(String defaultAuthor) {
+        this.defaultAuthor = defaultAuthor;
     }
 
     /**

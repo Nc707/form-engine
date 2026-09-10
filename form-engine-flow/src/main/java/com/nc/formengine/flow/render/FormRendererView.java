@@ -20,6 +20,7 @@ import com.nc.formengine.submission.model.dto.FormSubmissionDTO;
 import com.nc.formengine.submission.model.enums.SubmissionStatus;
 import com.nc.formengine.flow.shared.FieldComponentFactory;
 import com.nc.formengine.flow.shared.FieldEditor;
+import com.nc.formengine.flow.spi.SubmissionAuthorProvider;
 import com.nc.formengine.flow.shared.Notifications;
 import com.nc.formengine.flow.shared.ViewToolbar;
 import com.vaadin.flow.component.button.Button;
@@ -71,14 +72,13 @@ public class FormRendererView extends VerticalLayout implements BeforeEnterObser
     static final String FORM_ID = "formId";
     static final String SUBMISSION_ID = "submissionId";
 
-    static final String DEMO_USER = "demo";
-
     private final FormDefinitionService formService;
     private final LayoutResolutionService layoutService;
     private final DependencyEvaluationService dependencyService;
     private final FormValidationService validationService;
     private final FormSubmissionWorkflowService workflowService;
     private final FormSubmissionService submissionService;
+    private final SubmissionAuthorProvider authorProvider;
 
     /** Keyed by field name, which is the key both the validator and the dependency engine speak. */
     private final Map<String, FieldEditor> editors = new LinkedHashMap<>();
@@ -100,13 +100,15 @@ public class FormRendererView extends VerticalLayout implements BeforeEnterObser
                      DependencyEvaluationService dependencyService,
                      FormValidationService validationService,
                      FormSubmissionWorkflowService workflowService,
-                     FormSubmissionService submissionService) {
+                     FormSubmissionService submissionService,
+                     SubmissionAuthorProvider authorProvider) {
         this.formService = formService;
         this.layoutService = layoutService;
         this.dependencyService = dependencyService;
         this.validationService = validationService;
         this.workflowService = workflowService;
         this.submissionService = submissionService;
+        this.authorProvider = authorProvider;
 
         discardButton.addThemeVariants(ButtonVariant.LUMO_TERTIARY, ButtonVariant.LUMO_ERROR);
         discardButton.setVisible(false);
@@ -351,7 +353,7 @@ public class FormRendererView extends VerticalLayout implements BeforeEnterObser
                 .id(submissionId)
                 .formDefinitionId(form.getId())
                 .formCode(form.getCode())
-                .author(DEMO_USER)
+                .author(authorProvider.currentAuthor())
                 .fieldSubmissions(answers)
                 .build();
     }

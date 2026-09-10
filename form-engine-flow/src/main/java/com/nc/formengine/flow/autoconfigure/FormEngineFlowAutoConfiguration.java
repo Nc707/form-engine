@@ -2,6 +2,7 @@ package com.nc.formengine.flow.autoconfigure;
 
 import com.nc.formengine.business.service.FieldDefinitionService;
 import com.nc.formengine.flow.responses.AnswerResolver;
+import com.nc.formengine.flow.spi.SubmissionAuthorProvider;
 import com.vaadin.flow.component.Component;
 import com.vaadin.flow.server.VaadinServiceInitListener;
 import org.springframework.boot.autoconfigure.AutoConfiguration;
@@ -34,6 +35,17 @@ public class FormEngineFlowAutoConfiguration {
     @ConditionalOnMissingBean
     public AnswerResolver formEngineAnswerResolver(FieldDefinitionService fieldService) {
         return new AnswerResolver(fieldService);
+    }
+
+    /**
+     * A single answer for everyone, which is the honest default for a module that knows nothing
+     * about how the application authenticates. Guessing at Spring Security here instead would
+     * write whatever it guessed into every submission.
+     */
+    @Bean
+    @ConditionalOnMissingBean
+    public SubmissionAuthorProvider formEngineSubmissionAuthorProvider(FormEngineFlowProperties properties) {
+        return properties::getDefaultAuthor;
     }
 
     /**
