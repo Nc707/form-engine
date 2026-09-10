@@ -1,6 +1,6 @@
 package com.nc.formengine.demo;
 
-import com.nc.formengine.flow.view.render.FormIndexView;
+import com.nc.formengine.flow.FormIndexView;
 import com.vaadin.flow.component.html.Div;
 import com.vaadin.flow.router.BeforeEnterEvent;
 import com.vaadin.flow.router.BeforeEnterObserver;

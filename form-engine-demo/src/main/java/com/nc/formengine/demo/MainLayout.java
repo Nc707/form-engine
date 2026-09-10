@@ -1,10 +1,10 @@
 package com.nc.formengine.demo;
 
 import com.nc.formengine.flow.FormEngineViews;
-import com.nc.formengine.flow.view.builder.FormBuilderIndexView;
-import com.nc.formengine.flow.view.render.FormIndexView;
-import com.nc.formengine.flow.view.responses.FormResponsesView;
-import com.nc.formengine.flow.view.responses.SubmissionListView;
+import com.nc.formengine.flow.FormBuilderIndexView;
+import com.nc.formengine.flow.FormIndexView;
+import com.nc.formengine.flow.FormResponsesView;
+import com.nc.formengine.flow.SubmissionListView;
 import com.vaadin.flow.component.Component;
 import com.vaadin.flow.component.applayout.AppLayout;
 import com.vaadin.flow.component.html.Span;
