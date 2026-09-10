@@ -1,0 +1,38 @@
+# The build context is copied into the image before Maven runs, so anything here that is not a
+# source file is dead weight the daemon has to send and the build has to ignore. Worse than slow:
+# a target/ or a generated frontend from a host build would be copied over the top of what the
+# container is about to produce, and the image would ship whatever was last built on someone's
+# laptop instead of what this Dockerfile built.
+
+target/
+node_modules/
+
+# In a git worktree .git is a pointer file, not a directory — it would land in the image dangling.
+.git
+.github/
+.gitignore
+
+# Vaadin generates all of these during prepare-frontend; they are the same set .gitignore lists.
+src/main/frontend/generated/
+form-engine-demo/package.json
+form-engine-demo/package-lock.json
+form-engine-demo/tsconfig.json
+form-engine-demo/types.d.ts
+form-engine-demo/vite.config.ts
+form-engine-demo/vite.generated.ts
+form-engine-demo/src/main/bundles/
+form-engine-demo/src/main/frontend/generated/
+
+# Documentation and IDE state: nothing the build reads.
+docs/
+*.md
+.idea/
+.vscode/
+.settings/
+.classpath
+.project
+*.iml
+
+Dockerfile
+.dockerignore
+compose.yaml
