@@ -135,6 +135,21 @@ auto-configuration. That is why neither application above declares a `@Component
 
 ## Running it
 
+The shortest way in is Docker, which needs nothing else installed — no JDK, no Maven, no Node. The
+image is built from this repository; it is not pulled from a registry, because nothing here is
+published to one.
+
+```bash
+docker compose up          # Vaadin UI → http://localhost:8081
+```
+
+The first run takes a few minutes: it compiles all thirteen modules and the Vaadin production
+bundle inside the container. After that the build is cached. The demo runs on H2 in-memory there
+too, so stopping the stack discards whatever was entered — the seeded forms are rebuilt on the next
+start, so it always opens on something to look at.
+
+With a JDK 21 and Maven on the machine, the modules run directly, and the REST API with them:
+
 ```bash
 mvn clean install                          # full build with every test
 mvn spring-boot:run -pl form-engine-demo   # Vaadin UI  → http://localhost:8081
@@ -184,6 +199,17 @@ behind them.
     <artifactId>form-engine-flow</artifactId>
     <version>0.0.1-SNAPSHOT</version>
 </dependency>
+```
+
+**That version does not resolve from anywhere yet.** Nothing here is published — not to Maven
+Central, not to a snapshot repository, not to GitHub Packages — so adding no `<repository>` block is
+not an omission: there is none to point at. Build the artifacts into your own `~/.m2` first, and the
+coordinates above resolve from there:
+
+```bash
+git clone https://github.com/Nc707/form-engine.git
+cd form-engine
+mvn clean install
 ```
 
 Then an ordinary Spring Boot application and a datasource. That is all:
