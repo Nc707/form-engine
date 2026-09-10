@@ -10,6 +10,21 @@ Adding a rule to a form is an edit to data. No deployment, no code.
 
 Java 21, Spring Boot 4.0.2, Vaadin 25, Maven multi-module, H2 in-memory.
 
+## Screenshots
+
+<table>
+<tr>
+<td width="34%"><img src="docs/screenshots/builder.png" alt="Form builder: fields, rules and dependencies with a live preview"></td>
+<td width="33%"><img src="docs/screenshots/fill.png" alt="Filling in a published form, with a field revealed by a dependency"></td>
+<td width="33%"><img src="docs/screenshots/validation.png" alt="Inline validation on submit"></td>
+</tr>
+<tr>
+<td><sub>Design a form: fields, rules and conditional dependencies, with a live preview that mirrors the renderer exactly.</sub></td>
+<td><sub>Fill in a published form. <code>visa_country</code> only appears once <code>needs_visa</code> is ticked.</sub></td>
+<td><sub>The same rules the REST API enforces, reported field-by-field instead of as an exception.</sub></td>
+</tr>
+</table>
+
 ## What it does
 
 **Validation is data.** A field carries a list of restrictions — `MIN_LENGTH`, `PATTERN`, `EMAIL` and
@@ -17,6 +32,11 @@ so on — which are turned into composable `FieldSpecification` objects at evalu
 are deliberately *not* restrictions, because they are always true and so would be nothing to configure:
 whether an answer is required at all, and whether a choice is one the field offers. See
 [the specification guide](form-engine-definition-model/src/main/java/com/nc/formengine/model/specification/README.md).
+
+<img src="docs/screenshots/field-rules.png" width="720" alt="Editing a field's validation rules">
+
+<sub>Rules are checked top to bottom; the first one that fails is the message the person filling the
+form sees.</sub>
 
 **The engine owns its rules.** A form's coherence — field names usable as keys and unique within the
 form, a select with options, an option value no answer could ambiguate, a rule that applies to its
@@ -29,12 +49,30 @@ field B". The evaluator resolves the whole graph, detects cycles, and where two 
 disagree the more restrictive one wins — so the outcome never depends on load order and a
 misconfigured form fails closed.
 
+<img src="docs/screenshots/conditional-rule.png" width="720" alt="Editing a conditional dependency between two fields">
+
+<sub>"While <code>needs_visa</code> is ticked, show <code>visa_country</code>" — the rule behind the
+field appearing in the fill-in screenshot above.</sub>
+
 **Definitions have a lifecycle.** A `DRAFT` is editable, and cannot be published while it has no fields.
 Publishing freezes it *whole* — not only its own row but its fields, their options, their rules and its
 layouts — and archives whichever version was live before, so exactly one version per code accepts
 submissions at a time. Changing a published form means creating a new version, which deep-copies
 everything and repoints the references onto the copies. Old submissions stay readable against the
 definition they were actually filled under, which is the point of freezing rather than editing in place.
+
+<table>
+<tr>
+<td width="55%"><img src="docs/screenshots/versions.png" alt="Form builder listing draft, published and archived versions of two forms"></td>
+<td width="45%"><img src="docs/screenshots/submission-detail.png" alt="A submission read against its archived definition"></td>
+</tr>
+<tr>
+<td><sub><code>job_application</code> has a live v1 and an editable v2 draft; <code>customer_onboarding</code>'s
+v1 is archived under its published v2.</sub></td>
+<td><sub>An answer to that archived v1, still labelled — and readable — the way the person who filled it
+in actually saw it.</sub></td>
+</tr>
+</table>
 
 **Submissions have a state machine.** `DRAFT → SUBMITTED → VOIDED`, and `DRAFT → DISCARDED`. The two
 endings are different acts by different people: a draft is *discarded* by whoever was filling it in,
@@ -104,6 +142,19 @@ The UI seeds two demo forms on startup, so there is something to look at immedia
 | **Fill a form** | Render a published form on its layout grid, react to dependencies as you type, save a draft, submit |
 | **Responses** | Browse and filter submissions, read one in full, export CSV, discard a draft or void a response |
 | **Responses by form** | One form's submissions, with a per-status summary |
+
+<table>
+<tr>
+<td width="50%"><img src="docs/screenshots/responses.png" alt="Every submission across every form and version, with its status"></td>
+<td width="50%"><img src="docs/screenshots/responses-by-form.png" alt="One form's submissions with a per-status summary"></td>
+</tr>
+<tr>
+<td><sub>Every submission across every form and version — <code>DRAFT</code>, <code>SUBMITTED</code>,
+<code>DISCARDED</code>, <code>VOIDED</code> side by side.</sub></td>
+<td><sub>The same data scoped to one form, with the per-status counts the full list doesn't total for
+you.</sub></td>
+</tr>
+</table>
 
 Two notes on partial builds:
 
