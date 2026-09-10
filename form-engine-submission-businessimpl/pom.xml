@@ -36,6 +36,11 @@
       <groupId>org.springframework</groupId>
       <artifactId>spring-tx</artifactId>
     </dependency>
+    <!-- Auto-configuration: this module registers its own service beans. -->
+    <dependency>
+      <groupId>org.springframework.boot</groupId>
+      <artifactId>spring-boot-autoconfigure</artifactId>
+    </dependency>
     <!-- JUnit 5 + AssertJ + Mockito for the workflow tests, which need no container. -->
     <dependency>
       <groupId>org.springframework.boot</groupId>
