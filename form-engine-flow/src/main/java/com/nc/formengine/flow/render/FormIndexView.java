@@ -16,6 +16,7 @@ import com.vaadin.flow.component.orderedlayout.VerticalLayout;
 import com.vaadin.flow.router.Menu;
 import com.vaadin.flow.router.PageTitle;
 import com.vaadin.flow.router.Route;
+import com.vaadin.flow.router.RouteParameters;
 import com.vaadin.flow.theme.lumo.LumoUtility;
 
 import java.util.List;
@@ -30,7 +31,10 @@ import java.util.stream.Collectors;
  * ones the engine accepts submissions for — {@code FormSubmissionWorkflowService.submit} refuses
  * anything else. Offering a draft here would be offering a form that cannot be sent.
  */
-@Route("forms")
+// The value is only the default; the path actually used comes from
+// formengine.flow.routes and is registered by FormEngineRouteRegistrar, which is also
+// why this must not register itself at startup.
+@Route(value = "form-engine/forms", registerAtStartup = false)
 @PageTitle("Fill a form")
 @Menu(order = 1, icon = "vaadin:records", title = "Fill a form")
 public class FormIndexView extends VerticalLayout {
@@ -68,7 +72,9 @@ public class FormIndexView extends VerticalLayout {
         grid.addColumn(form -> form.getFields() == null ? 0 : form.getFields().size())
                 .setHeader("Fields").setAutoWidth(true);
         grid.addComponentColumn(form -> {
-            var fill = new Button("Fill", event -> getUI().ifPresent(ui -> ui.navigate("fill/" + form.getId())));
+            var fill = new Button("Fill", event -> getUI().ifPresent(ui -> ui.navigate(
+                    FormRendererView.class,
+                    new RouteParameters(FormRendererView.FORM_ID, String.valueOf(form.getId())))));
             fill.addThemeVariants(ButtonVariant.LUMO_PRIMARY, ButtonVariant.LUMO_SMALL);
             return fill;
         }).setHeader("").setAutoWidth(true).setFlexGrow(0);
@@ -90,8 +96,11 @@ public class FormIndexView extends VerticalLayout {
         grid.addColumn(draft -> draft.getFieldSubmissions() == null ? 0 : draft.getFieldSubmissions().size())
                 .setHeader("Answers").setAutoWidth(true);
         grid.addComponentColumn(draft -> {
-            var resume = new Button("Resume", event -> getUI().ifPresent(ui ->
-                    ui.navigate("fill/" + draft.getFormDefinitionId() + "/" + draft.getId())));
+            var resume = new Button("Resume", event -> getUI().ifPresent(ui -> ui.navigate(
+                    FormRendererView.class,
+                    new RouteParameters(Map.of(
+                            FormRendererView.FORM_ID, String.valueOf(draft.getFormDefinitionId()),
+                            FormRendererView.SUBMISSION_ID, String.valueOf(draft.getId()))))));
             resume.addThemeVariants(ButtonVariant.LUMO_SMALL);
             return resume;
         }).setHeader("").setAutoWidth(true).setFlexGrow(0);

@@ -37,7 +37,10 @@ import java.util.function.Supplier;
  * well be an archived one — so what is on screen is what the person filling the form actually saw,
  * not what the form asks today.
  */
-@Route("responses/submission/:submissionId([0-9]+)")
+// The value is only the default; the path actually used comes from
+// formengine.flow.routes and is registered by FormEngineRouteRegistrar, which is also
+// why this must not register itself at startup.
+@Route(value = "form-engine/responses/submission/:submissionId([0-9]+)", registerAtStartup = false)
 @PageTitle("Submission detail")
 public class SubmissionDetailView extends VerticalLayout implements BeforeEnterObserver {
 

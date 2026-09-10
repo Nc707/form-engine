@@ -25,7 +25,6 @@ import com.nc.formengine.flow.shared.ViewToolbar;
 import com.vaadin.flow.component.button.Button;
 import com.vaadin.flow.component.button.ButtonVariant;
 import com.vaadin.flow.component.confirmdialog.ConfirmDialog;
-import com.vaadin.flow.component.html.Anchor;
 import com.vaadin.flow.component.html.Div;
 import com.vaadin.flow.component.html.H3;
 import com.vaadin.flow.component.html.Span;
@@ -34,6 +33,9 @@ import com.vaadin.flow.router.BeforeEnterEvent;
 import com.vaadin.flow.router.BeforeEnterObserver;
 import com.vaadin.flow.router.PageTitle;
 import com.vaadin.flow.router.Route;
+import com.vaadin.flow.router.RouteConfiguration;
+import com.vaadin.flow.router.RouteParameters;
+import com.vaadin.flow.router.RouterLink;
 import com.vaadin.flow.server.VaadinSession;
 import com.vaadin.flow.server.WebBrowser;
 import com.vaadin.flow.theme.lumo.LumoUtility;
@@ -58,11 +60,17 @@ import java.util.Optional;
  * <p>The same route serves a fresh form and a draft being resumed; the optional {@code submissionId}
  * is what tells them apart.
  */
-@Route("fill/:formId/:submissionId?")
+// The value is only the default; the path actually used comes from
+// formengine.flow.routes and is registered by FormEngineRouteRegistrar, which is also
+// why this must not register itself at startup.
+@Route(value = "form-engine/fill/:formId/:submissionId?", registerAtStartup = false)
 @PageTitle("Fill a form")
 public class FormRendererView extends VerticalLayout implements BeforeEnterObserver {
 
     /** There is no authentication in this demo, so every submission is filed under one name. */
+    static final String FORM_ID = "formId";
+    static final String SUBMISSION_ID = "submissionId";
+
     static final String DEMO_USER = "demo";
 
     private final FormDefinitionService formService;
@@ -114,7 +122,7 @@ public class FormRendererView extends VerticalLayout implements BeforeEnterObser
         editors.clear();
         submissionId = null;
 
-        Optional<Long> formId = event.getRouteParameters().get("formId")
+        Optional<Long> formId = event.getRouteParameters().get(FORM_ID)
                 .flatMap(FormRendererView::parseId);
         if (formId.isEmpty()) {
             showProblem("That is not a form id.");
@@ -136,7 +144,7 @@ public class FormRendererView extends VerticalLayout implements BeforeEnterObser
         }
 
         buildForm();
-        event.getRouteParameters().get("submissionId")
+        event.getRouteParameters().get(SUBMISSION_ID)
                 .flatMap(FormRendererView::parseId)
                 .ifPresent(this::resumeDraft);
         showDiscardWhenThereIsADraft();
@@ -269,8 +277,7 @@ public class FormRendererView extends VerticalLayout implements BeforeEnterObser
             SubmissionResult result = workflowService.saveDraft(submission());
             submissionId = result.submission().getId();
             // Keep the URL pointing at the draft, so a reload resumes it instead of starting over.
-            getUI().ifPresent(ui -> ui.getPage().getHistory()
-                    .replaceState(null, "fill/" + form.getId() + "/" + submissionId));
+            getUI().ifPresent(ui -> ui.getPage().getHistory().replaceState(null, draftUrl()));
 
             showErrors(result.report());
             // There is something to give up on now, which there was not before the first save.
@@ -302,7 +309,7 @@ public class FormRendererView extends VerticalLayout implements BeforeEnterObser
         try {
             workflowService.discard(submissionId);
             Notifications.success("Draft discarded.");
-            getUI().ifPresent(ui -> ui.navigate("forms"));
+            getUI().ifPresent(ui -> ui.navigate(FormIndexView.class));
         } catch (RuntimeException ex) {
             // The workflow refuses what it does not allow; what it says is what the user needs.
             Notifications.error("Could not discard the draft: " + ex.getMessage());
@@ -319,7 +326,7 @@ public class FormRendererView extends VerticalLayout implements BeforeEnterObser
                 return;
             }
             Notifications.success("Sent. Submission #" + result.submission().getId() + ".");
-            getUI().ifPresent(ui -> ui.navigate("forms"));
+            getUI().ifPresent(ui -> ui.navigate(FormIndexView.class));
         } catch (RuntimeException ex) {
             Notifications.error("Could not send the form: " + ex.getMessage());
         }
@@ -423,9 +430,20 @@ public class FormRendererView extends VerticalLayout implements BeforeEnterObser
 
     // --- dead ends ------------------------------------------------------------------------------
 
+    /**
+     * The URL of this draft, asked of the registry rather than assembled: the path the view is
+     * mounted on is the application's to choose.
+     */
+    private String draftUrl() {
+        return RouteConfiguration.forSessionScope().getUrl(FormRendererView.class,
+                new RouteParameters(Map.of(
+                        FORM_ID, String.valueOf(form.getId()),
+                        SUBMISSION_ID, String.valueOf(submissionId))));
+    }
+
     private void showProblem(String message) {
         var explanation = new Span(message);
-        var back = new Anchor("forms", "Back to the list of forms");
+        var back = new RouterLink("Back to the list of forms", FormIndexView.class);
 
         var body = new VerticalLayout(explanation, back);
         body.setPadding(true);

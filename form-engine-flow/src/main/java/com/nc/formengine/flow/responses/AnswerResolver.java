@@ -4,7 +4,6 @@ import com.nc.formengine.business.service.FieldDefinitionService;
 import com.nc.formengine.model.dto.FieldDefinitionDTO;
 import com.nc.formengine.submission.model.dto.FieldSubmissionDTO;
 import com.nc.formengine.submission.model.dto.FormSubmissionDTO;
-import org.springframework.stereotype.Component;
 
 import java.util.ArrayList;
 import java.util.HashSet;
@@ -32,7 +31,6 @@ import java.util.Set;
  * answers have no {@code orderIndex} to place them by, so interleaving them would only invent an
  * order.
  */
-@Component
 public class AnswerResolver {
 
     private final FieldDefinitionService fieldDefinitionService;

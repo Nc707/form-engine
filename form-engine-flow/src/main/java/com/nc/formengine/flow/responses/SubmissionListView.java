@@ -10,7 +10,10 @@ import com.vaadin.flow.router.PageTitle;
 import com.vaadin.flow.router.Route;
 
 /** Every submission the engine has stored, across all forms and versions. */
-@Route("responses")
+// The value is only the default; the path actually used comes from
+// formengine.flow.routes and is registered by FormEngineRouteRegistrar, which is also
+// why this must not register itself at startup.
+@Route(value = "form-engine/responses", registerAtStartup = false)
 @PageTitle("Responses")
 @Menu(order = 2, icon = "vaadin:records", title = "Responses")
 public class SubmissionListView extends VerticalLayout {
