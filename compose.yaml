@@ -1,0 +1,20 @@
+# `docker compose up` is the whole setup: it builds the demo from source and serves it. Nothing
+# here needs to exist on the host — no JDK, no Maven, no Node.
+
+# Named explicitly, because Compose otherwise derives the project name from the directory. That is
+# whatever the repository happens to be cloned into — in a git worktree it is commonly "main" — and
+# two unrelated stacks sharing a directory name share containers, networks and orphan warnings.
+name: form-engine
+
+services:
+  app:
+    build: .
+    image: form-engine-demo:local
+    ports:
+      # The demo reads server.port=${PORT:8081}, so the container listens on 8081.
+      - "8081:8081"
+
+# There is no database service and no volume, and that is the design rather than an omission: the
+# demo runs on H2 in-memory (spring.jpa.hibernate.ddl-auto=create-drop), so whatever is entered goes
+# away when the container stops. It opens on something to look at regardless, because both seeders
+# rebuild their forms on every boot — a fresh container is a working demo, not an empty one.
