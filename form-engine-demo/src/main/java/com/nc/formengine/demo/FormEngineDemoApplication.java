@@ -6,8 +6,6 @@ import com.vaadin.flow.spring.annotation.EnableVaadin;
 import com.vaadin.flow.theme.lumo.Lumo;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
-import org.springframework.boot.persistence.autoconfigure.EntityScan;
-import org.springframework.data.jpa.repository.config.EnableJpaRepositories;
 
 /**
  * Vaadin front end for the form engine.
@@ -15,23 +13,12 @@ import org.springframework.data.jpa.repository.config.EnableJpaRepositories;
  * <p>This application consumes the same business layer as {@code form-engine-rest}: it injects the
  * {@code *Service} interfaces from the {@code -business} modules and lets Spring wire the
  * {@code -businessimpl} beans. No engine logic is duplicated here.
+ *
+ * <p>It names none of the engine's packages either: every module it depends on auto-configures its
+ * own beans, entities and repositories. The one package it does name is the views', which are not
+ * beans of this application but classes Spring has to find to instantiate.
  */
-@SpringBootApplication(scanBasePackages = {
-        "com.nc.formengine.demo",
-        "com.nc.formengine.ui",
-        "com.nc.formengine.businessimpl",
-        "com.nc.formengine.dataimpl",
-        "com.nc.formengine.submission.businessimpl",
-        "com.nc.formengine.submission.dataimpl"
-})
-@EnableJpaRepositories(basePackages = {
-        "com.nc.formengine.dataimpl.repository",
-        "com.nc.formengine.submission.dataimpl.repository"
-})
-@EntityScan(basePackages = {
-        "com.nc.formengine.dataimpl.entity",
-        "com.nc.formengine.submission.dataimpl.entity"
-})
+@SpringBootApplication(scanBasePackages = {"com.nc.formengine.demo", "com.nc.formengine.ui"})
 /**
  * Where Vaadin looks for {@code @Route} classes.
  *
