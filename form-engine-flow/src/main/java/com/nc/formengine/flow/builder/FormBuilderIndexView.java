@@ -14,7 +14,6 @@ import com.vaadin.flow.component.html.Span;
 import com.vaadin.flow.component.icon.VaadinIcon;
 import com.vaadin.flow.component.orderedlayout.HorizontalLayout;
 import com.vaadin.flow.component.orderedlayout.VerticalLayout;
-import com.vaadin.flow.router.Menu;
 import com.vaadin.flow.router.PageTitle;
 import com.vaadin.flow.router.Route;
 import com.vaadin.flow.router.RouteParameters;
@@ -40,7 +39,6 @@ import java.util.Objects;
 // why this must not register itself at startup.
 @Route(value = "form-engine/definitions", registerAtStartup = false)
 @PageTitle("Form builder")
-@Menu(order = 0, icon = "vaadin:tools", title = "Form builder")
 public class FormBuilderIndexView extends VerticalLayout {
 
     private final FormDefinitionService formService;

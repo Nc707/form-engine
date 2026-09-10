@@ -1,9 +1,13 @@
 package com.nc.formengine.demo;
 
+import com.nc.formengine.flow.FormEngineViews;
+import com.nc.formengine.flow.builder.FormBuilderIndexView;
+import com.nc.formengine.flow.render.FormIndexView;
+import com.nc.formengine.flow.responses.FormResponsesView;
+import com.nc.formengine.flow.responses.SubmissionListView;
 import com.vaadin.flow.component.Component;
 import com.vaadin.flow.component.applayout.AppLayout;
 import com.vaadin.flow.component.html.Span;
-import com.vaadin.flow.component.icon.Icon;
 import com.vaadin.flow.component.icon.VaadinIcon;
 import com.vaadin.flow.component.orderedlayout.FlexComponent;
 import com.vaadin.flow.component.orderedlayout.Scroller;
@@ -12,13 +16,30 @@ import com.vaadin.flow.component.sidenav.SideNav;
 import com.vaadin.flow.component.sidenav.SideNavItem;
 import com.vaadin.flow.dom.Style;
 import com.vaadin.flow.router.Layout;
-import com.vaadin.flow.server.menu.MenuConfiguration;
-import com.vaadin.flow.server.menu.MenuEntry;
 import com.vaadin.flow.theme.lumo.LumoUtility;
 
-/** Application shell: drawer navigation built from the {@code @Menu} entries of each view. */
+import java.util.Map;
+
+/**
+ * Application shell.
+ *
+ * <p>This is the other half of what a library cannot ship. A single unqualified {@code @Layout}
+ * becomes the shell of every route in the application, so one arriving in a jar would give whoever
+ * depended on it a drawer they did not ask for, and would collide with the layout they already
+ * have. Left here, Vaadin wraps the library views in it anyway, and an application with its own
+ * layout gets that one instead without configuring anything.
+ *
+ * <p>The drawer is built from {@link FormEngineViews#TOP_LEVEL}, with the titles and icons chosen
+ * here rather than by the library.
+ */
 @Layout
 public final class MainLayout extends AppLayout {
+
+    private static final Map<Class<? extends Component>, VaadinIcon> ICONS = Map.of(
+            FormBuilderIndexView.class, VaadinIcon.TOOLS,
+            FormIndexView.class, VaadinIcon.RECORDS,
+            SubmissionListView.class, VaadinIcon.INBOX,
+            FormResponsesView.class, VaadinIcon.CLIPBOARD_TEXT);
 
     MainLayout() {
         setPrimarySection(Section.DRAWER);
@@ -41,14 +62,12 @@ public final class MainLayout extends AppLayout {
     private SideNav createSideNav() {
         var nav = new SideNav();
         nav.addClassNames(LumoUtility.Margin.Horizontal.MEDIUM);
-        MenuConfiguration.getMenuEntries().forEach(entry -> nav.addItem(createSideNavItem(entry)));
+        // By class, not by path: the paths are configuration, and SideNavItem resolves them from
+        // wherever the views were mounted.
+        FormEngineViews.TOP_LEVEL.forEach(view -> nav.addItem(new SideNavItem(
+                view.suggestedTitle(),
+                view.navigationTarget(),
+                ICONS.get(view.navigationTarget()).create())));
         return nav;
-    }
-
-    private SideNavItem createSideNavItem(MenuEntry menuEntry) {
-        if (menuEntry.icon() != null) {
-            return new SideNavItem(menuEntry.title(), menuEntry.path(), new Icon(menuEntry.icon()));
-        }
-        return new SideNavItem(menuEntry.title(), menuEntry.path());
     }
 }
