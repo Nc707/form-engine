@@ -47,6 +47,9 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 @SpringBootTest
 class RendererWorkflowIntegrationTest {
 
+    /** Whatever the application answers; the default provider answers this. */
+    private static final String AUTHOR = "anonymous";
+
     @Autowired
     private FormDefinitionService formService;
 
@@ -210,7 +213,7 @@ class RendererWorkflowIntegrationTest {
                 .id(id)
                 .formDefinitionId(form.getId())
                 .formCode(form.getCode())
-                .author(FormRendererView.DEMO_USER)
+                .author(AUTHOR)
                 .fieldSubmissions(rows)
                 .build();
     }
