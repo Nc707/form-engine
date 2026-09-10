@@ -27,7 +27,10 @@ import java.util.Map;
  * <p>The form is a version, not a code: two versions of the same code have different fields, so
  * counting or exporting them together would mean columns that only some rows have.
  */
-@Route("responses/form/:formId?")
+// The value is only the default; the path actually used comes from
+// formengine.flow.routes and is registered by FormEngineRouteRegistrar, which is also
+// why this must not register itself at startup.
+@Route(value = "form-engine/responses/form/:formId?", registerAtStartup = false)
 @PageTitle("Responses by form")
 @Menu(order = 3, icon = "vaadin:clipboard-text", title = "Responses by form")
 public class FormResponsesView extends VerticalLayout implements BeforeEnterObserver {

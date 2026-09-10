@@ -17,6 +17,7 @@ import com.vaadin.flow.component.orderedlayout.VerticalLayout;
 import com.vaadin.flow.router.Menu;
 import com.vaadin.flow.router.PageTitle;
 import com.vaadin.flow.router.Route;
+import com.vaadin.flow.router.RouteParameters;
 
 import java.util.ArrayList;
 import java.util.Comparator;
@@ -34,7 +35,10 @@ import java.util.Objects;
  * from {@link FormActions}, the same function the editor uses, so the two cannot disagree about what
  * a published form allows.
  */
-@Route("")
+// The value is only the default; the path actually used comes from
+// formengine.flow.routes and is registered by FormEngineRouteRegistrar, which is also
+// why this must not register itself at startup.
+@Route(value = "form-engine/definitions", registerAtStartup = false)
 @PageTitle("Form builder")
 @Menu(order = 0, icon = "vaadin:tools", title = "Form builder")
 public class FormBuilderIndexView extends VerticalLayout {
@@ -50,7 +54,7 @@ public class FormBuilderIndexView extends VerticalLayout {
         setSpacing(false);
 
         var newForm = new Button("New form", VaadinIcon.PLUS.create(),
-                event -> navigateTo(FormBuilderView.ROUTE));
+                event -> navigateToNewForm());
         newForm.addThemeVariants(ButtonVariant.LUMO_PRIMARY);
 
         buildGrid();
@@ -91,7 +95,7 @@ public class FormBuilderIndexView extends VerticalLayout {
         FormActions actions = FormActions.of(form.getStatus(), fieldCount(form));
 
         var edit = action("Edit", actions.editable(), actions.reason(),
-                () -> navigateTo(FormBuilderView.ROUTE + "/" + form.getId()));
+                () -> navigateToForm(form.getId()));
 
         var publish = action("Publish", actions.publishable(), actions.publishBlockedReason(),
                 () -> confirm("Publish this form?",
@@ -108,7 +112,7 @@ public class FormBuilderIndexView extends VerticalLayout {
                 () -> run(() -> {
                     var draft = formService.createNewVersion(form.getId());
                     Notifications.success("Started version " + draft.getVersion() + ".");
-                    navigateTo(FormBuilderView.ROUTE + "/" + draft.getId());
+                    navigateToForm(draft.getId());
                 }));
 
         var delete = action("Delete", actions.deletable(), actions.reason(),
@@ -187,8 +191,13 @@ public class FormBuilderIndexView extends VerticalLayout {
         dialog.open();
     }
 
-    private void navigateTo(String route) {
-        getUI().ifPresent(ui -> ui.navigate(route));
+    private void navigateToNewForm() {
+        getUI().ifPresent(ui -> ui.navigate(FormBuilderView.class));
+    }
+
+    private void navigateToForm(Long formId) {
+        getUI().ifPresent(ui -> ui.navigate(FormBuilderView.class,
+                new RouteParameters(FormBuilderView.FORM_ID, String.valueOf(formId))));
     }
 
     private static int fieldCount(FormDefinitionDTO form) {

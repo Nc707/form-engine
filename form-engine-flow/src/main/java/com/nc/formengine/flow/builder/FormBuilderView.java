@@ -30,6 +30,7 @@ import com.vaadin.flow.router.BeforeLeaveEvent;
 import com.vaadin.flow.router.BeforeLeaveObserver;
 import com.vaadin.flow.router.PageTitle;
 import com.vaadin.flow.router.Route;
+import com.vaadin.flow.router.RouteParameters;
 import com.vaadin.flow.theme.lumo.LumoUtility;
 
 import java.util.ArrayList;
@@ -55,12 +56,14 @@ import java.util.stream.Collectors;
  * rather than greyed out, and the banner and "New version" button, which are how a published form is
  * meant to be changed.
  */
-@Route(FormBuilderView.ROUTE + "/:formId?")
+// The value is only the default; the path actually used comes from
+// formengine.flow.routes and is registered by FormEngineRouteRegistrar, which is also
+// why this must not register itself at startup.
+@Route(value = "form-engine/builder/:formId?", registerAtStartup = false)
 @PageTitle("Form builder")
 public class FormBuilderView extends VerticalLayout implements BeforeEnterObserver, BeforeLeaveObserver {
 
-    static final String ROUTE = "builder";
-    private static final String FORM_ID = "formId";
+    static final String FORM_ID = "formId";
 
     private final FormDefinitionService formService;
     private final FieldDefinitionService fieldService;
@@ -106,7 +109,7 @@ public class FormBuilderView extends VerticalLayout implements BeforeEnterObserv
     // --- layout ------------------------------------------------------------------------------
 
     private ViewToolbar toolbar() {
-        var back = new Button("All forms", event -> navigateTo(""));
+        var back = new Button("All forms", event -> navigateToIndex());
 
         publish.addThemeVariants(ButtonVariant.LUMO_PRIMARY);
         publish.addClickListener(event -> confirm("Publish this form?",
@@ -119,7 +122,7 @@ public class FormBuilderView extends VerticalLayout implements BeforeEnterObserv
             try {
                 Long draftId = session.createNewVersion();
                 Notifications.success("Started a new draft from this version.");
-                navigateTo(ROUTE + "/" + draftId);
+                navigateToForm(draftId);
             } catch (RuntimeException ex) {
                 Notifications.error(ex.getMessage());
             }
@@ -134,7 +137,7 @@ public class FormBuilderView extends VerticalLayout implements BeforeEnterObserv
                     try {
                         session.deleteForm();
                         Notifications.success("Deleted the draft.");
-                        navigateTo("");
+                        navigateToIndex();
                     } catch (RuntimeException ex) {
                         Notifications.error(ex.getMessage());
                     }
@@ -234,13 +237,13 @@ public class FormBuilderView extends VerticalLayout implements BeforeEnterObserv
                     try {
                         var created = formService.create(form);
                         Notifications.success("Created '" + created.getTitle() + "'.");
-                        navigateTo(ROUTE + "/" + created.getId());
+                        navigateToForm(created.getId());
                     } catch (RuntimeException ex) {
                         Notifications.error(ex.getMessage());
-                        navigateTo("");
+                        navigateToIndex();
                     }
                 },
-                () -> navigateTo("")).open();
+                this::navigateToIndex).open();
     }
 
     /**
@@ -458,8 +461,13 @@ public class FormBuilderView extends VerticalLayout implements BeforeEnterObserv
         dialog.open();
     }
 
-    private void navigateTo(String route) {
-        getUI().ifPresent(ui -> ui.navigate(route));
+    private void navigateToIndex() {
+        getUI().ifPresent(ui -> ui.navigate(FormBuilderIndexView.class));
+    }
+
+    private void navigateToForm(Long formId) {
+        getUI().ifPresent(ui -> ui.navigate(FormBuilderView.class,
+                new RouteParameters(FORM_ID, String.valueOf(formId))));
     }
 
     private static String nullToEmpty(String text) {
