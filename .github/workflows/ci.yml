@@ -30,8 +30,8 @@ jobs:
       # The default build deliberately skips the Vaadin `production` profile: only that profile
       # binds vaadin-maven-plugin's build-frontend goal, which downloads a Node toolchain and runs
       # a Vite build. Adding -Pproduction here means also caching ~/.vaadin and
-      # form-engine-demo/node_modules, or CI gets slow and network-flaky for no benefit — the REST
-      # module and every test live outside the demo.
+      # form-engine-demo/node_modules, or CI gets slow and network-flaky for no benefit — the demo
+      # is the only module with a frontend build, and it has no tests of its own.
       - name: Build and test
         run: mvn -B -ntp verify
 

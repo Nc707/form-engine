@@ -87,13 +87,15 @@ carrying the errors, with nothing written.
 
 ## Architecture
 
-The project is sliced by domain, then by layer. The REST API and the Vaadin UI are two consumers of
-the same business core; neither owns engine logic.
+The project is sliced by domain, then by layer. The REST API and the Vaadin views are two consumers
+of the same business core; neither owns engine logic. The views are a library of their own, and the
+demo is an application that consumes it the way anyone else's would.
 
 ```mermaid
 graph TD
     REST["form-engine-rest<br/>7 controllers, RFC 7807, OpenAPI"]
-    UI["form-engine-demo<br/>Vaadin 25: builder, renderer, responses"]
+    DEMO["form-engine-demo<br/>sample application"]
+    FLOW["form-engine-flow<br/>Vaadin 25: builder, renderer, responses"]
     DB[("H2<br/>in-memory")]
 
     subgraph core [" "]
@@ -106,7 +108,7 @@ graph TD
     end
 
     REST --> BIZ
-    UI --> BIZ
+    DEMO --> FLOW --> BIZ
     DATA --> DB
 ```
 
@@ -124,7 +126,12 @@ key.
 | `*-business` | Service interfaces |
 | `*-businessimpl` | Service implementations |
 | `form-engine-rest` | REST API — port 8080, context path `/form-engine` |
-| `form-engine-demo` | Vaadin UI — port 8081, injects the services directly (no HTTP) |
+| `form-engine-flow` | Vaadin views and components, packaged to be added to any Spring Boot application |
+| `form-engine-demo` | A sample application built on that library — port 8081, injects the services directly (no HTTP) |
+
+Every module registers its own beans, entities and repositories through Spring Boot
+auto-configuration. That is why neither application above declares a `@ComponentScan`, an
+`@EntityScan` or an `@EnableJpaRepositories`, and why yours does not have to either.
 
 ## Running it
 
@@ -134,7 +141,9 @@ mvn spring-boot:run -pl form-engine-demo   # Vaadin UI  → http://localhost:808
 mvn spring-boot:run -pl form-engine-rest   # REST API   → http://localhost:8080/form-engine
 ```
 
-The UI seeds two demo forms on startup, so there is something to look at immediately:
+`form-engine-flow` is a library and has nothing to run; the demo above is what runs it.
+
+The demo seeds two forms on startup, so there is something to look at immediately:
 
 | View | What it is |
 |---|---|
@@ -163,6 +172,87 @@ Two notes on partial builds:
   installed there gets used instead of your working tree.
 - `mvn -Pproduction ...` compiles the Vaadin frontend bundle. It is a separate profile on purpose:
   the default build must not need a Node toolchain.
+
+## Using it in your own application
+
+`form-engine-flow` is the package to add. It brings the views, the components and the whole engine
+behind them.
+
+```xml
+<dependency>
+    <groupId>com.nc</groupId>
+    <artifactId>form-engine-flow</artifactId>
+    <version>0.0.1-SNAPSHOT</version>
+</dependency>
+```
+
+Then an ordinary Spring Boot application and a datasource. That is all:
+
+```java
+@SpringBootApplication
+public class MyApplication {
+    public static void main(String[] args) {
+        SpringApplication.run(MyApplication.class, args);
+    }
+}
+```
+
+No `@ComponentScan`, no `@EntityScan`, no `@EnableJpaRepositories`, no `@EnableVaadin`. The views
+mount themselves and are wrapped in your `@Layout` if you have one. Out of the box:
+
+| Path | View |
+|---|---|
+| `form-engine/definitions` | Every form and version, with its actions |
+| `form-engine/builder/{formId}` | The editor for one definition |
+| `form-engine/forms` | The published forms, and your saved drafts |
+| `form-engine/fill/{formId}/{submissionId}` | The renderer |
+| `form-engine/responses` | Every submission |
+| `form-engine/responses/form/{formId}` | One form's submissions |
+| `form-engine/responses/submission/{id}` | One submission in full |
+
+**Moving them.** The prefix and each segment are properties, so the paths are yours:
+
+```properties
+formengine.flow.routes.prefix=admin/forms   # everything moves under admin/forms/
+formengine.flow.routes.forms=fill-in        # .../fill-in instead of .../forms
+formengine.flow.routes.enabled=false        # no routes at all; beans and components stay
+```
+
+**The menu.** The module ships no `@Menu` annotations: they would fix the order, the title and the
+icon inside the jar, where you could not reorder them against your own views or translate them. Build
+the items yourself, by class — the URL is resolved from wherever the view was mounted:
+
+```java
+FormEngineViews.TOP_LEVEL.forEach(view ->
+        nav.addItem(new SideNavItem(view.suggestedTitle(), view.navigationTarget())));
+```
+
+**Who is filling the form in.** Submissions are stored against an author, and the drafts to resume
+are that author asked back. The default files everything under `formengine.flow.default-author`;
+an application with accounts answers properly:
+
+```java
+@Bean
+SubmissionAuthorProvider submissionAuthorProvider() {
+    return () -> SecurityContextHolder.getContext().getAuthentication().getName();
+}
+```
+
+That is identity, not authorisation: the responses views show every author's submissions to whoever
+opens them, and anyone who reaches the builder can publish. Access control is yours to add.
+
+**If your application already configures these things:**
+
+- an explicit `@EntityScan` must also list `com.nc.formengine.dataimpl.entity` and
+  `com.nc.formengine.submission.dataimpl.entity`;
+- an explicit `@EnableJpaRepositories` must also list `com.nc.formengine.dataimpl.repository` and
+  `com.nc.formengine.submission.dataimpl.repository`;
+- an explicit `@EnableVaadin` or `vaadin.allowed-packages` should include
+  `com.nc.formengine.flow`. Neither is needed for the routes, which are registered rather than
+  scanned for.
+
+**Licensing.** This is AGPL-3.0. Linking `form-engine-flow` into an application you serve over a
+network puts that application under section 13, which is a real obligation and not a formality.
 
 ## API documentation
 
@@ -218,7 +308,7 @@ Errors are RFC 7807 problem details, served as `application/problem+json` by a s
 
 ## Tests
 
-414 tests, all run by `mvn install` and by CI.
+417 tests, all run by `mvn install` and by CI.
 
 | Where | What it covers |
 |---|---|
@@ -227,7 +317,7 @@ Errors are RFC 7807 problem details, served as `application/problem+json` by a s
 | `form-engine-definition-businessimpl` | The dependency graph and its cycles, validation decisions, the definition lifecycle, and every invariant the domain now enforces rather than the builder |
 | `form-engine-submission-*` | The submission state machine, and that writing a submission back does not delete the answers the request said nothing about |
 | `form-engine-rest` | The API through `MockMvc`: status codes, problem bodies, the springdoc integration, and that the domain rules hold on the HTTP path too |
-| `form-engine-demo` | The builder's policy and parameter names, the layout grid, answer resolution against archived versions, the renderer's save/submit workflow |
+| `form-engine-flow` | The builder's policy and parameter names, the layout grid, answer resolution against archived versions, the renderer's save/submit workflow — and that an application configuring nothing gets working views without losing its own entities |
 
 ## License
 
