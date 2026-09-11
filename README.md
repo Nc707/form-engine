@@ -151,7 +151,7 @@ start, so it always opens on something to look at.
 With a JDK 21 and Maven on the machine, the modules run directly, and the REST API with them:
 
 ```bash
-mvn clean install                          # full build with every test
+mvn clean install -DskipTests              # full build without having to wait for every test to run
 mvn spring-boot:run -pl form-engine-demo   # Vaadin UI  → http://localhost:8081
 mvn spring-boot:run -pl form-engine-rest   # REST API   → http://localhost:8080/form-engine
 ```
