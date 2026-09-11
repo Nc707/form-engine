@@ -13,8 +13,21 @@ services:
     ports:
       # The demo reads server.port=${PORT:8081}, so the container listens on 8081.
       - "8081:8081"
+    environment:
+      # In-memory here would mean `docker compose down` is indistinguishable from deleting
+      # everything ever entered through the container, which is not what stopping a container
+      # means anywhere else. application.properties keeps the in-memory database for
+      # `mvn spring-boot:run`, where the JVM process itself is the unit of "stopped"; only this
+      # override, which nothing outside Docker sees, switches to a file so the volume below has
+      # something durable to hold.
+      SPRING_DATASOURCE_URL: jdbc:h2:file:/home/formengine/data/formengine
+      SPRING_JPA_HIBERNATE_DDL_AUTO: update
+    volumes:
+      - form-engine-data:/home/formengine/data
 
-# There is no database service and no volume, and that is the design rather than an omission: the
-# demo runs on H2 in-memory (spring.jpa.hibernate.ddl-auto=create-drop), so whatever is entered goes
-# away when the container stops. It opens on something to look at regardless, because both seeders
-# rebuild their forms on every boot — a fresh container is a working demo, not an empty one.
+# Named rather than bound to a host path: the data belongs to this stack, not to wherever the repo
+# happens to be checked out, and a named volume survives `docker compose down` the same way a
+# database server's own storage would. `docker compose down -v` (or deleting the volume by hand)
+# is the actual reset, back to only the seeded forms.
+volumes:
+  form-engine-data:
