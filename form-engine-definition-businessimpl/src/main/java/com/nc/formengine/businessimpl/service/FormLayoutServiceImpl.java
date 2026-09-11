@@ -1,27 +1,18 @@
 package com.nc.formengine.businessimpl.service;
 
 import com.nc.formengine.business.service.FormLayoutService;
-import com.nc.formengine.dataimpl.entity.FieldDefinition;
-import com.nc.formengine.dataimpl.entity.FieldLayout;
-import com.nc.formengine.dataimpl.entity.FormDefinition;
-import com.nc.formengine.dataimpl.entity.FormLayout;
-import com.nc.formengine.dataimpl.mapper.FieldLayoutMapper;
-import com.nc.formengine.dataimpl.mapper.FormLayoutMapper;
-import com.nc.formengine.dataimpl.repository.FieldRepository;
-import com.nc.formengine.dataimpl.repository.FormLayoutRepository;
-import com.nc.formengine.dataimpl.repository.FormRepository;
+import com.nc.formengine.data.dao.FormLayoutDao;
+import com.nc.formengine.model.dto.FieldDefinitionDTO;
 import com.nc.formengine.model.dto.FieldLayoutDTO;
+import com.nc.formengine.model.dto.FormDefinitionDTO;
 import com.nc.formengine.model.dto.FormLayoutDTO;
 import com.nc.formengine.model.enums.DeviceType;
-import com.nc.formengine.model.exception.FieldDefinitionNotFoundException;
-import com.nc.formengine.model.exception.FormDefinitionNotFoundException;
 import com.nc.formengine.model.exception.FormLayoutNotFoundException;
 import com.nc.formengine.model.exception.ValidationFailedException;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Optional;
@@ -33,121 +24,66 @@ import java.util.stream.Collectors;
 @Transactional
 public class FormLayoutServiceImpl implements FormLayoutService {
 
-    private final FormLayoutRepository formLayoutRepository;
-    private final FormRepository formRepository;
-    private final FieldRepository fieldRepository;
-    private final FormLayoutMapper formLayoutMapper;
-    private final FieldLayoutMapper fieldLayoutMapper;
+    private final FormLayoutDao formLayoutDao;
     private final DefinitionMutationGuard guard;
 
-    public FormLayoutServiceImpl(FormLayoutRepository formLayoutRepository,
-                                 FormRepository formRepository,
-                                 FieldRepository fieldRepository,
-                                 FormLayoutMapper formLayoutMapper,
-                                 FieldLayoutMapper fieldLayoutMapper,
-                                 DefinitionMutationGuard guard) {
-        this.formLayoutRepository = formLayoutRepository;
-        this.formRepository = formRepository;
-        this.fieldRepository = fieldRepository;
-        this.formLayoutMapper = formLayoutMapper;
-        this.fieldLayoutMapper = fieldLayoutMapper;
+    public FormLayoutServiceImpl(FormLayoutDao formLayoutDao, DefinitionMutationGuard guard) {
+        this.formLayoutDao = formLayoutDao;
         this.guard = guard;
     }
 
     @Override
     public FormLayoutDTO createLayout(FormLayoutDTO layoutDTO) {
-        guard.requireDraft(layoutDTO.getFormDefinitionId());
-        validateLayout(layoutDTO);
+        FormDefinitionDTO form = guard.requireDraft(layoutDTO.getFormDefinitionId());
+        validateLayout(form, layoutDTO);
 
-        FormDefinition formDefinition = formRepository.findById(layoutDTO.getFormDefinitionId())
-                .orElseThrow(() -> new FormDefinitionNotFoundException(layoutDTO.getFormDefinitionId()));
-
-        FormLayout formLayout = formLayoutMapper.toEntity(layoutDTO);
-        formLayout.setFormDefinition(formDefinition);
-
-        if (layoutDTO.getFieldLayouts() != null) {
-            List<FieldLayout> fieldLayouts = new ArrayList<>();
-            for (FieldLayoutDTO fieldLayoutDTO : layoutDTO.getFieldLayouts()) {
-                FieldDefinition fieldDefinition = fieldRepository.findById(fieldLayoutDTO.getFieldDefinitionId())
-                        .orElseThrow(() -> new FieldDefinitionNotFoundException(fieldLayoutDTO.getFieldDefinitionId()));
-
-                FieldLayout fieldLayout = fieldLayoutMapper.toEntity(fieldLayoutDTO);
-                fieldLayout.setFormLayout(formLayout);
-                fieldLayout.setFieldDefinition(fieldDefinition);
-                fieldLayouts.add(fieldLayout);
-            }
-            formLayout.setFieldLayouts(fieldLayouts);
-        }
-
-        FormLayout saved = formLayoutRepository.save(formLayout);
-        log.info("Created layout {} for form {} with device type {}", 
+        FormLayoutDTO saved = formLayoutDao.save(layoutDTO);
+        log.info("Created layout {} for form {} with device type {}",
                 saved.getId(), layoutDTO.getFormDefinitionId(), layoutDTO.getDeviceType());
-        
-        return formLayoutMapper.toDTO(saved);
+
+        return saved;
     }
 
     @Override
     public FormLayoutDTO updateLayout(Long layoutId, FormLayoutDTO layoutDTO) {
-        FormLayout existingLayout = formLayoutRepository.findById(layoutId)
+        FormLayoutDTO existingLayout = formLayoutDao.findById(layoutId)
                 .orElseThrow(() -> new FormLayoutNotFoundException(layoutId));
-        guard.requireDraft(existingLayout.getFormDefinition().getId());
-        guard.requireDraft(layoutDTO.getFormDefinitionId());
-        validateLayout(layoutDTO);
+        guard.requireDraft(existingLayout.getFormDefinitionId());
+        FormDefinitionDTO form = guard.requireDraft(layoutDTO.getFormDefinitionId());
+        validateLayout(form, layoutDTO);
 
-        existingLayout.setDeviceType(layoutDTO.getDeviceType());
+        layoutDTO.setId(layoutId);
 
-        existingLayout.getFieldLayouts().clear();
-
-        if (layoutDTO.getFieldLayouts() != null) {
-            for (FieldLayoutDTO fieldLayoutDTO : layoutDTO.getFieldLayouts()) {
-                FieldDefinition fieldDefinition = fieldRepository.findById(fieldLayoutDTO.getFieldDefinitionId())
-                        .orElseThrow(() -> new FieldDefinitionNotFoundException(fieldLayoutDTO.getFieldDefinitionId()));
-
-                FieldLayout fieldLayout = fieldLayoutMapper.toEntity(fieldLayoutDTO);
-                fieldLayout.setFormLayout(existingLayout);
-                fieldLayout.setFieldDefinition(fieldDefinition);
-                existingLayout.getFieldLayouts().add(fieldLayout);
-            }
-        }
-
-        FormLayout updated = formLayoutRepository.save(existingLayout);
+        FormLayoutDTO updated = formLayoutDao.save(layoutDTO);
         log.info("Updated layout {}", layoutId);
-        
-        return formLayoutMapper.toDTO(updated);
+
+        return updated;
     }
 
     @Override
     public void deleteLayout(Long layoutId) {
-        formLayoutRepository.findById(layoutId)
-                .ifPresent(layout -> guard.requireDraft(layout.getFormDefinition().getId()));
-        formLayoutRepository.deleteById(layoutId);
+        formLayoutDao.findById(layoutId)
+                .ifPresent(layout -> guard.requireDraft(layout.getFormDefinitionId()));
+        formLayoutDao.deleteById(layoutId);
         log.info("Deleted layout {}", layoutId);
     }
 
     @Override
     @Transactional(readOnly = true)
     public Optional<FormLayoutDTO> getLayoutById(Long layoutId) {
-        return formLayoutRepository.findById(layoutId)
-                .map(formLayoutMapper::toDTO);
+        return formLayoutDao.findById(layoutId);
     }
 
     @Override
     @Transactional(readOnly = true)
     public List<FormLayoutDTO> getLayoutsByFormDefinition(Long formDefinitionId) {
-        return formLayoutRepository.findByFormDefinitionId(formDefinitionId).stream()
-                .map(formLayoutMapper::toDTO)
-                .collect(Collectors.toList());
+        return formLayoutDao.findByFormDefinitionId(formDefinitionId);
     }
 
     @Override
     @Transactional(readOnly = true)
     public Optional<FormLayoutDTO> getLayoutByFormAndDevice(Long formDefinitionId, DeviceType deviceType) {
-        if (deviceType == null) {
-            return formLayoutRepository.findByFormDefinitionIdAndDeviceTypeIsNull(formDefinitionId)
-                    .map(formLayoutMapper::toDTO);
-        }
-        return formLayoutRepository.findByFormDefinitionIdAndDeviceType(formDefinitionId, deviceType)
-                .map(formLayoutMapper::toDTO);
+        return formLayoutDao.findByFormDefinitionIdAndDeviceType(formDefinitionId, deviceType);
     }
 
     /**
@@ -157,17 +93,10 @@ public class FormLayoutServiceImpl implements FormLayoutService {
      * renderer appends whatever the layout forgot, on purpose, so that a field can never become
      * unanswerable by omission. Only fields that are not the form's at all are a broken layout.
      */
-    private void validateLayout(FormLayoutDTO layoutDTO) {
-        if (layoutDTO.getFormDefinitionId() == null) {
-            throw new IllegalArgumentException("Form definition ID is required");
-        }
-
-        FormDefinition formDefinition = formRepository.findById(layoutDTO.getFormDefinitionId())
-                .orElseThrow(() -> new FormDefinitionNotFoundException(layoutDTO.getFormDefinitionId()));
-
+    private void validateLayout(FormDefinitionDTO formDefinition, FormLayoutDTO layoutDTO) {
         if (layoutDTO.getFieldLayouts() != null && !layoutDTO.getFieldLayouts().isEmpty()) {
             Set<Long> formFieldIds = formDefinition.getFields().stream()
-                    .map(FieldDefinition::getId)
+                    .map(FieldDefinitionDTO::getId)
                     .collect(Collectors.toSet());
 
             Set<Long> layoutFieldIds = layoutDTO.getFieldLayouts().stream()
