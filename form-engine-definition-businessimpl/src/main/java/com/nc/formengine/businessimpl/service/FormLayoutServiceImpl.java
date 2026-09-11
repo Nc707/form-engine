@@ -54,11 +54,16 @@ public class FormLayoutServiceImpl implements FormLayoutService {
     public FormLayoutDTO updateLayout(Long layoutId, FormLayoutDTO layoutDTO) {
         FormLayoutDTO existingLayout = formLayoutDao.findById(layoutId)
                 .orElseThrow(() -> new FormLayoutNotFoundException(layoutId));
-        guard.requireDraft(existingLayout.getFormDefinitionId());
-        FormDefinitionDTO form = guard.requireDraft(layoutDTO.getFormDefinitionId());
-        validateLayout(form, layoutDTO);
+        FormDefinitionDTO form = guard.requireDraft(existingLayout.getFormDefinitionId());
 
         layoutDTO.setId(layoutId);
+        // A layout cannot be moved to another form: pinning this before validating is what makes the
+        // "fields belong to this form" check below actually mean something. Trusting the DTO's own
+        // formDefinitionId instead would validate the placements against whichever form the request
+        // named and then save the layout under the id path names — precisely the mismatch the 422 two
+        // lines down exists to catch.
+        layoutDTO.setFormDefinitionId(existingLayout.getFormDefinitionId());
+        validateLayout(form, layoutDTO);
 
         FormLayoutDTO updated = formLayoutDao.save(layoutDTO);
         log.info("Updated layout {}", layoutId);

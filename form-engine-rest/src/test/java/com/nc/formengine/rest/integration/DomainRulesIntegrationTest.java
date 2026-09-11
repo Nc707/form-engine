@@ -183,6 +183,31 @@ class DomainRulesIntegrationTest {
         assertThat(stillFormAs.getFormDefinitionId()).isEqualTo(formA.getId());
     }
 
+    /**
+     * Validating the request's own {@code formDefinitionId} instead of the layout's actual one used
+     * to pass this straight through: form B's fields are perfectly valid for form B, so the 422 this
+     * asserts never fired, and the layout was saved with form B's placements while staying addressed
+     * under form A's id — the exact cross-form layout the rule is meant to refuse, reached by the one
+     * path that wasn't checking against the right form.
+     */
+    @Test
+    void updatingALayoutWithAnotherFormsFieldsIsRefused() throws Exception {
+        FormDefinitionDTO formA = formWithOneField("layout_move_target");
+        FormLayoutDTO formALayout = formLayoutService.createLayout(layout(formA.getId(), formA.getFields().get(0).getId()));
+
+        FormDefinitionDTO formB = formWithOneField("layout_move_source");
+        FormLayoutDTO moved = layout(formB.getId(), formB.getFields().get(0).getId());
+
+        send(put("/api/v1/form-layouts/{id}", formALayout.getId()), moved)
+                .andExpect(status().isUnprocessableEntity());
+
+        FormLayoutDTO stillFormAs = formLayoutService.getLayoutById(formALayout.getId()).orElseThrow();
+        assertThat(stillFormAs.getFormDefinitionId()).isEqualTo(formA.getId());
+        assertThat(stillFormAs.getFieldLayouts())
+                .extracting(FieldLayoutDTO::getFieldDefinitionId)
+                .containsExactly(formA.getFields().get(0).getId());
+    }
+
     // --- answers belong to the submission they were given in --------------------------------------
 
     /**
