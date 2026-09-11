@@ -144,9 +144,10 @@ docker compose up          # Vaadin UI → http://localhost:8081
 ```
 
 The first run takes a few minutes: it compiles all thirteen modules and the Vaadin production
-bundle inside the container. After that the build is cached. The demo runs on H2 in-memory there
-too, so stopping the stack discards whatever was entered — the seeded forms are rebuilt on the next
-start, so it always opens on something to look at.
+bundle inside the container. After that the build is cached. There, unlike with Maven directly, H2
+writes to a file on a named volume rather than to memory, so `docker compose down` followed by
+`docker compose up` picks up right where it left off; `docker compose down -v` is what resets it.
+The seeded forms still appear on a genuinely empty volume, so it never opens on nothing to look at.
 
 With a JDK 21 and Maven on the machine, the modules run directly, and the REST API with them:
 

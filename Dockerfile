@@ -42,6 +42,12 @@ FROM eclipse-temurin:21-jre AS runtime
 # A process that only serves HTTP has no reason to be able to write to its own image. Running as
 # root by default means any remote-code-execution bug in the app is immediately a root shell.
 RUN useradd --system --create-home --uid 10001 formengine
+
+# Created here, before the user switch, so a fresh named volume mounted over it at runtime still
+# inherits this ownership: Docker create an empty volume's mount point as root otherwise, and H2
+# cannot write its file there under the unprivileged user set below.
+RUN mkdir /home/formengine/data && chown formengine:formengine /home/formengine/data
+
 USER formengine
 WORKDIR /home/formengine
 
