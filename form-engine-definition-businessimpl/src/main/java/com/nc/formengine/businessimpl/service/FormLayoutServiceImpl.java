@@ -34,6 +34,12 @@ public class FormLayoutServiceImpl implements FormLayoutService {
 
     @Override
     public FormLayoutDTO createLayout(FormLayoutDTO layoutDTO) {
+        if (layoutDTO.getId() != null) {
+            // Without this, an id naming someone else's layout is not rejected but obeyed: the DAO's
+            // save() treats a non-null id as "update that row", so a POST could silently overwrite a
+            // layout on a form this request never named, published or not.
+            throw new IllegalArgumentException("New layout should not have an ID");
+        }
         FormDefinitionDTO form = guard.requireDraft(layoutDTO.getFormDefinitionId());
         validateLayout(form, layoutDTO);
 

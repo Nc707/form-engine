@@ -1,10 +1,13 @@
 package com.nc.formengine.rest.integration;
 
 import com.nc.formengine.business.service.FormDefinitionService;
+import com.nc.formengine.business.service.FormLayoutService;
 import com.nc.formengine.model.dto.FieldDefinitionDTO;
+import com.nc.formengine.model.dto.FieldLayoutDTO;
 import com.nc.formengine.model.dto.FieldOptionDTO;
 import com.nc.formengine.model.dto.FieldRestrictionDTO;
 import com.nc.formengine.model.dto.FormDefinitionDTO;
+import com.nc.formengine.model.dto.FormLayoutDTO;
 import com.nc.formengine.model.enums.FieldType;
 import com.nc.formengine.model.enums.RestrictionType;
 import com.nc.formengine.submission.business.service.FormSubmissionWorkflowService;
@@ -25,6 +28,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
@@ -60,6 +64,9 @@ class DomainRulesIntegrationTest {
 
     @Autowired
     private FormSubmissionWorkflowService workflowService;
+
+    @Autowired
+    private FormLayoutService formLayoutService;
 
     // --- a published definition is frozen whole ---------------------------------------------------
 
@@ -149,6 +156,33 @@ class DomainRulesIntegrationTest {
                 .andExpect(status().isUnprocessableEntity());
     }
 
+    // --- a stored layout cannot be hijacked by naming its id ---------------------------------------
+
+    /**
+     * The DAO's save() treats a non-null id as "update that row" — the same trick every DAO in this
+     * layer plays to preserve an orphanRemoval collection across a real update. Nothing but the
+     * service stood between a POST and reusing someone else's id, including the layout of a form
+     * that was already published: this used to overwrite it in place, rewriting a frozen form's
+     * layout onto a different, unrelated draft.
+     */
+    @Test
+    void creatingALayoutThatNamesAnExistingIdIsRefused() throws Exception {
+        FormDefinitionDTO formA = formWithOneField("layout_hijack_target");
+        FormLayoutDTO formALayout = formLayoutService.createLayout(layout(formA.getId(), formA.getFields().get(0).getId()));
+        formDefinitionService.publish(formA.getId());
+
+        FormDefinitionDTO formB = formWithOneField("layout_hijack_source");
+
+        FormLayoutDTO hijack = layout(formB.getId(), formB.getFields().get(0).getId());
+        hijack.setId(formALayout.getId());
+
+        send(post("/api/v1/form-layouts"), hijack)
+                .andExpect(status().isBadRequest());
+
+        FormLayoutDTO stillFormAs = formLayoutService.getLayoutById(formALayout.getId()).orElseThrow();
+        assertThat(stillFormAs.getFormDefinitionId()).isEqualTo(formA.getId());
+    }
+
     // --- answers belong to the submission they were given in --------------------------------------
 
     /**
@@ -223,6 +257,37 @@ class DomainRulesIntegrationTest {
                 .andReturn();
         return objectMapper.readValue(
                 result.getResponse().getContentAsString(), FieldDefinitionDTO[].class)[0];
+    }
+
+    /**
+     * A field created inline with its form, so the form's {@code fields} collection is accurate the
+     * first time anything in this transaction reads it — unlike a field added by a later, separate
+     * request against a form already touched once (Hibernate's first-level cache does not notice a
+     * sibling collection changing out from under an entity it has already loaded).
+     */
+    private FormDefinitionDTO formWithOneField(String code) throws Exception {
+        FormDefinitionDTO form = new FormDefinitionDTO();
+        form.setCode(code);
+        form.setTitle("Form " + code);
+        form.setVersion(1);
+        form.setFields(List.of(FieldDefinitionDTO.builder()
+                .name("name").label("Name").type(FieldType.TEXT).orderIndex(0).build()));
+
+        MvcResult result = send(post("/api/v1/form-definitions"), form)
+                .andExpect(status().isCreated())
+                .andReturn();
+        return objectMapper.readValue(
+                result.getResponse().getContentAsString(), FormDefinitionDTO.class);
+    }
+
+    private FormLayoutDTO layout(Long formId, Long fieldId) {
+        return FormLayoutDTO.builder()
+                .formDefinitionId(formId)
+                .fieldLayouts(List.of(FieldLayoutDTO.builder()
+                        .fieldDefinitionId(fieldId)
+                        .row(0).column(0).colspan(12).rowspan(1)
+                        .build()))
+                .build();
     }
 
     private FieldDefinitionDTO field(Long formId, String name, FieldType type) {
