@@ -11,9 +11,18 @@
   		<groupId>com.nc</groupId>
   		<artifactId>form-engine-definition-data</artifactId>
   	</dependency>
+  	<!-- Runtime, not compile: every service here goes through form-engine-definition-data's DAO
+  	     interfaces, so nothing in src/main is compiled against this jar's entities or
+  	     repositories — Spring Boot auto-configuration wires the DAO implementations in from
+  	     here at startup. At compile scope this was the dependency that actually leaked the
+  	     engine's JPA model onto a form-engine-flow consumer's compile classpath: flow depends
+  	     on this module too, and Maven resolves a scope conflict between two paths to a jar by
+  	     taking the wider one, so flow's own runtime scope for this jar counted for nothing
+  	     while this declaration stayed at compile. -->
   	<dependency>
   		<groupId>com.nc</groupId>
   		<artifactId>form-engine-definition-dataimpl</artifactId>
+  		<scope>runtime</scope>
   	</dependency>
 		<dependency>
 		<groupId>com.nc</groupId>
