@@ -34,14 +34,24 @@
             <artifactId>form-engine-submission-businessimpl</artifactId>
         </dependency>
 
-        <!-- Internal dependencies - Data implementations (entities + repositories) -->
+        <!-- Internal dependencies - Data implementations (entities + repositories).
+             Runtime, not compile: the views and utils under src/main talk to the business
+             interfaces only, and Spring Boot auto-configuration is what wires the DAO
+             implementations in these jars in at startup, so nothing here is ever compiled
+             against them. Left at compile scope, the entities and repositories would sit on
+             the compile classpath of every application that adds this library, and binding
+             application code to the engine's own JPA model is exactly what its tables are
+             meant to be free to change without notice. Runtime scope still reaches the test
+             classpath, which is what HostPersistenceIsLeftAloneTest depends on. -->
         <dependency>
             <groupId>com.nc</groupId>
             <artifactId>form-engine-definition-dataimpl</artifactId>
+            <scope>runtime</scope>
         </dependency>
         <dependency>
             <groupId>com.nc</groupId>
             <artifactId>form-engine-submission-dataimpl</artifactId>
+            <scope>runtime</scope>
         </dependency>
 
         <!-- Vaadin. vaadin-core, not vaadin: the full artifact drags the commercial
